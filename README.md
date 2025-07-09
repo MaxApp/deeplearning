@@ -1,2 +1,1 @@
-# deeplearning
-personal practical codes of machine learning 
+# Personal practical codes of machine learning 
