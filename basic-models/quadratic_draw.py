@@ -22,7 +22,6 @@ def plot_function(x, y, y_pred, title='Function Plot', xlabel='x', ylabel='y'):
 
 # def scatter_plot(x, y, title='Scatter Plot', xlabel='x', ylabel='y'):
 #     plt.figure(figsize=(10, 6))
-    
 #     plt.title(title)
 #     plt.xlabel(xlabel)
 #     plt.ylabel(ylabel)
