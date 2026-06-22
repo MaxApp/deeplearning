@@ -13,6 +13,7 @@
 6. .detach.numpy()
 
 效果示例：
+
 ![train1](imgs/simple_linear_dynamic_01.png)
 
 * simple_curve_dynamic.py
@@ -27,4 +28,5 @@
 4. Adam vs. SGD
 
 效果示例：
+
 ![train1](imgs/simple_curve_dynamic_01.png)
