@@ -13,10 +13,8 @@ b = 1.5
 NUM_OF_DATA = 50
 torch.manual_seed(40)
 x_true = torch.linspace(0,1,NUM_OF_DATA).unsqueeze(1)
-# print(f"=== { w * x_true + b}")
 # 增加 noise
 noise = (torch.rand(NUM_OF_DATA,1) * 2 - 1) * 0.08
-# print(f"=== { noise}")
 y_true = w * x_true + b + noise
 
 # print(f"x: {x_true}")
@@ -26,7 +24,7 @@ y_true = w * x_true + b + noise
 plt.scatter(x_true, y_true)
 plot_line, = plt.plot([],[], c="r")
 
-model = nn.Sequential(
+model: nn.Module = nn.Sequential(
     nn.Linear(1,1) # input 1d, output 1d
 )
 
@@ -50,5 +48,12 @@ for epoch in range(epochs):
         plot_line.set_data(x_true.detach().numpy(), y_hat.detach().numpy())
         plt.pause(0.8)  # 短暂暂停以显示更新
 
+# 训练后的参数值
+layer1: nn.Linear = model[0] # type: ignore[assignment]
+learned_weights = layer1.weight.detach().numpy()
+learned_bias = layer1.bias.detach().numpy()
+
+print(f"Actual Weight: {w}  Learned weights: {learned_weights}")
+print(f"Actual Bias: {b}  Learned Bias: {learned_bias}")
 plt.show()
     
