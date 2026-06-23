@@ -27,11 +27,18 @@ model = nn.Sequential(
     nn.Linear(10,1)
 )
 
-fig, axs = plt.subplots(nrows=1, ncols=2, figsize=(10,5))
+fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(14,4))
 
 # 绘制 true data
-axs[0].set_title("Model Fitting")
+axs[0].set_title("Original Data")
 axs[0].scatter(x_true, y_true)
+
+bn = nn.BatchNorm1d(1)
+x_norm = bn(x_true)
+y_norm = bn(y_true)
+axs[1].set_title("Normalized Data")
+axs[1].scatter(x_norm.detach().numpy(), y_norm.detach().numpy())
+
 plot_line, = axs[0].plot([],[], c="r")
 
 # Loss function
@@ -60,6 +67,10 @@ for epoch in range(epochs):
 
     if (epoch + 1) % 50 == 0:
         print(f"epoch:{epoch+1} Loss:{loss.item()}")
+    
+    # adam 损失下降很快，为展示明显变化的拟合过程，便于观察，
+    # 仅对前50次epoch中，偶数期和最后一次epoch拟合结果进行绘制
+    if ((epoch + 1) <= 50 and (epoch + 1) % 2 == 0) or (epoch + 1) == 1000:
         plot_line.set_data(x_true.detach().numpy(), y_hat.detach().numpy())
         plt.pause(0.8)  # 短暂暂停以显示更新
 
@@ -95,9 +106,9 @@ for epoch in range(epochs):
         loss_values["sgd"]["epochs"].append(epoch)
         loss_values["sgd"]["losses"].append(loss.item())
 
-axs[1].plot(loss_values["adam"]["epochs"], loss_values["adam"]["losses"], c="g", label="Adam")
-axs[1].plot(loss_values["sgd"]["epochs"], loss_values["sgd"]["losses"], c="y", label="SGD")
-axs[1].legend()
-axs[1].set_title("Loss Curve")
+axs[2].plot(loss_values["adam"]["epochs"], loss_values["adam"]["losses"], c="g", label="Adam")
+axs[2].plot(loss_values["sgd"]["epochs"], loss_values["sgd"]["losses"], c="y", label="SGD")
+axs[2].legend()
+axs[2].set_title("Loss Curve")
 plt.show()
 

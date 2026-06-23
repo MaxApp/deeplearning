@@ -23,7 +23,7 @@
 
 摘要：
 1. torch.log10
-2. BatchNorm1d
+2. BatchNorm1d 增强版 z-score (gamma, beta 1e-5)
 3. plt.subplots 多子图
 4. Adam vs. SGD
 
