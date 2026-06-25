@@ -45,7 +45,7 @@ plot_line, = axs[0].plot([],[], c="r")
 loss_function = nn.MSELoss()
 # optimizer
 # 使用 Adam 明显收敛更快速
-optimizer = optim.Adam(model.parameters(), lr=0.02)
+optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.01)
 
 # 记录 loss 变化值
 LOSS_RECORDS = 60

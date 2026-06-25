@@ -1,1 +1,2 @@
-# Personal practical codes of machine learning 
+# Practicals of Machine Learning and Deep Learning
+
