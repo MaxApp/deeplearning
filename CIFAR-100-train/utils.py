@@ -7,7 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Filter subdatasets
-def load_cifar100_training_subset(train_dataset:torchvision.datasets.CIFAR100, target_classes:list) -> torchvision.datasets.CIFAR100:
+def load_cifar100_subset(train_dataset:torchvision.datasets.CIFAR100,
+                         validation_dataset:torchvision.datasets.CIFAR100, 
+                         target_classes:list):
     all_classes = train_dataset.classes
     try:
         # Get the original integer indices for the target class names.
@@ -20,21 +22,26 @@ def load_cifar100_training_subset(train_dataset:torchvision.datasets.CIFAR100, t
     # Create a mapping from the original class indices to new, contiguous indices (0, 1, 2, ...).
     label_map = {old_label: new_label for new_label, old_label in enumerate(target_indices)}
 
-    targets_np = np.array(train_dataset.targets)
+    train_dataset = filter_dataset(train_dataset, target_classes, target_indices, label_map)
+    validation_dataset = filter_dataset(validation_dataset, target_classes, target_indices, label_map)
+    return train_dataset, validation_dataset
+
+def filter_dataset(dataset, target_classes, target_indices, label_map):
+    targets_np = np.array(dataset.targets)
     # Create a boolean mask to identify which samples belong to the target classes.
     indices_to_keep = np.isin(targets_np, target_indices)
     
     # Filter the dataset's image data using the boolean mask.
-    train_dataset.data = train_dataset.data[indices_to_keep]
+    dataset.data = dataset.data[indices_to_keep]
     
     # Get the original labels of the samples that are being kept.
     original_targets_to_keep = targets_np[indices_to_keep]
     # Remap the original labels to the new contiguous labels.
-    train_dataset.targets = [label_map[target] for target in original_targets_to_keep]
+    dataset.targets = [label_map[target] for target in original_targets_to_keep]
     
     # Update the dataset's class list to only include the target classes.
-    train_dataset.classes = target_classes
-    return train_dataset
+    dataset.classes = target_classes
+    return dataset
 
 # Visualise random from datasets
 def visualise_random(cifar100_datasets:torchvision.datasets.CIFAR100):

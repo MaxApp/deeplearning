@@ -7,18 +7,7 @@ from torch.utils.data import DataLoader
 
 import utils
 
-# mean, std data from CIFAR-100 in advance
-cifar100_mean = (0.5071, 0.4867, 0.4408)
-cifar100_std = (0.2675, 0.2565, 0.2761)
-
-# Training set transformation pipeline
-train_transform = transforms.Compose([
-    transforms.RandomHorizontalFlip(p=0.4),
-    transforms.RandomRotation(15), #  [-15,15]
-    transforms.ToTensor(),
-    transforms.Normalize(cifar100_mean, cifar100_std)
-])
-
+# a limited subclasses instead of a full one
 target_classes = [
     # Flowers
     'orchid', 'poppy', 'sunflower',
@@ -27,19 +16,6 @@ target_classes = [
     # Insects
     'butterfly', 'caterpillar', 'cockroach'
 ]
-
-# load dataset
-original_dataset = datasets.CIFAR100("E:\\CIFAR100分类数据集", train=True, download=False, transform=train_transform)
-sub_dataset = utils.load_cifar100_training_subset(original_dataset, target_classes)
-
-# test for dataloader if necessary
-# utils.visualise_random(sub_dataset)
-
-# Set the number of samples to be processed in each batch
-batch_size = 64
-
-# Create a data loader for the training set, with shuffling enabled
-train_loader = DataLoader(sub_dataset, batch_size=batch_size, shuffle=True)
 
 # Model
 class SimpleCNN(nn.Module):
@@ -75,8 +51,8 @@ class SimpleCNN(nn.Module):
         # FC layer
         self.fc2 = nn.Linear(512, len(target_classes))
 
-
     def forward(self, x):
+
         x = self.conv1(x)
         x = self.relu1(x)
         x = self.pool1(x)
@@ -93,59 +69,119 @@ class SimpleCNN(nn.Module):
 
         x = self.fc1(x)
         x = self.relu4(x)
-        x = self.dropout(x)
+        x = self.dropout(x) # dropout
         x = self.fc2(x)
 
         return x
 
-
-model = SimpleCNN()
-
-# Loss function
-loss_function = nn.CrossEntropyLoss()
-
-# Optimizer for the prototype model
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-def train_model(model, train_loader, num_epochs, loss_func, optimizer):
-    train_losses = []
-    print("--- Training Started ---")
-    
-    # Loop over the specified number of epochs
-    for epoch in range(num_epochs):
-        model.train()
-        # Initialize running loss for the current epoch
-        running_loss = 0.0
-        # Iterate over batches of data in the training loader
-        for images, labels in train_loader:
-            # Clear the gradients of all optimized variables
-            optimizer.zero_grad()
-            # Perform a forward pass to get model outputs
-            outputs = model(images)
-            # Calculate the loss
-            loss = loss_func(outputs, labels)
-            # Perform a backward pass to compute gradients
-            loss.backward()
-            # Update the model parameters
-            optimizer.step()
-            
-            # Accumulate the training loss for the batch
-            running_loss += loss.item() * images.size(0)
-            
-        # Calculate the average training loss for the epoch
-        epoch_loss = running_loss / len(train_loader.dataset)
-        # Append the epoch loss to the list of training losses
-        train_losses.append(epoch_loss)
+# training the model with module settings
+def train_model(model, train_loader, loss_func, optimizer):
+    # Set model to train mode
+    model.train()
+    # Initialize running loss
+    training_loss = 0.0
+    # Iterate over batches of data in the training loader
+    for images, labels in train_loader:
+        # Clear the gradients of all optimized variables
+        optimizer.zero_grad()
+        # Perform a forward pass to get model outputs
+        outputs = model(images)
+        # Calculate the loss
+        loss = loss_func(outputs, labels)
+        # Perform a backward pass to compute gradients
+        loss.backward()
+        # Update the model parameters
+        optimizer.step()
         
-        # Print the metrics for the current epoch
-        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {epoch_loss:.4f}")
+        # Accumulate the training loss for the batch
+        training_loss += loss.item() * images.size(0)
         
-    # Print a message indicating the end of the training process
-    print("--- Finished Training ---")
-    
-    # Return the trained model and the collected metrics
-    return model, train_losses
+    # Calculate the average training loss for the epoch
+    epoch_loss = training_loss / len(train_loader.dataset)
+    # Return the epoch metrics
+    return epoch_loss
+
+def eval_model(model, val_loader, loss_func):
+    # Set the model to evaluation mode
+    model.eval()
+    val_losses = 0.0
+    correct = 0
+    # Disable gradient descent
+    with torch.no_grad():
+        for val_images, labels in val_loader:
+            outputs = model(val_images)
+            batch_avg_loss = loss_func(outputs, labels)
+            # accumulate total loss per batch
+            val_losses += batch_avg_loss.item() * labels.size(0)
+            predicted = torch.argmax(outputs, 1)
+            correct += (predicted == labels).sum().item()
+
+        # Calculate the average validation loss
+        epoch_val_loss = val_losses / len(val_loader.dataset)
+        # Calculate the accuracy
+        epoch_accuracy = 100.0 * correct / len(val_loader.dataset)
+        return epoch_val_loss, epoch_accuracy
 
 if __name__ == "__main__":
-    num_epochs = 15
-    train_model(model, train_loader, num_epochs, loss_function, optimizer)
+    # constant values
+    # mean, std data for CIFAR-100 in advance
+    cifar100_mean = (0.5071, 0.4867, 0.4408)
+    cifar100_std = (0.2675, 0.2565, 0.2761)
+
+    # Training set transform
+    train_transform = transforms.Compose([
+        # Data augmentation
+        transforms.RandomHorizontalFlip(p=0.4),
+        transforms.RandomRotation(15), #  [-15,15]
+
+        transforms.ToTensor(),
+        transforms.Normalize(cifar100_mean, cifar100_std)
+    ])
+
+    # Validation set transform
+    val_transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(cifar100_mean, cifar100_std)
+    ])
+
+    # load pre-downloaded dataset
+    original_train_dataset = datasets.CIFAR100("E:\\CIFAR100分类数据集", train=True, download=False, transform=train_transform)
+    original_val_dataset = datasets.CIFAR100("E:\\CIFAR100分类数据集", train=False, download=False, transform=val_transform)
+    # filter sub dataset
+    sub_train_sets, sub_val_sets = utils.load_cifar100_subset(original_train_dataset, original_val_dataset, target_classes)
+
+    # test for dataloader if necessary
+    # utils.visualise_random(sub_train_sets)
+    # utils.visualise_random(sub_val_sets)
+
+    batch_size = 64
+    # data loader for the training set, with shuffling enabled
+    train_loader = DataLoader(sub_train_sets, batch_size=batch_size, shuffle=True)
+    # validation loader for test, with shuffling disabled
+    val_loader = DataLoader(sub_val_sets, batch_size=batch_size, shuffle=False)
+
+    # model initialize
+    model = SimpleCNN()
+    loss_function = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=0.0001)
+
+    num_epochs = 20
+    epoch_train_losses = []
+    epoch_val_losses = []
+    epoch_val_accuracy = []
+    # Loop over epochs
+    for epoch in range(num_epochs):
+        # training
+        train_loss = train_model(model, train_loader, loss_function, optimizer)
+        # evaluating
+        val_loss, accuracy = eval_model(model, val_loader, loss_function)
+        
+        print(f"Epoch [{epoch+1}/{num_epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, Accuracy: {accuracy:.2f}")
+        
+        epoch_train_losses.append(train_loss)
+        epoch_val_losses.append(val_loss)
+        epoch_val_accuracy.append(accuracy)
+
+    # print(f"train loss: {epoch_train_losses}")
+    # print(f"val loss: {epoch_val_losses}")
+    # print(f"val accuracy: {epoch_val_accuracy}")
