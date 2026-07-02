@@ -185,3 +185,6 @@ if __name__ == "__main__":
     # print(f"train loss: {epoch_train_losses}")
     # print(f"val loss: {epoch_val_losses}")
     # print(f"val accuracy: {epoch_val_accuracy}")
+    
+    # show training and evaluation results in matplotlib
+    utils.plot_training_results(epoch_train_losses, epoch_val_losses, epoch_val_accuracy)

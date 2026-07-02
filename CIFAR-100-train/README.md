@@ -15,7 +15,7 @@ Classify limited subclasses instead of 100 categories.
 
     Build a model that can classify flowers, insects and small animals within small curated classes.
 
-    Technicals covering:
+    **Technicals covering:**
     
     * data tranform & normalize
     * data augmentation
@@ -27,7 +27,7 @@ Classify limited subclasses instead of 100 categories.
     * mini-batch gradient clearing
     * evaluate model with validation set
 
-    **cautions:**
+    **Cautions:**
     
     * Be careful with accumulating the loss in batch and calculate the average loss for total. The loss value returned by loss function is the mean value per batch by default, in order to calculate the total loss based on every sample, you should calculate every batch total loss and accumulate them to get the final one. Otherwise you could calculate average loss based on batch, see `additional` notes below.
     * It's not promised the last batch is a full size, so you should count step by step to get the right size of the sample in a batch.
@@ -35,7 +35,8 @@ Classify limited subclasses instead of 100 categories.
     
       `CrossEntropyLoss = LogSoftmax + NLLLoss`
     
-    **additional:**
+    **Additional:**
+
     There're two different ways of calculating the average loss.
     
     * Batch average
@@ -52,42 +53,30 @@ Classify limited subclasses instead of 100 categories.
 
     In this model, we are using the **sample average loss**
     ```python
-    # Initialize running validation loss and correct predictions count
-    running_val_loss = 0.0
+    val_losses = 0.0
     correct = 0
-    total = 0
-    # Disable gradient calculations for validation
+    # Disable gradient descent
     with torch.no_grad():
-        # Iterate over batches of data in the validation loader
-        for images, labels in val_loader:
-            # Move images and labels to the specified device
-            images, labels = images.to(device), labels.to(device)
-            
-            # Perform a forward pass to get model outputs
-            outputs = model(images)
-            
-            # Calculate the validation loss for the batch
-            val_loss = loss_function(outputs, labels)
-            # Accumulate the validation loss
-            running_val_loss += val_loss.item() * images.size(0)
-            
-            # Get the predicted class labels
-            _, predicted = torch.max(outputs, 1)
-            # Update the total number of samples
-            total += labels.size(0)
-            # Update the number of correct predictions
+        for val_images, labels in val_loader:
+            outputs = model(val_images)
+            batch_avg_loss = loss_func(outputs, labels)
+            # accumulate total loss per batch
+            val_losses += batch_avg_loss.item() * labels.size(0)
+            predicted = torch.argmax(outputs, 1)
             correct += (predicted == labels).sum().item()
-            
-    # Calculate the average validation loss for the epoch
-    epoch_val_loss = running_val_loss / len(val_loader.dataset)
-    # Append the epoch validation loss to the list
-    val_losses.append(epoch_val_loss)
-    
-    # Calculate the validation accuracy for the epoch
-    epoch_accuracy = 100.0 * correct / total
-    # Append the epoch accuracy to the list
-    val_accuracies.append(epoch_accuracy)
+
+        # Calculate the average validation loss
+        epoch_val_loss = val_losses / len(val_loader.dataset)
+        # Calculate the accuracy
+        epoch_accuracy = 100.0 * correct / len(val_loader.dataset)
     ```
+
+    **Model training figures:** 
+    
+    Calculate each loss per epoch, as well as accuracy on validation dataset.
+
+    ![training_result](imgs/nature_classifier_01.png)
+
 
 * utils.py
 

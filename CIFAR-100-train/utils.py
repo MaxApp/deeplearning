@@ -61,3 +61,50 @@ def visualise_random(cifar100_datasets:torchvision.datasets.CIFAR100):
         
     plt.tight_layout()  # 自动调整子图间距
     plt.show()
+
+
+def plot_training_results(train_losses, val_losses, val_accuracies):
+    num_epochs = len(train_losses)
+    # Create a 1-indexed range of epoch numbers for the x-axis
+    epochs = range(1, num_epochs + 1)
+
+    # Create a figure and a set of subplots with 1 row and 2 columns
+    fig, axes = plt.subplots(1, 2, figsize=(8, 4))
+
+    # --- Configure the first subplot for training and validation loss ---
+    ax1 = axes[0]
+    # Plot training loss data
+    ax1.plot(epochs, train_losses, color="#185df3", linewidth=2.5, marker='o', markersize=3, label='Training Loss')
+    # Plot validation loss data
+    ax1.plot(epochs, val_losses, color="#2cd69d", linewidth=2.5, marker='o', markersize=3, label='Validation Loss')
+    # Set the title and axis labels for the loss plot
+    ax1.set_title('Training & Validation Loss', fontsize=14)
+    ax1.set_xlabel('Epoch', fontsize=12)
+    ax1.set_ylabel('Loss', fontsize=12)
+    # Display the legend
+    ax1.legend()
+    # Add a grid for better readability
+    ax1.grid(True, linestyle='--', alpha=0.6)
+
+    # --- Configure the second subplot for validation accuracy ---
+    ax2 = axes[1]
+    # Plot validation accuracy data
+    ax2.plot(epochs, val_accuracies, color="#7821db", linewidth=2.5, marker='o', markersize=3, label='Validation Accuracy')
+    # Set the title and axis labels for the accuracy plot
+    ax2.set_title('Validation Accuracy', fontsize=14)
+    ax2.set_xlabel('Epoch', fontsize=12)
+    ax2.set_ylabel('Accuracy (%)', fontsize=12)
+    # Display the legend
+    ax2.legend()
+    # Add a grid for better readability
+    ax2.grid(True, linestyle='--', alpha=0.6)
+
+    # Loop through each subplot to apply common axis settings
+    for ax in axes:
+        # Set the y-axis to start at 0 and the x-axis to span the epochs
+        ax.set_ylim(bottom=0)
+        ax.set_xlim(left=0, right=num_epochs)
+
+    plt.tight_layout()
+    # Display the plots
+    plt.show()
