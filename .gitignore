@@ -1,0 +1,7 @@
+# 忽略所有层级的 __pycache__ 目录
+__pycache__/
+
+# 忽略散落的 .pyc, .pyo, .pyd 文件（针对旧项目或特殊构建）
+*.pyc
+*.pyo
+*.pyd
