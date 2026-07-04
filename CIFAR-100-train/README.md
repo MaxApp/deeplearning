@@ -55,6 +55,7 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
       `running_loss / len(train_dataset)`      
 
     In this model, we are using the **sample average loss**
+    
     ```python
     val_losses = 0.0
     correct = 0
@@ -96,6 +97,7 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
 
   * dropout should be implemented **after** activation values
   * normalize should be implemented **before** activations
+  
 
   ```python
   # CNN feature Block
