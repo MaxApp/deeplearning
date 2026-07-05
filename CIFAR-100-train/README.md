@@ -154,6 +154,58 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
   ![training_enhanced_result](imgs/nature_classifier_02.png)
 
 
+* **nature_classifier_optimized.py**
+
+    Base on `nature_classifier_enhanced.py` we add more optimized methods to tuning the model in order to improve accuracy and other performance metrics.
+    We monitor not just on `accuracy` but also more useful `precision`, `recall`, `f1 score` metrics to evaluating the predictions. 
+    
+    Therefore we include:
+    * `torchmetrics` for automating calculate metrics
+    * `scheduler` for adjusting adaptive learning rate
+
+    ```python
+    import torchmetrics
+
+    # accuracy
+    accuracy_metric = torchmetrics.Accuracy(
+        task="multiclass", 
+        num_classes=len(target_classes), 
+        average="micro"
+    )
+
+    # precision
+    precision_metric = torchmetrics.Precision(
+        task="multiclass",
+        num_classes=len(target_classes),
+        average="macro"
+    )
+
+    # recall
+    recall_metric = torchmetrics.Recall(
+        task="multiclass",
+        num_classes=len(target_classes),
+        average="macro"
+    )
+
+    # f1 score
+    f1score_metric = torchmetrics.F1Score(
+        task="multiclass",
+        num_classes=len(target_classes),
+        average="macro"
+    )
+    ```
+
+    ```python
+    from torch.optim import lr_scheduler
+
+    # add a scheduler to facilitate converging
+    scheduler = lr_scheduler.ReduceLROnPlateau(optimizer=optimizer, mode="max", factor=0.2, patience=3)
+    ```
+
+    Whereas the lr and other settings is the same as `natrue_classifier_enhance.py`, the **training loss** and **validation_loss**, **accuracy** are more promising.
+
+    ![training_optimized_result](imgs/nature_classifier_optim.png)
+
 * **utils.py**
 
     helper functions assist with main code.
