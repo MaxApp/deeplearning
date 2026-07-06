@@ -49,7 +49,7 @@ transform = transforms.Compose([
 
 # Assign the transform to both the training and test datasets
 train_dataset.transform = transform
-test_dataset.transform = transfor
+test_dataset.transform = transform
 
 def create_emnist_dataloaders(train_dataset, test_dataset, batch_size=64):
     """
