@@ -37,65 +37,85 @@ class FCBlock(nn.Module):
 
     
 # Flexible CNN composed of dynamic blocks
+# Cautions:
+# 1. Do not use python `list` for layer modules, use `nn.ModuleList` instead, for parameter won't be updated and recorded during training
+# 2. Only constructure layers once in `forward` method, don't reconstruct it every time
+# 3. It's better to calculate the flatten size according to input layer features in `__init__` method instead of `forword`
 class FlexibleCNN(nn.Module):
 
-    def __init__(self, num_of_fiters_per_conv_layer:list[int], kernel_size_per_layer:list[int], 
+    def __init__(self, input_layer_dim, num_of_filters_per_conv_layer:list[int], kernel_size_per_layer:list[int], 
                  paddings_per_layer:list[int], max_pool_size_per_layer:list[int], max_pool_stride_per_layer:list[int],
-                 dropout_rate:list[float], num_of_fc_neurous:list[int], num_of_classes:int) -> None:
+                 dropout_rate:list[float], num_of_fc_neurons:list[int], num_of_classes:int) -> None:
         super().__init__()
         
-        # TODO: check the size of the associated parameters lists are identical.
+        # TODO: check the size of the associated parameters, 
+        #       make sure list sizes are identical to each other.
 
         self.dropout_rate = dropout_rate
-        self.num_of_fc_neurous = num_of_fc_neurous
+        self.num_of_fc_neurous = num_of_fc_neurons
         self.num_of_classes = num_of_classes
 
         # feature layers
-        self.conv_layers = []
+        conv_blocks = []
         
         # number of conv layers
-        num_of_conv_layers = len(num_of_fiters_per_conv_layer)
+        num_of_conv_layers = len(num_of_filters_per_conv_layer)
 
         # input layer is original image with RGB
         in_channels = 3
 
         for i in range(num_of_conv_layers):
             conv_layer = ConvBlock(in_channels, 
-                                   num_of_fiters_per_conv_layer[i], 
+                                   num_of_filters_per_conv_layer[i], 
                                    kernel_size=kernel_size_per_layer[i], 
                                    padding=paddings_per_layer[i],
                                    pool_kernel_size=max_pool_size_per_layer[i],
                                    pool_stride=max_pool_stride_per_layer[i])
-            self.conv_layers.append(conv_layer)
+            conv_blocks.append(conv_layer)
 
             # set the next conv input_channels
-            in_channels = num_of_fiters_per_conv_layer[i]
+            in_channels = num_of_filters_per_conv_layer[i]
+        
+        # use ModuleList
+        self.conv_layers = nn.ModuleList(conv_blocks)
+
+        # calculate flatten inputs according to input layer data
+        with torch.no_grad():
+            # input_layer_dim sample：(3, 224, 224)
+            dummy_input = torch.zeros(1, *input_layer_dim)
+            dummy_output = self._forward_conv(dummy_input)
+            fc_in_features = dummy_output.view(1, -1).size(1)
+
+        # number of fc layers
+        num_of_fc_layers = len(self.num_of_fc_neurous)
+        self.fc_layers = nn.ModuleList()
+        for i in range(num_of_fc_layers):
+            fc_out_channels = self.num_of_fc_neurous[i]
+            fc_layer = FCBlock(self.dropout_rate[i], fc_in_features, fc_out_channels)
+            self.fc_layers.append(fc_layer)
+            fc_in_features = fc_out_channels
+        
+        # init final output layer
+        self.final_layer = nn.Sequential(
+            nn.Dropout(p=0.5),
+            nn.Linear(fc_in_features, self.num_of_classes)
+        )
+        
+
+    def _forward_conv(self, x):
+        for conv_layer in self.conv_layers:
+            x = conv_layer(x)
+        return x
 
     def forward(self, x):
-        for i in self.conv_layers:
-            x = self.conv_layers[i](x)
+        # convolutional layers
+        for conv_layer in self.conv_layers:
+            x = conv_layer(x)
         
+        # flatten
         flattened_x = torch.flatten(x, 1) # dim=1
 
-        # construct fc layers dynamically
-        # Caveat: ONLY create structures for the first time
-        if self.fc_layers is None:
-            # number of fc layers
-            num_of_fc_layers = len(self.num_of_fc_neurous)
-            fc_in_channels = flattened_x.size(1)
-            self.fc_layers = []
-            for i in range(num_of_fc_layers):
-                fc_out_channels = self.num_of_fc_neurous[i]
-                fc_layer = FCBlock(self.dropout_rate[i], fc_in_channels, fc_out_channels)
-                self.fc_layers.append(fc_layer)
-                fc_in_channels = fc_out_channels
-            
-            # init final output layer
-            self.final_layer = nn.Sequential(
-                nn.Dropout(p=0.5),
-                nn.Linear(fc_in_channels, self.num_of_classes)
-            )
-        
+        # fc layers
         for fc_layer in self.fc_layers:
             flattened_x = fc_layer(flattened_x)
 
@@ -103,8 +123,8 @@ class FlexibleCNN(nn.Module):
         return self.final_layer(flattened_x)
 
 
-
 if "__main__" == __name__:
+    input_image_dim = (3, 32, 32)
     num_of_fiters_per_conv_layer = [6,3]
     kernel_size_per_layer = [5, 3]
     paddings_per_layer = [2, 1]
@@ -113,7 +133,8 @@ if "__main__" == __name__:
     dropout_rate = [0.6, 0.5]
     num_of_fc_neurous = [15, 10]
     num_of_classes = 5
-    model = FlexibleCNN(num_of_fiters_per_conv_layer,
+    model = FlexibleCNN(input_image_dim,
+                        num_of_fiters_per_conv_layer,
                         kernel_size_per_layer,
                         paddings_per_layer,
                         max_pool_size_per_layer,
