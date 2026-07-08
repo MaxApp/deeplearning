@@ -29,3 +29,21 @@ Linear Output Layer
 1. Do not use python `list` for dynamically reserve modules, use `nn.ModuleList` instead, or parameters won't be registered and updated during training.
 2. It's better to calculate the flatten size according to input layer features in `__init__` method. Using an internel method for conv calculation.
 3. Print out the models to confirm the structure is what you expect.
+
+## Optuna Optimization
+Based on flexible network design, we could automated hyperparameter tuning process with `optuna` tools.
+
+1. Design and define hyperparameter search space
+2. Implement an objective function
+3. Make the target and run optuna study
+4. Analyze efficiency metrics to refine
+
+useful methods for search spaces:
+
+* `trial.suggest_int`
+* `trial.suggest_float`
+* `trial.suggest_categorical`
+* `optuna.trial.FixedTrial`
+* `optuna.create_study`
+* `study.optimize`
+
