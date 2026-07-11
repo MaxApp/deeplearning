@@ -1,4 +1,5 @@
 import torchvision.utils as vutils
+import torchvision as tv
 import torchvision.datasets as datasets
 from torch.utils.data import DataLoader
 from torchvision import transforms
@@ -46,3 +47,12 @@ def multi_fake_data():
 
     plt.tight_layout()
     plt.show()
+
+
+def simple_load(image_file_path):
+    img_tensor = tv.io.decode_image(image_file_path)
+    # image_tensor = transforms.ToTensor()(img)
+    # image_tensor = transforms.Normalize((0.1736,),((0.3317,)))(image_tensor)
+    plt.imshow(img_tensor.permute(1,2,0))
+    plt.show()
+
