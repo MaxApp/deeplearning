@@ -9,7 +9,7 @@ state_dict = torch.load("E:\\PDF\\pytorch\\resnet50-0676ba61.pth", map_location=
 resnet50.load_state_dict(state_dict)
 resnet50.eval()
 with torch.no_grad():
-    image_files = ["E:\\img1.jpg","E:\\img2.jpg","E:\\img3.png"]
+    image_files = ["E:\\cock1.jpg"]
     trans = transforms.Compose(
             [
                 # if use `decode_image`, the value of pixels is uint8
@@ -23,7 +23,7 @@ with torch.no_grad():
         )
     
     # make predictions with pretrained model
-    for i in range(3):
+    for i in range(len(image_files)):
         image = torchvision.io.decode_image(image_files[i])
         img_tensor = trans(image)
         
