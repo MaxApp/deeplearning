@@ -9,7 +9,7 @@ state_dict = torch.load("E:\\PDF\\pytorch\\resnet50-0676ba61.pth", map_location=
 resnet50.load_state_dict(state_dict)
 resnet50.eval()
 with torch.no_grad():
-    image_files = ["E:\\cock1.jpg"]
+    image_files = ["E:\\img1.jpg","E:\\img2.jpg","E:\\img3.png"]
     trans = transforms.Compose(
             [
                 # if use `decode_image`, the value of pixels is uint8
