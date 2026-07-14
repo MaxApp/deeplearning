@@ -1,3 +1,20 @@
+import os
+import json
+
+def load_classnames_json(file_path):
+    imagenet_classes = None
+    if os.path.exists(file_path):
+        try:
+            # Open and load the JSON file
+            with open(file_path, 'r') as f:
+                imagenet_classes = json.load(f)
+        except Exception as e:
+            print(f"Error reading {file_path}: {e}")
+    else:
+        print(f"JSON file not found")
+        
+    return imagenet_classes
+
 
 def show_classes_from_weight_meta(weights_obj) -> tuple[list|None, int|None]:
     """
