@@ -35,5 +35,12 @@ Comparision shows below:
 ![masked_horses](imgs/horse1_masked.png)
 
 
+### faster_rcnn_resnet50_detection.py
 
-### faster R-CNN resnet50 FPN detection
+Use the power of `Fast R-CNN` model to perform object detection. The popular model combines components:
+
+* Faster R-CNN (Region-based Convolutional Neural Network)
+* ResNet-50
+* FPN (Feature Pyramid Network): an effective multi-scale detection strategy
+
+
