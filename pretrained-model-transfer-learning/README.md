@@ -43,4 +43,16 @@ Use the power of `Fast R-CNN` model to perform object detection. The popular mod
 * ResNet-50
 * FPN (Feature Pyramid Network): an effective multi-scale detection strategy
 
+First load the model with pre-trained weights, set up target list and a `Threshold` to filter out uncertain detections.
+Then feed the model with input image, get outputs of potential bounding boxes for detected objects and assigned scores.
+Drawing with `torchvision.utils.draw_bounding_boxes` method.
+
+The results would be a little different according to `threshold` values, here we choose 0.7 to be more confident, but as you can see not all of the cars in images was detected correctly somehow. Maybe needing more adjustment and post-training.
+
+![car_detection](imgs/car_detection.png)
+
+**Caution:**
+
+Unlike `DeepLabV3` the input to `fasterrcnn_resnet50_fpn` model in Pytorch do not need normalized at first, only convert image to tensor and scaled to 0~1 is enough, otherwise you'll get problems with detection results.
+
 
