@@ -1,4 +1,4 @@
-# Pretrained models in Pytorch in action
+# Pretrained models with Pytorch in action
 
 By the power of `torchvision` library, we can make use of most famous models effortlessly into projects.
 We can do inference directly with pre-trained parameters or we can do transfer learning and fine-tuning with them to adapter to our cases.
@@ -55,4 +55,18 @@ The results would be a little different according to `threshold` values, here we
 
 Unlike `DeepLabV3` the input to `fasterrcnn_resnet50_fpn` model in Pytorch do not need normalized at first, only convert image to tensor and scaled to 0~1 is enough, otherwise you'll get problems with detection results.
 
+
+### mobile_net_v3_fine_tuning.py
+
+It's common situations you should take a pretrained model and adapt it to your target, instead of training one from scratch. Transfer learning leverage the pretrained model's power. We could keep the backbone and replace some of the layers, take further small step of training, eventually end up with a satisfied one.
+
+Transfer learning can save lots of training time and computational resources. You can benefit from its general knowledges and well designed architectures.
+
+In the script, I use `mobilenet_v3_small`, a tiny network pretrained on ImageNet, to predict handwritten digits on `MNIST` dataset. Although both are image prediction, the training dataset content were a huge vary. As expected, it won't work well and makes lots of incorrect predictions. Here comes the transfer learning, we replace some of the top layers of classifier, then retrained it with new dataset. Just for a few couple of epochs, it will do a brilliant work.
+
+**Predicting without transfer learning**
+
+![incorrect_prediction](imgs/incorrect_pred.png)
+
+As you can see, training on ImageNet won't help it recognizing the gray simple digits.
 
