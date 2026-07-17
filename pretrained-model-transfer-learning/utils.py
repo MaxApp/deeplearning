@@ -1,5 +1,7 @@
 import os
 import json
+import numpy as np
+import matplotlib.pyplot as plt
 
 def load_classnames_json(file_path):
     imagenet_classes = None
@@ -30,3 +32,31 @@ def show_classes_from_weight_meta(weights_obj) -> tuple[list|None, int|None]:
         print("Weights categories is not detected")
     
     return class_names, num_classes
+
+
+def print_gray_image_in_console(gray_img_data):
+    """
+    print out gray image shape in console with pixel values, just get an intuitive vision.
+
+    Args: the original 1 single channel gray image data, values range from 0~255
+    """
+
+    pixels_array = np.array(gray_img_data)
+
+    print()
+    for row in pixels_array:
+        for pixel in row:
+            print(f"{pixel:^3}", end="")
+        print()
+
+def plot_gray_image(gray_img_data):
+    """
+    show gray image with matplotlib
+
+    Args: the original 1 single channel gray image data, values range from 0~255
+    """
+
+    pixels_array = np.array(gray_img_data)
+    plt.imshow(pixels_array, cmap="gray")
+    plt.show()
+
