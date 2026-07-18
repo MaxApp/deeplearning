@@ -66,11 +66,47 @@ In the script, I use `mobilenet_v3_small`, a tiny network pretrained on ImageNet
 
 ![digit_sample](imgs/digit01.png)
 
-Although both are image prediction, the training dataset content were a huge vary. As expected, it won't work well and makes lots of incorrect predictions. Here comes the transfer learning, we replace some of the top layers of classifier, then retrained it with new dataset. Just for a few couple of epochs, it will do a brilliant work.
+Something need to mention is that while `MobileNetV3` was trained on colored images, MNIST datasets are gray scale images with just one channel. So we need to convert them to the same format with transforms in order to make predictions.
+
+```python
+mnist_transform = transforms.Compose([
+    # Convert gray scale image to 3 channels to match MobileNetV3's input
+    transforms.Grayscale(num_output_channels=3),
+    # Resize the image to 224x224, the standard input size for MobileNetV3
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    # Normalize the tensor using ImageNet's mean and standard deviation
+    transforms.Normalize(mean=MEAN, std=STD)
+])
+```
+
+Although both are image prediction, the training dataset content were a huge vary. As expected, it won't work well and makes lots of incorrect predictions. 
 
 **Predicting without transfer learning**
 
 ![incorrect_prediction](imgs/incorrect_pred.png)
 
-As you can see, training on ImageNet won't help it recognizing the gray simple digits.
+As you can see, pre-trained knowledges on ImageNet won't help it recognizing the gray simple digits. Here comes the transfer learning, we replace some of the last layers of classifier, then retrained it with new dataset. Just for a few couple of epochs, it will do a much better work.
+
+```python
+# freeze pretrained parameters for feature layers
+for feature_parameter in model.features.parameters():
+    feature_parameter.requires_grad = False
+
+# retrieve the last layer of classifier
+last_classifier_layer = model.classifier[-1]
+# the in_features of last_classifier_layer
+num_features = last_classifier_layer.in_features
+
+# our target classifications for MINIST which is 0-9
+num_classes = 10
+# replace the last layer for 10 items prediction results
+model.classifier[-1] = nn.Linear(in_features=num_features, out_features=num_classes)
+```
+
+**Predicting after transfer learning**
+
+![better_prediction](imgs/retrained_pred.png)
+
+There you see, just using 10000 dataset for 3 epochs training, the `MobileNetV3` network now is able to predict digits with more accuracy.
 
