@@ -62,7 +62,11 @@ It's common situations you should take a pretrained model and adapt it to your t
 
 Transfer learning can save lots of training time and computational resources. You can benefit from its general knowledges and well designed architectures.
 
-In the script, I use `mobilenet_v3_small`, a tiny network pretrained on ImageNet, to predict handwritten digits on `MNIST` dataset. Although both are image prediction, the training dataset content were a huge vary. As expected, it won't work well and makes lots of incorrect predictions. Here comes the transfer learning, we replace some of the top layers of classifier, then retrained it with new dataset. Just for a few couple of epochs, it will do a brilliant work.
+In the script, I use `mobilenet_v3_small`, a tiny network pretrained on ImageNet, to predict handwritten digits on `MNIST` dataset which I printed a sample in console like below. It's a single channel gray scale image.
+
+![digit_sample](imgs/digit01.png)
+
+Although both are image prediction, the training dataset content were a huge vary. As expected, it won't work well and makes lots of incorrect predictions. Here comes the transfer learning, we replace some of the top layers of classifier, then retrained it with new dataset. Just for a few couple of epochs, it will do a brilliant work.
 
 **Predicting without transfer learning**
 
