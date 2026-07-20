@@ -1,29 +1,46 @@
-import torch
-from transformers import BertTokenizerFast, AutoTokenizer
+from transformers import BertTokenizerFast,GPT2TokenizerFast, AutoTokenizer
 
-sentences = [
-    'I love my dog a lot',
-    'I don\'t love other\'s cat'
-]
+def get_tokenizer(tk_name):
 
-# Define the local directory where the tokenizer is saved
-local_tokenizer_path = "./bert_tokenizer_local"
+    # `AutoTokenizer` is a better way in product, 
+    # but for practice we specified tokenizer's type respectively
+    if tk_name and tk_name.strip().lower() == "gpt":
+        tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
+        # should set `eos_token` as padding for GPT2
+        tokenizer.pad_token = tokenizer.eos_token
+    elif tk_name and tk_name.strip().lower() == "bert":
+        tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(tk_name)
 
-# Initialize the tokenizer from the local directory
-tokenizer = BertTokenizerFast.from_pretrained(local_tokenizer_path)
+    return tokenizer
 
-# Tokenize the sentences and encode them
-encoded_inputs = tokenizer(sentences, padding=True, 
-                           truncation=True, return_tensors='pt')
 
-# To see the tokens for each input (helpful for understanding the output)
-tokens = [tokenizer.convert_ids_to_tokens(ids)
-          for ids in encoded_inputs["input_ids"]]
+if __name__ == "__main__":
 
-# Get the model's vocabulary (mapping from tokens to IDs)
-word_index = tokenizer.get_vocab() # For BertTokenizerFast, get_vocab() returns the vocab
+    sentences = [
+        'I\'m feeling happy today because doing deeplearning',
+        'Don\'t drop garbage anywhere in dinning room~'
+    ]
 
-# Print the human-readable `tokens` for each sentence
-print("Tokens:", tokens)
+    tokenizer = get_tokenizer("bert")
+    # tokenize the sentences and encode
+    encoded_inputs = tokenizer(sentences, padding=True, 
+                               truncation=True, return_tensors='pt')
+    # convert encoded ids to tokens
+    tokens = [tokenizer.convert_ids_to_tokens(ids)
+              for ids in encoded_inputs["input_ids"]]
+    print("BERT Tokens:", tokens)
+    print("BERT Token IDs:", encoded_inputs['input_ids'])
 
-print("\nToken IDs:", encoded_inputs['input_ids'])
+    tokenizer = get_tokenizer("gpt")
+    # tokenize the sentences and encode
+    encoded_inputs = tokenizer(sentences, padding=True, 
+                               truncation=True, return_tensors='pt')
+    # convert encoded ids to tokens
+    tokens = [tokenizer.convert_ids_to_tokens(ids)
+              for ids in encoded_inputs["input_ids"]]
+    print("GPT Tokens:", tokens)
+    print("GPT Token IDs:", encoded_inputs['input_ids'])
+
+    
