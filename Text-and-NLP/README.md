@@ -1,6 +1,32 @@
 # Text processing and NLP applications
 
-This part of projects relevant to sequence models, concretely focus on text processing and NLP applications. We'll take a journey from **tokenization**, **embedding**, to ...
+This part of projects relevant to sequence models, concretely focus on text processing and NLP applications. We'll take a journey from **corpus preparation**, **tokenization**, **embedding**, to ...
+
+## Corpus and Preprocess
+
+Corpus consists of a full context with prediction words. You need to cleaning and tokenizing them in an uniform way at first in order to feed into the training model. What would be taken into account includes:
+
+* case sensitive
+* punctuations
+* numbers
+* special characters
+* emoji
+* ...
+
+There're various of tools for pre-processing the words including `NLTK`, `emoji` libraries etc. By using these tools make it much easier and efficient for data preparation.
+
+```python
+import nltk
+nltk.download('punkt')
+
+corpus ='Which team is the "CHAMPION" of the World Cup 2026? ❤️ ESPANA!!!'
+# replace punctuations
+data = re.sub(r'[,!?;-]+',corpus)
+# tokenize
+data = nltk.word_tokenize(data)
+# turn to lower case
+data = [ch.lower() for ch in data]
+```
 
 ## Tokenization
 
@@ -21,6 +47,7 @@ Subwords is a common method and we'll use it to tokenize sentences into small pi
 ### tokenization.py
 
 In most cases we'll not build tokenizer from scratch, a pre-trained one would be a better choice. There're lots of popular models from `HuggineFace transformers`, we use `BERT` and `GPT` respectively to do practice.
+
 **Remark:** It's a more common way to use `AutoTokenizer` to automatically matches the model.
 
 ```python
