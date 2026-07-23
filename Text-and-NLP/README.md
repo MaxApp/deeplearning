@@ -1,10 +1,11 @@
 # Text processing and NLP applications
 
-This part of projects relevant to sequence models, concretely focus on text processing and NLP applications. We'll take a journey from **corpus preparation**, **tokenization**, **embedding**, to ...
+This part of projects relevant to sequence models, concretely focus on text processing and NLP applications. We'll start from **corpus preparation**, **tokenization**, **embedding**, to ...
+covering the main workflows of NLP task.
 
 ## Corpus and Preprocess
 
-Corpus consists of a full context with prediction words. You need to cleaning and tokenizing them in an uniform way at first in order to feed into the training model. What would be taken into account includes:
+Corpus consists of a full context with predicted words and other symbols, you need to clean and tokenize them to build a vocabulary which is the foundation of text task. What would be taken into account includes:
 
 * case sensitive
 * punctuations
@@ -32,7 +33,7 @@ data = [ch.lower() for ch in data]
 
 The first step of processing text is to split sentences into small parts of units and convert them into numerics which can be understand by machines, that's **tokenization**.
 
-There're different methods of tokenization, let's take 
+There're different granularities and methods of tokenization, let's take 
 a glance:
 
 * Words
@@ -42,13 +43,13 @@ a glance:
   * SentencePiece
 * Characters
 
-Subwords is a common method and we'll use it to tokenize sentences into small pieces.
+Subwords is a common way and we'll use it to tokenize sentences into small pieces.
 
 ### tokenization.py
 
 In most cases we'll not build tokenizer from scratch, a pre-trained one would be a better choice. There're lots of popular models from `HuggineFace transformers`, we use `BERT` and `GPT` respectively to do practice.
 
-**Remark:** It's a more common way to use `AutoTokenizer` to automatically matches the model.
+**Remark:** It's a more common way to use `AutoTokenizer` to automatically matches the strategy and model.
 
 ```python
 def get_tokenizer(tk_name):
@@ -81,4 +82,12 @@ BERT Token IDs:<br/> tensor([[  101,  1045,  1005,  1049,  3110,  3407,  2651,  
 GPT Token IDs: <br/>tensor([[   40,  1101,  4203,  3772,  1909,   780,  1804,  2769, 40684, 50256],[ 3987,   470,  4268, 15413,  6609,   287, 16278,   768,  2119,    93]])
 
 
-## Embedding
+## Word Representations and Embeddings
+
+Embedding models evolute from classic static to modern contextual ones. Here we'll create with a classic way of `CBOW` which is one strategy of `Word2Vec`, by the way, the other is `skip-gram`.
+
+Same as before, in most of the cases you won't create embeddings from scratch. Usually you'll use them by mature models as library. 
+
+### embedding_model.py
+
+
