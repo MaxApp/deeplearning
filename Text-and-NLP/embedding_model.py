@@ -16,7 +16,7 @@ class CbowEmbeddingModel(nn.Module):
     def forward(self, context):
         embedded_vector = self.embedding(context)
         # average context
-        embedded_avg = torch.mean(embedded_vector, dim=1)
+        embedded_avg = torch.mean(embedded_vector, dim=0)
         output = self.linear(embedded_avg)
         return output, embedded_vector
 
@@ -24,6 +24,7 @@ def word_idx_dict(vocabulary: list):
     word_to_idx = {word:i for i, word in enumerate(vocabulary)}
     idx_to_word = {i: word for word, i in word_to_idx.items()}
     return word_to_idx, idx_to_word
+
 
 if __name__ == "__main__":
     # build a simple vocabulary
@@ -38,20 +39,51 @@ if __name__ == "__main__":
     train_data = [
         {"ctx":["car","bike"], "center":"plane"},
         {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"},
-        {"ctx":["plane","bike"], "center":"car"}
-    ]
-                  
+        {"ctx":["plane","car"], "center":"bike"},
 
-    embedding_dim = 5
-    
+        {"ctx":["cat", "dog"], "center":"bird"},
+        {"ctx":["cat", "bird"], "center":"dog"},
+        {"ctx":["bird", "dog"], "center":"cat"},
+
+        {"ctx":["orange", "apple"], "center":"grape"},
+        {"ctx":["orange", "grape"], "center":"apple"},
+        {"ctx":["grape", "apple"], "center":"orange"}
+    ]
+
+    embedding_dim = 3
     embedding_model = CbowEmbeddingModel(len(vocabulary), embedding_dim)
+
+    optimizer = torch.optim.Adam(embedding_model.parameters(), lr=0.01)
+    loss_function = nn.CrossEntropyLoss()
+
+    num_epoch = 5
+    embedding_model.train()
+    for i in range(num_epoch):
+        epoch_loss = 0.0
+        for context_and_center in train_data:
+            ctx = context_and_center["ctx"]
+            center = context_and_center["center"]
+
+            print(f"ctx: {ctx}  center: {center}")
+            # convert idx
+            ctx_idx = [word_to_idx[ctx_word] for ctx_word in ctx]
+            center_idx = [word_to_idx[center]]
+
+            print(f"ctx_idx: {ctx_idx}  center_idx: {center_idx}")
+
+            optimizer.zero_grad()
+            output, _ = embedding_model(torch.tensor(ctx_idx))
+            print(f"predict: {output}")
+            loss = loss_function(output, torch.tensor(center_idx))
+            loss.backward()
+            optimizer.step()
+
+            epoch_loss += loss.item()
+
+        epoch_avg_loss = epoch_loss / len(train_data)
+        print(f"Epoch: {i+1}/{num_epoch}   Loss: {epoch_avg_loss}")
+
+        break
+    
+
+        
