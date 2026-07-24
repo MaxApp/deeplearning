@@ -84,10 +84,50 @@ GPT Token IDs: <br/>tensor([[   40,  1101,  4203,  3772,  1909,   780,  1804,  2
 
 ## Word Representations and Embeddings
 
-Embedding models evolute from classic static to modern contextual ones. Here we'll create with a classic way of `CBOW` which is one strategy of `Word2Vec`, by the way, the other is `skip-gram`.
+Embedding models evolute from classic static to modern contextual ones. Here we'll create a simple classic embedding model to get start. The architecture somewhat like the way of `Word2Vec`, a static embedding method.
 
-Same as before, in most of the cases you won't create embeddings from scratch. Usually you'll use them by mature models as library. 
+Same as before, in real-world cases you won't create embeddings from scratch. Usually you'll use them by mature models as library. 
 
 ### embedding_model.py
 
+We build a model with tow layers, one for look up embeddings, the other for mapping to indices. That is to say `nn.Embedding` layer and `nn.Linear`.
 
+```python
+class MyEmbeddingModel(nn.Module):
+
+    def __init__(self, vocab_size, embedding_dim):
+        super().__init__()
+        
+        # embedding layer
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        # linear layer
+        self.linear = nn.Linear(embedding_dim, vocab_size)
+
+    def forward(self, context):
+        embedded_vector = self.embedding(context)
+        # Note: you could input several words with context window,
+        # in that case, you would using average or sum of context tensor like `CBOW` do
+        # embedded_avg = torch.mean(embedded_vector, dim=1)
+
+        # for simplicity, we just use one-to-one training pair
+        output = self.linear(embedded_vector)
+        return output, embedded_vector
+```
+
+We manually prepared (input,output) prediction word pairs to train the simple model instead of large corpus dataset.
+
+```python
+# just for sample
+vocabulary = ["car", "bike", "plane", "boat",
+                  "cat", "dog", "bird", "horse",
+                  "orange", "apple", "grape", "banana"]
+train_data = [
+        ('car', 'bike'),
+        ('bird', 'cat'),
+        ('orange', 'apple'),
+]
+```
+
+After training loop, we fetch out the embedding weights and use `scikit-learn` tools to `PCA` the high dimensions to low dimensions in coordinate. As expected, words are well clustered in semantics.
+
+![embedding](imgs/embeddings.png)
