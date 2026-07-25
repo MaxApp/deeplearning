@@ -84,9 +84,9 @@ GPT Token IDs: <br/>tensor([[   40,  1101,  4203,  3772,  1909,   780,  1804,  2
 
 ## Word Representations and Embeddings
 
-Embedding models evolute from classic static to modern contextual ones. Here we'll create a simple classic embedding model to get start. The architecture somewhat like the way of `Word2Vec`, a static embedding method.
+Embedding models evolute from classic static to modern contextual ones which can handle multiple meanings of the word according to the context. Here we'll create a simple classic embedding model to get start. The architecture somewhat like the way of `Word2Vec`, a static embedding method.
 
-Same as before, in real-world cases you won't create embeddings from scratch. Usually you'll use them by mature models as library. 
+Same as before, in real-world applications you won't create embeddings from scratch. Usually you'll use them by mature models as libraries. 
 
 ### embedding_model.py
 
@@ -122,12 +122,15 @@ vocabulary = ["car", "bike", "plane", "boat",
                   "cat", "dog", "bird", "horse",
                   "orange", "apple", "grape", "banana"]
 train_data = [
-        ('car', 'bike'),
+        ('car', 'bike'),  # format: (input, label)
         ('bird', 'cat'),
         ('orange', 'apple'),
 ]
 ```
 
-After training loop, we fetch out the embedding weights and use `scikit-learn` tools to `PCA` the high dimensions to low dimensions in coordinate. As expected, words are well clustered in semantics.
+After training loop, we fetch out the embedding weights and use `scikit-learn` tools `PCA` to make the high dimensions to low dimensions in 2D coordinate. As expected, words are well clustered in their semantics.
 
 ![embedding](imgs/embeddings.png)
+
+Beyond the static embeddings, dynamic embeddings is more powerful and meaningful, but need more resources and computational. `BERT`, `GPT` are the popular ones recently with transformer architecture. You need to choose the proper model according to your cases.
+
