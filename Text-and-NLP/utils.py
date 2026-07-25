@@ -1,6 +1,8 @@
 import re
 import matplotlib.pyplot as plt
 import random
+import pandas as pd
+import ast
 
 def clean_and_tokenize(corpus):
     data = re.sub(r'[,!?;-]+', '.', corpus)
@@ -8,6 +10,13 @@ def clean_and_tokenize(corpus):
     data = [ch.lower() for ch in data]
     return data
 
+def preprocess_text(text):
+    text = text.lower()
+    # remove all characters that are not letters or whitespace
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
+    # split into a list of words
+    words = text.split()
+    return words
 
 def get_sliding_context(tokenized_words: list[str], half_context_size: int):
     """A sliding window generator"""
@@ -127,3 +136,82 @@ def plot_embeddings(coords, labels, label_dict, title):
 # for cont, word in get_sliding_context(a, 3):
 #     print(f"context: {cont}  center: {word}")
 
+def filter_recipe_dataset(input_path, output_path="recipes_fruit_veg.csv"):
+    """
+    Filters the raw Food.com recipe dataset to create a smaller subset
+    containing only mutually exclusive fruit or vegetable recipes.
+
+    This function reads a large recipe dataset, categorizes each recipe
+    based on keywords in its ingredients, and filters it to keep only recipes
+    that are exclusively fruit-based or exclusively vegetable-based. The
+    resulting subset is then saved to a new CSV file.
+
+    Args:
+        input_path: The file path for the original recipe dataset CSV file.
+        output_path: The file path where the filtered CSV will be saved.
+    """
+    print(f"Loading the raw dataset from '{input_path}'...")
+    # Read the dataset from the specified path, with error handling for missing files.
+    try:
+        df = pd.read_csv(input_path)
+        # return df
+    except FileNotFoundError:
+        print(f"Error: The file was not found at '{input_path}'")
+        return
+
+    # Define keywords for categorization.
+    fruit_keywords = [
+        "apple", "banana", "orange", "strawberry", "grape", "mango",
+        "pineapple", "peach", "pear", "cherry", "berry", "lemon",
+        "lime", "melon",
+    ]
+    vegetable_keywords = [
+        "carrot", "broccoli", "spinach", "potato", "tomato", "onion",
+        "garlic", "pepper", "lettuce", "cucumber", "celery", "mushroom",
+        "corn", "bean", "pea", "cabbage", "asparagus",
+    ]
+
+    def categorize_recipe(ingredients_str):
+        """Categorizes a recipe as 'fruit', 'vegetable', or 'other'."""
+        try:
+            # Safely parse the string representation of the ingredient list.
+            ingredients_list = ast.literal_eval(ingredients_str)
+            ingredients_text = " ".join(ingredients_list).lower()
+
+            # Check for the presence of fruit or vegetable keywords.
+            has_fruit = any(keyword in ingredients_text for keyword in fruit_keywords)
+            has_veg = any(keyword in ingredients_text for keyword in vegetable_keywords)
+
+            # Assign mutually exclusive categories.
+            if has_fruit and not has_veg:
+                return "fruit"
+            if has_veg and not has_fruit:
+                return "vegetable"
+            
+            # Return 'other' for recipes with both or no relevant keywords.
+            return "other"
+        
+        except (ValueError, SyntaxError):
+            # Handle potential parsing errors for malformed ingredient strings.
+            return "other"
+
+    print("Categorizing recipes based on ingredient keywords...")
+    # Apply the categorization function to each row in the DataFrame.
+    df["category"] = df["ingredients"].apply(categorize_recipe)
+
+    # Filter the DataFrame to keep only 'fruit' and 'vegetable' categories.
+    filtered_df = df[df["category"].isin(["fruit", "vegetable"])].copy()
+
+    # Define the specific columns to keep in the final dataset.
+    columns_to_keep = ["name", "id", "minutes", "ingredients", "steps", "category"]
+    subset_df = filtered_df[columns_to_keep]
+
+    print("Filtering complete.")
+    print(f"Found {len(subset_df[subset_df['category'] == 'fruit'])} fruit recipes.")
+    print(f"Found {len(subset_df[subset_df['category'] == 'vegetable'])} vegetable recipes.")
+
+    print(f"\nSaving the subset data to '{output_path}'...")
+    # Save the final filtered DataFrame to a CSV file.
+    subset_df.to_csv(output_path, index=False)
+
+    print(f"Success! Subset dataset saved to '{output_path}'.")
