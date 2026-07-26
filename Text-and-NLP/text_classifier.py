@@ -1,3 +1,5 @@
+import torch
+from torch.utils.data import Dataset
 from collections import Counter
 
 class Vocabulary:
@@ -30,8 +32,56 @@ class Vocabulary:
 
     def decode(self, indices):
         """convert indices to tokens"""
-        pass
+        return [self.idx2word.get(idx) for idx in indices]
 
     def __len__(self):
         """Returns the vocabulary size."""
         return len(self.word2idx)
+
+class TextDataset(Dataset):
+    """
+    A custom PyTorch Dataset for handling text and label data.
+
+    This class encapsulates a dataset of texts and their corresponding labels,
+    making it compatible with PyTorch's DataLoader.
+    """
+    def __init__(self, texts, labels):
+        """
+        Initializes the TextDataset object.
+
+        Args:
+            texts: A list or array of numericalized text sequences.
+            labels: A list or array of corresponding labels.
+        """
+        # Store the collection of texts.
+        self.texts = texts
+        # Store the collection of labels.
+        self.labels = labels
+        # Find unique class labels and store them
+        self.classes = sorted(list(set(labels)))
+
+    def __len__(self):
+        """
+        Returns the total number of samples in the dataset.
+        """
+        # Return the size of the dataset based on the number of texts.
+        return len(self.texts)
+
+    def __getitem__(self, idx):
+        """
+        Retrieves a single sample from the dataset at a given index.
+
+        Args:
+            idx: The index of the sample to retrieve.
+
+        Returns:
+            A dictionary containing the text and label as PyTorch tensors.
+        """
+        # Create a dictionary for the sample at the specified index.
+        sample = {
+            'text': torch.tensor(self.texts[idx], dtype=torch.long),
+            'label': torch.tensor(self.labels[idx], dtype=torch.long)
+        }
+        
+        # Return the sample dictionary.
+        return sample

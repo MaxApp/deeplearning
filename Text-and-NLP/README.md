@@ -134,3 +134,11 @@ After training loop, we fetch out the embedding weights and use `scikit-learn` t
 
 Beyond the static embeddings, dynamic embeddings is more powerful and meaningful, but need more resources and computational. `BERT`, `GPT` are the popular ones recently with transformer architecture. You need to choose the proper model according to your cases.
 
+## Text Classification
+
+Before training a model by embeddings, there're still some key points to solve.
+
+1. Sentences are normally different length, size of words is variable. We need to pad sentences to the same length in a batch in order to train efficiently.
+By using `collate_fn` with Dataloader, we pad sentences dynamically to improve performance.
+2. Padding tensors are meaningless and should not be learned by model. So comes corresponding `attention mask `or `packedSequence`.
+
