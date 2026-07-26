@@ -1,5 +1,6 @@
 import torch
-from torch.utils.data import Dataset
+import torch.nn as nn
+from torch.utils.data import Dataset, DataLoader
 from collections import Counter
 
 class Vocabulary:
@@ -85,3 +86,72 @@ class TextDataset(Dataset):
         
         # Return the sample dictionary.
         return sample
+
+class EmbeddingBagClassifier(nn.Module):
+    """
+    A simple text classifier using nn.EmbeddingBag
+    """
+    def __init__(self, vocab_size, embedding_dim, num_classes):
+        super().__init__()
+        # using average strategy
+        self.embedding_bag = nn.EmbeddingBag(vocab_size, embedding_dim, mode='mean')
+        self.dropout = nn.Dropout(0.5)
+        self.fc = nn.Linear(embedding_dim, num_classes)
+
+    def forward(self, text, offsets=None):
+        embedded = self.embedding_bag(text, offsets)
+        embedded = self.dropout(embedded)
+        return self.fc(embedded)
+
+def collate_batch_flatten(batch_samples):
+    """
+    Formats a batch by flatten
+    """
+    labels = torch.tensor([item['label'] for item in batch_samples])
+    texts = [item['text'] for item in batch_samples]
+    # create a list of the lengths of each text, prepended with 0.
+    offsets = [0] + [len(text) for text in texts]
+    offsets = torch.tensor(offsets[:-1]).cumsum(dim=0)
+    # concatenate
+    flattened_text = torch.cat(texts)
+    
+    return flattened_text, offsets, labels
+
+def collate_batch_padding(batch_samples):
+    """
+    Formats a batch by padding
+    """
+    labels = torch.tensor([item['label'] for item in batch_samples])
+    texts = [item['text'] for item in batch_samples]
+    # find the max length
+    max_len = max(len(text) for text in texts)
+    # create a tensor of zeros
+    padded_texts = torch.zeros(len(texts), max_len, dtype=torch.long)
+    # copy each text sequence into the padded tensor
+    for i, text in enumerate(texts):
+        padded_texts[i, :len(text)] = text
+        
+    return padded_texts, labels
+
+
+if "__main__" == __name__:
+
+    # prepare training process
+    batch_size = 32
+    vocab_size = len(vocab)
+    embedding_dim = 16
+    num_classes = 2
+
+    # create the DataLoader
+    train_loader_flatten = DataLoader(train_dataset, 
+                                    batch_size=batch_size, 
+                                    shuffle=True, 
+                                    collate_fn=collate_batch_flatten)
+
+    # train_loader_padding = DataLoader(train_dataset, 
+    #                                 batch_size=batch_size, 
+    #                                 shuffle=True, 
+    #                                 collate_fn=collate_batch_padding)
+
+    model_embag = EmbeddingBagClassifier(vocab_size, embedding_dim, num_classes)
+    

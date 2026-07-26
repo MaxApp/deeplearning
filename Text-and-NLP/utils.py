@@ -136,6 +136,8 @@ def plot_embeddings(coords, labels, label_dict, title):
 # for cont, word in get_sliding_context(a, 3):
 #     print(f"context: {cont}  center: {word}")
 
+# ===========  For text_classifier.py =================
+
 def filter_recipe_dataset(input_path, output_path="recipes_fruit_veg.csv"):
     """
     Filters the raw Food.com recipe dataset to create a smaller subset
@@ -215,3 +217,4 @@ def filter_recipe_dataset(input_path, output_path="recipes_fruit_veg.csv"):
     subset_df.to_csv(output_path, index=False)
 
     print(f"Success! Subset dataset saved to '{output_path}'.")
+

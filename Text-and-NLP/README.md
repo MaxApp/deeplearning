@@ -1,7 +1,6 @@
 # Text processing and NLP applications
 
-This part of projects relevant to sequence models, concretely focus on text processing and NLP applications. We'll start from **corpus preparation**, **tokenization**, **embedding**, to ...
-covering the main workflows of NLP task.
+This part of projects relevant to sequence models, concretely focus on text processing and NLP applications. We'll moving from raw, unstructured text to a functional predictive model, covering the main workflows of NLP task.
 
 ## Corpus and Preprocess
 
@@ -136,9 +135,56 @@ Beyond the static embeddings, dynamic embeddings is more powerful and meaningful
 
 ## Text Classification
 
-Before training a model by embeddings, there're still some key points to solve.
+Before training a model by embeddings, there're still one issue to solve.
 
-1. Sentences are normally different length, size of words is variable. We need to pad sentences to the same length in a batch in order to train efficiently.
-By using `collate_fn` with Dataloader, we pad sentences dynamically to improve performance.
-2. Padding tensors are meaningless and should not be learned by model. So comes corresponding `attention mask `or `packedSequence`.
+Sentences are normally by different length, size of words is variable. We need to feed them in a batch in order to train efficiently. We have two ways for doing so.
+
+1. padding the sentences to the same length and provide a corresponding `attention mask `or `packedSequence` for pooling calculation.
+
+    ```python
+    def collate_batch_flatten(batch_samples):
+        """
+        Formats a batch by flatten
+        """
+        labels = torch.tensor([item['label'] for item in batch_samples])
+        texts = [item['text'] for item in batch_samples]
+        # create a list of the lengths of each text, prepended with 0.
+        offsets = [0] + [len(text) for text in texts]
+        offsets = torch.tensor(offsets[:-1]).cumsum(dim=0)
+        # concatenate
+        flattened_text = torch.cat(texts)
+        
+        return flattened_text, offsets, labels
+    ```
+
+2. concatenate all the words into a single flattened tensor and supply `offset indices` for each sentence.
+
+    ```python
+    def collate_batch_padding(batch_samples):
+        """
+        Formats a batch by padding
+        """
+        labels = torch.tensor([item['label'] for item in batch_samples])
+        texts = [item['text'] for item in batch_samples]
+        # find the max length
+        max_len = max(len(text) for text in texts)
+        # create a tensor of zeros
+        padded_texts = torch.zeros(len(texts), max_len, dtype=torch.long)
+        # copy each text sequence into the padded tensor
+        for i, text in enumerate(texts):
+            padded_texts[i, :len(text)] = text
+            
+        return padded_texts, labels
+    ```
+
+By using `collate_fn` with Dataloader, we are able to dynamically adjust sentences into batches and improve the performance.
+
+### text_classifier.py
+
+The basic architecture of the model consists of `Embedding layer`, `Dropout` and `FC Layer`. 
+
+The scenario is providing dataset of recipes, identify it's fruit or vegetable by recipe title. The dataset is retrieved from [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions) and is refined for simplify.
+
+
+
 
