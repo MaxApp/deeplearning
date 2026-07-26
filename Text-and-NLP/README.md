@@ -185,6 +185,15 @@ The basic architecture of the model consists of `Embedding layer`, `Dropout` and
 
 The scenario is providing dataset of recipes, identify it's fruit or vegetable by recipe title. The dataset is retrieved from [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions) and is refined for simplify.
 
+|    |     id | name                             | category   | label |
+|---:|-------:|:---------------------------------|:-----------|:------|
+|  0 |  31490 | a bit different  breakfast pizza | vegetable  | 1     |
+|  1 | 112140 | all in the kitchen  chili        | vegetable  | 1     |
+|  2 |  59389 | alouette  potatoes               | vegetable  | 1     |
+|  3 |   5289 | apple a day  milk shake          | fruit      | 0     |
+|  4 |  70971 | bananas 4 ice cream  pie         | fruit      | 0     |
+
+
 
 
 

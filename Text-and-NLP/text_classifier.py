@@ -1,7 +1,13 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+import numpy as np
+import pandas as pd
+from sklearn.utils.class_weight import compute_class_weight
+
+from pathlib import Path
 from collections import Counter
+import re
 
 class Vocabulary:
     """word-to-index management for vocabulary
@@ -133,20 +139,69 @@ def collate_batch_padding(batch_samples):
         
     return padded_texts, labels
 
+def retrieve_name_and_label(df):
+    df['label'] = 1
+    df.loc[df['category'] == 'fruit', 'label'] = 0
+    df_clean = df.dropna(subset=['name'])
+    texts = df_clean['name'].tolist()
+    labels = df_clean['label'].tolist()
+    return texts, labels
+
+def preprocess_text(text):
+    """Cleans and tokenizes a raw text string.
+
+    Args:
+        text (str): The raw text to be processed.
+
+    Returns:
+        list: A list of cleaned words (tokens).
+    """
+    # Convert the entire text to lowercase.
+    text = text.lower()
+    # Remove all characters that are not letters or whitespace.
+    text = re.sub(r'[^a-zA-Z\s]', '', text)
+    # Split the cleaned string into a list of words.
+    words = text.split()
+
+    return words
 
 if "__main__" == __name__:
+
+    # load refined data from csv file, preprocessing for vocab and tokenization
+    current_dir = Path(__file__).parent
+    df = pd.read_csv(str(current_dir / "./resources/recipes_fruit_veg_small.csv"))
+    texts, labels = retrieve_name_and_label(df)
+    processed_train_texts = [preprocess_text(text) for text in texts]
+
+    # build vocabulary
+    vocab = Vocabulary(min_freq=2)
+    vocab.build_vocab(processed_train_texts)
+    # Encode both the training and validation texts using the vocabulary.
+    indexed_train_texts = [vocab.encode(text) for text in processed_train_texts]
+
+    # address skewed data
+    class_weights = compute_class_weight(
+        class_weight='balanced',
+        classes=np.unique(labels),
+        y=labels
+    )
+    class_weights = torch.tensor(class_weights, dtype=torch.float)
 
     # prepare training process
     batch_size = 32
     vocab_size = len(vocab)
     embedding_dim = 16
     num_classes = 2
+    num_epochs = 5
+    loss_function = nn.CrossEntropyLoss(weight=class_weights)
 
+    # create dataset
+    train_dataset = TextDataset(indexed_train_texts, labels)
     # create the DataLoader
     train_loader_flatten = DataLoader(train_dataset, 
-                                    batch_size=batch_size, 
-                                    shuffle=True, 
-                                    collate_fn=collate_batch_flatten)
+                                      batch_size=batch_size, 
+                                      shuffle=True, 
+                                      collate_fn=collate_batch_flatten)
 
     # train_loader_padding = DataLoader(train_dataset, 
     #                                 batch_size=batch_size, 
@@ -154,4 +209,22 @@ if "__main__" == __name__:
     #                                 collate_fn=collate_batch_padding)
 
     model_embag = EmbeddingBagClassifier(vocab_size, embedding_dim, num_classes)
-    
+    optimizer = torch.optim.Adam(model_embag.parameters(), lr=0.01)
+
+    model_embag.train()
+    for i in range(num_epochs):
+        epoch_loss = 0.0
+        for batch_texts, batch_offsets, batch_labels in train_loader_flatten:
+            optimizer.zero_grad()
+            output = model_embag(batch_texts, batch_offsets)
+            # print(f"output: {output}")
+            loss = loss_function(output, batch_labels)
+            loss.backward()
+            optimizer.step()
+
+            epoch_loss += loss.item()
+
+        epoch_avg_loss = epoch_loss / len(train_loader_flatten)
+
+        # if (i+1) % 10 == 0:
+        print(f"Epoch: {i+1}/{num_epochs}   Loss: {epoch_avg_loss}")
