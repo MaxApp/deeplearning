@@ -135,11 +135,41 @@ Beyond the static embeddings, dynamic embeddings is more powerful and meaningful
 
 ## Text Classification
 
-Before training a model by embeddings, there're still one issue to solve.
+In this scenario, we're provided with a dataset of recipes which is retrieved from [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions) and is refined for simplicity. The dataset includes a recipe name, ingredients, steps, category, label etc. Our aim is to identify whether its category is fruit or vegetable by recipe name. The dataset is in `.csv` format and processed by pandas like below:
 
-Sentences are normally by different length, size of words is variable. We need to feed them in a batch in order to train efficiently. We have two ways for doing so.
+|    |     id | name                             | category   | label |
+|---:|-------:|:---------------------------------|:-----------|:------|
+|  0 |  31490 | a bit different  breakfast pizza | vegetable  | 1     |
+|  1 | 112140 | all in the kitchen  chili        | vegetable  | 1     |
+|  2 |  59389 | alouette  potatoes               | vegetable  | 1     |
+|  3 |   5289 | apple a day  milk shake          | fruit      | 0     |
+|  4 |  70971 | bananas 4 ice cream  pie         | fruit      | 0     |
 
-1. padding the sentences to the same length and provide a corresponding `attention mask `or `packedSequence` for pooling calculation.
+Before training with a model, there're still lots of work to do.
+
+Sentences are normally by different length, size of words is variable, whereas we need to pack them uniformly in a batch in order to train efficiently. We have two ways for doing so.
+
+1. padding the sentences to the same length and provide a corresponding `mask` or `packedSequence` for pooling calculation.
+
+    ```python
+    def collate_batch_padding(batch_samples):
+        """
+        Formats a batch by padding
+        """
+        labels = torch.tensor([item['label'] for item in batch_samples])
+        texts = [item['text'] for item in batch_samples]
+        # find the max length in batch
+        max_len = max(len(text) for text in texts)
+        # create a tensor of max size, filled with zeros
+        padded_texts = torch.zeros(len(texts), max_len, dtype=torch.long)
+        # copy each text sequence into the padded tensor
+        for i, text in enumerate(texts):
+            padded_texts[i, :len(text)] = text
+            
+        return padded_texts, labels
+    ```
+
+2. concatenate all the words into a single flattened tensor and supply `offset indices` for each sentence.
 
     ```python
     def collate_batch_flatten(batch_samples):
@@ -157,41 +187,30 @@ Sentences are normally by different length, size of words is variable. We need t
         return flattened_text, offsets, labels
     ```
 
-2. concatenate all the words into a single flattened tensor and supply `offset indices` for each sentence.
-
-    ```python
-    def collate_batch_padding(batch_samples):
-        """
-        Formats a batch by padding
-        """
-        labels = torch.tensor([item['label'] for item in batch_samples])
-        texts = [item['text'] for item in batch_samples]
-        # find the max length
-        max_len = max(len(text) for text in texts)
-        # create a tensor of zeros
-        padded_texts = torch.zeros(len(texts), max_len, dtype=torch.long)
-        # copy each text sequence into the padded tensor
-        for i, text in enumerate(texts):
-            padded_texts[i, :len(text)] = text
-            
-        return padded_texts, labels
-    ```
-
-By using `collate_fn` with Dataloader, we are able to dynamically adjust sentences into batches and improve the performance.
+By using `collate_fn` parameter with Dataloader, we are able to dynamically adjust length in batches and improve the performance.
 
 ### text_classifier.py
 
-The basic architecture of the model consists of `Embedding layer`, `Dropout` and `FC Layer`. 
+We are using  the `flatten` way with `nn.EmbeddingBag` in a simple architecture which consists of `Embedding layer`, `Dropout` and `FC Layer`. 
 
-The scenario is providing dataset of recipes, identify it's fruit or vegetable by recipe title. The dataset is retrieved from [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions) and is refined for simplify.
+```python
+class EmbeddingBagClassifier(nn.Module):
+    """
+    A simple text classifier using nn.EmbeddingBag
+    """
+    def __init__(self, vocab_size, embedding_dim, num_classes):
+        super().__init__()
+        # using average strategy
+        self.embedding_bag = nn.EmbeddingBag(vocab_size, embedding_dim, mode='mean')
+        self.dropout = nn.Dropout(0.5)
+        self.fc = nn.Linear(embedding_dim, num_classes)
 
-|    |     id | name                             | category   | label |
-|---:|-------:|:---------------------------------|:-----------|:------|
-|  0 |  31490 | a bit different  breakfast pizza | vegetable  | 1     |
-|  1 | 112140 | all in the kitchen  chili        | vegetable  | 1     |
-|  2 |  59389 | alouette  potatoes               | vegetable  | 1     |
-|  3 |   5289 | apple a day  milk shake          | fruit      | 0     |
-|  4 |  70971 | bananas 4 ice cream  pie         | fruit      | 0     |
+    def forward(self, text, offsets=None):
+        embedded = self.embedding_bag(text, offsets)
+        embedded = self.dropout(embedded)
+        return self.fc(embedded)
+```
+
 
 
 
