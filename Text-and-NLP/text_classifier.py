@@ -165,6 +165,45 @@ def preprocess_text(text):
 
     return words
 
+class ManualPoolingClassifier(nn.Module):
+    """
+    A text classifier that uses nn.Embedding layer
+    and a manual pooling strategy (mean, max, or sum)
+    """
+    def __init__(self, vocab_size, embedding_dim, num_classes, pooling='mean'):
+        super().__init__()
+        # padding_idx=0 ensures that the padding token is ignored during training
+        self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
+        # pooling strategy.
+        self.pooling = pooling
+        self.dropout = nn.Dropout(0.5)
+        self.fc = nn.Linear(embedding_dim, num_classes)
+
+    def forward(self, text):
+        # (batch_size, max_len, embedding_dim)
+        embedded = self.embedding(text)
+
+        # mask to ignore padding tokens in pooling calculations
+        mask = (text != 0).float().unsqueeze(-1)
+        # element-wise multiplication
+        embedded = embedded * mask
+
+        # pooling strategy
+        if self.pooling == 'mean':
+            # clamp(min=1) prevents division by zero for empty sequences
+            pooled = embedded.sum(dim=1) / mask.sum(dim=1).clamp(min=1)
+        elif self.pooling == 'max':
+            # set padded positions to negative infinity so they are ignored by max()
+            embedded[mask.squeeze(-1) == 0] = float('-inf')
+            pooled, _ = embedded.max(dim=1)
+        elif self.pooling == 'sum':
+            # sum the embeddings of all non-padded tokens
+            pooled = embedded.sum(dim=1)
+
+        pooled = self.dropout(pooled)
+        return self.fc(pooled)
+
+
 if "__main__" == __name__:
 
     # load refined data from csv file, preprocessing for vocab and tokenization
@@ -228,3 +267,4 @@ if "__main__" == __name__:
 
         # if (i+1) % 10 == 0:
         print(f"Epoch: {i+1}/{num_epochs}   Loss: {epoch_avg_loss}")
+
