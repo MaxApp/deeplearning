@@ -39,7 +39,7 @@ class FCBlock(nn.Module):
 # Flexible CNN composed of dynamic blocks
 # Cautions:
 # 1. Do not use python `list` for layer modules, use `nn.ModuleList` instead, for parameter won't be updated and recorded during training
-# 2. Only constructure layers once in `forward` method, don't reconstruct it every time
+# 2. Only constructure layers once in `__init__` method, don't reconstruct it every time
 # 3. It's better to calculate the flatten size according to input layer features in `__init__` method instead of `forword`
 class FlexibleCNN(nn.Module):
 
@@ -102,6 +102,8 @@ class FlexibleCNN(nn.Module):
         )
         
 
+    # fake forward, just for calculate parameters for FC layer
+    # used only once
     def _forward_conv(self, x):
         for conv_layer in self.conv_layers:
             x = conv_layer(x)
