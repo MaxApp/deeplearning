@@ -1,5 +1,9 @@
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
+import torch
+import torch.optim as optim
+import torch.nn as nn
+import torch.nn.functional as F
 import os
 from PIL import Image
 
@@ -102,6 +106,69 @@ class ChangeDetectionDataset(Dataset):
         return image
 
 
+class WeightedContrastiveLoss(nn.Module):
+    """
+    A contrastive loss function that incorporates class weights to handle imbalance.
+    
+    It adapts a multi-class problem into a binary similarity problem where
+    'No_Change' is 'similar' and 'Positive'/'Negative' are 'dissimilar'.
+    """
+    def __init__(self, device, margin=1.0, class_weights=None):
+        """
+        Initializes the weighted contrastive loss function.
+        
+        Args:
+            device (torch.device): The device to move class weights to.
+            margin (float): The margin for dissimilar pairs.
+            class_weights (torch.Tensor, optional): A tensor of weights for each class.
+                                                      Shape: (num_classes,).
+        """
+        super().__init__()
+        self.margin = margin
+        self.device = device
+        
+        # Move weights to the correct device once during initialization for efficiency.
+        if class_weights is not None:
+            self.class_weights = class_weights.to(self.device)
+        else:
+            self.class_weights = None
+
+    def forward(self, output1, output2, label):
+        """
+        Computes the weighted contrastive loss for a batch of embeddings.
+
+        Args:
+            output1 (torch.Tensor): Embeddings for the first set of images.
+            output2 (torch.Tensor): Embeddings for the second set of images.
+            label (torch.Tensor): The multi-class labels (0, 1, or 2) from the dataset.
+        """
+        # Calculate the pairwise Euclidean distance between the output embeddings.
+        distances = F.pairwise_distance(output1, output2)
+        
+        # Convert multi-class labels (0, 1, 2) to binary similarity labels (1, 1, 0).
+        # A label of 2 ('No_Change') is considered similar (0), others are dissimilar (1).
+        binary_label = (label != 2).float()
+
+        # Calculate the contrastive loss for each sample in the batch.
+        loss_per_sample = (
+            # Loss for similar pairs aims to minimize the distance.
+            (1 - binary_label) * distances.pow(2) +
+            # Loss for dissimilar pairs aims to make the distance larger than the margin.
+            binary_label * torch.clamp(self.margin - distances, min=0).pow(2)
+        )
+
+        # Apply class-specific weights to the loss if they are provided.
+        if self.class_weights is not None:
+            # Gather the correct weight for each sample using its original multi-class label.
+            weights = self.class_weights[label.long()]
+            
+            # Multiply each sample's loss by its corresponding class weight.
+            loss_per_sample = loss_per_sample * weights
+            
+        # Return the mean of the (potentially weighted) losses for the batch.
+        return loss_per_sample.mean()
+
+
 if __name__ == "__main__":
 
     # ImageNet normalization statistics
@@ -125,3 +192,17 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         transforms.Normalize(mean=mean, std=std)
     ])
+
+    # Initialize the custom weighted contrastive loss function with the calculated class weights.
+    # contrastive_loss = WeightedContrastiveLoss(margin=2.0, class_weights=class_weights, device=device)
+
+    # Initialize the AdamW optimizer for the new EfficientNet-based model
+    optimizer_change = optim.AdamW(siamese_efficientnet.parameters(), lr=1e-3)
+
+    # Initialize the new, more flexible scheduler
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer_change,
+        mode='min',      # Reduce LR when the validation loss stops decreasing
+        factor=0.2,      # New LR = LR * factor
+        patience=2,      # Wait 2 epochs with no improvement before reducing LR
+    )
