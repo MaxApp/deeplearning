@@ -6,44 +6,28 @@ from collections import defaultdict
 import glob
 import os
 import random
+import re
 from PIL import Image
+import matplotlib.pyplot as plt
+
+import utils
 
 class SignatureTripletDataset(Dataset):
     """
-    A PyTorch Dataset for creating signature triplets for verification.
+    sigature triplets dataset
     """
-    def __init__(self, base_data_dir, triplets_per_user=100, transform=None):
+    def __init__(self, base_data_dir, triplets_per_user=10, transform=None):
         """
         Args:
-            base_data_dir (str): The root directory of the signature dataset.
-            triplets_per_user (int): The number of triplets to generate per user (virtual epoch size).
-            transform (callable, optional): PyTorch transforms to apply to images.
+            base_data_dir: The root directory of the signature dataset.
+            triplets_per_user: The number of triplets to generate per user (virtual epoch size).
+            transform : transforms to apply to images.
         """
-        self.base_data_dir = base_data_dir
+        # self.base_data_dir = base_data_dir
         self.triplets_per_user = triplets_per_user
         self.transform = transform
-        self.signature_map = self._create_signature_map()
+        self.signature_map = utils.create_signature_map(base_data_dir)
         self.user_ids = list(self.signature_map.keys())
-        if not self.user_ids:
-            raise RuntimeError(f"No valid individuals found in {base_data_dir}. Check directory structure and image counts.")
-
-    def _create_signature_map(self):
-        real_signatures_dir = os.path.join(self.base_data_dir, 'Real')
-        fake_signatures_dir = os.path.join(self.base_data_dir, 'Fake')
-        signature_map = defaultdict(lambda: {'real': [], 'fake': []})
-        if not os.path.isdir(real_signatures_dir):
-            raise FileNotFoundError(f"Error: Directory not found at {real_signatures_dir}")
-        if not os.path.isdir(fake_signatures_dir):
-            raise FileNotFoundError(f"Error: Directory not found at {fake_signatures_dir}")
-        all_ids = sorted(os.listdir(real_signatures_dir))
-        for user_id in all_ids:
-            if user_id.startswith('ID_'):
-                real_images = glob.glob(os.path.join(real_signatures_dir, user_id, '*.jpg'))
-                fake_images = glob.glob(os.path.join(fake_signatures_dir, user_id, '*.jpg'))
-                if len(real_images) >= 2 and len(fake_images) >= 1:
-                    signature_map[user_id]['real'] = real_images
-                    signature_map[user_id]['fake'] = fake_images
-        return signature_map
 
     def __len__(self):
         return len(self.user_ids) * self.triplets_per_user
@@ -55,7 +39,11 @@ class SignatureTripletDataset(Dataset):
         anchor_img = self._load_image(anchor_path)
         positive_img = self._load_image(positive_path)
         negative_img = self._load_image(negative_path)
-        return (anchor_img, positive_img, negative_img)
+
+        anchor_file_name = os.path.basename(anchor_path)
+        positive_file_name = os.path.basename(positive_path)
+        negative_file_name = os.path.basename(negative_path)
+        return (anchor_img, positive_img, negative_img), (anchor_file_name, positive_file_name, negative_file_name)
 
     def _load_image(self, path):
         with Image.open(path) as img:
@@ -115,25 +103,39 @@ class SiameseNetwork(nn.Module):
 
 if __name__ == "__main__":
 
-    mean = [0.861, 0.861, 0.861]
-    std = [0.274, 0.274, 0.274]
-    train_transform = transforms.Compose([
-        transforms.RandomAffine(degrees=0, shear=10, translate=(0.1,0.1)),
-        transforms.RandomPerspective(distortion_scale=0.1, p=0.5),
-        transforms.Resize((224,224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
-    ])
-    val_transform = transforms.Compose([
-        transforms.Resize((224,224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
-    ])
+    signature_base_dir = "E:\\PDF\\pytorch\\C3M1\\signatures_train"
+    # mean = [0.861, 0.861, 0.861]
+    # std = [0.274, 0.274, 0.274]
+    # train_transform = transforms.Compose([
+    #     transforms.RandomAffine(degrees=0, shear=10, translate=(0.1,0.1)),
+    #     transforms.RandomPerspective(distortion_scale=0.1, p=0.5),
+    #     transforms.Resize((224,224)),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(mean=mean, std=std)
+    # ])
+    # val_transform = transforms.Compose([
+    #     transforms.Resize((224,224)),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(mean=mean, std=std)
+    # ])
 
-    embedding_dim = 128
-    embedding_net = SimpleEmbeddingNetwork(embedding_dim=embedding_dim)
-    siamese_network = SiameseNetwork(embedding_network=embedding_net)
+    # embedding_dim = 128
+    # embedding_net = SimpleEmbeddingNetwork(embedding_dim=embedding_dim)
+    # siamese_network = SiameseNetwork(embedding_network=embedding_net)
 
-    triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
-    optimizer_siamese = optim.AdamW(siamese_network.parameters(), lr=1e-3)
-    scheduler = optim.lr_scheduler.StepLR(optimizer_siamese, step_size=2, gamma=0.1)
+    # triplet_loss = nn.TripletMarginLoss(margin=1.0, p=2)
+    # optimizer_siamese = optim.AdamW(siamese_network.parameters(), lr=1e-3)
+    # scheduler = optim.lr_scheduler.StepLR(optimizer_siamese, step_size=2, gamma=0.1)
+
+    dataset = SignatureTripletDataset(base_data_dir=signature_base_dir, triplets_per_user=3)
+
+    for i in range(0,5):
+        triplet_file, triplet_filename = dataset[0]
+
+        fig, axses = plt.subplots(nrows=1, ncols=3)
+        for i, axs in enumerate(axses):
+            axs.imshow(triplet_file[i])
+            axs.axis('off')
+            axs.set_title(triplet_filename[i])
+        plt.tight_layout()
+        plt.show()
