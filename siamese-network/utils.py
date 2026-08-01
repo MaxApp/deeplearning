@@ -40,8 +40,8 @@ def create_signature_map(base_data_dir):
         """
         from collections import defaultdict
         import glob
-        real_signatures_dir = os.path.join(base_data_dir, 'DigitalReal')
-        fake_signatures_dir = os.path.join(base_data_dir, 'DigitalFake')
+        real_signatures_dir = os.path.join(base_data_dir, 'ManualReal')
+        fake_signatures_dir = os.path.join(base_data_dir, 'ManualFake')
         signature_map = defaultdict(lambda: {'real': [], 'fake': []})
         if not os.path.isdir(real_signatures_dir):
             raise FileNotFoundError(f"Error: Directory not found at {real_signatures_dir}")
