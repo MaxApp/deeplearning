@@ -38,7 +38,7 @@ class SignatureTripletDataset(Dataset):
         return len(self.user_ids) * self.triplets_per_user
 
     def __getitem__(self, index):
-        # custom defined getitem without consideration of index
+        # custom defined __getitem__ without consideration of index
         person_id = random.choice(self.user_ids)
         anchor_path, positive_path = random.sample(self.signature_map[person_id]['real'], 2)
         negative_path = random.choice(self.signature_map[person_id]['fake'])
@@ -105,87 +105,65 @@ class SiameseNetwork(nn.Module):
             output1 = self.embedding_network(img1)
             output2 = self.embedding_network(img2)
             return output1, output2
-        
-    def get_embedding(self, image):
-        return self.embedding_network(image)
 
 
-def verify_signature(genuine_path, test_path, threshold=0.7):
+def verify_signature(model, anchor_path, verify_path, val_transform, threshold=0.7):
 
-    mean = [0.861, 0.861, 0.861]
-    std = [0.274, 0.274, 0.274]
-    val_transform = transforms.Compose([
-        transforms.Resize((224,224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=mean, std=std)
-    ])
-
-    embedding_dim = 128
-    embedding_net = SimpleEmbeddingNetwork(embedding_dim=embedding_dim)
-    model = SiameseNetwork(embedding_network=embedding_net)
-    saved_file = Path(__file__).parent / saved_filename
-    model.load_state_dict(torch.load(saved_file))
+    # saved_file = Path(__file__).parent / saved_filename
+    # model.load_state_dict(torch.load(saved_file))
     
     try:
-        img_genuine = val_transform(Image.open(genuine_path).convert("RGB")).unsqueeze(0)
-        img_test = val_transform(Image.open(test_path).convert("RGB")).unsqueeze(0)
+        # load signatures
+        sig_anchor = val_transform(Image.open(anchor_path).convert("RGB")).unsqueeze(0)
+        sig_verify = val_transform(Image.open(verify_path).convert("RGB")).unsqueeze(0)
     except FileNotFoundError as e:
-        print(f"Error loading image: {e}")
+        print(f"Error loading signatures: {e}")
         return
     
     model.eval() 
     with torch.no_grad():
-        emb_genuine = model.get_embedding(img_genuine)
-        emb_test = model.get_embedding(img_test)
-        
+        emb_genuine, emb_test = model(sig_anchor, sig_verify, triplet_bool=False)
+
         # Calculate the euclidean distance between the two embeddings.
         distance = F.pairwise_distance(emb_genuine, emb_test).item()
         
         # Make a prediction based on whether the distance is below the threshold.
         is_genuine = distance < threshold
         
-    # Display the numerical results of the verification.
     print(f"--- Verification Result ---")
     print(f"Distance: {distance:.4f}")
     print(f"Decision Threshold: {threshold:.4f}")
-    # Print the final prediction outcome.
+
     if is_genuine:
         print("Prediction: ✅ Genuine Signature\n")
     else:
         print("Prediction: ❌ Forgery Detected\n")
 
-    """
-    # Create a figure with two subplots for visual comparison.
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4))
-    # Set the main title of the figure to show the calculated distance.
-    fig.suptitle(f'Distance: {distance:.4f}', fontsize=16)
     
-    # Display the known genuine signature in the left subplot.
-    ax1.imshow(Image.open(genuine_path))
-    ax1.set_title("Known Genuine Signature")
+    # Create a figure with two subplots for visual comparison.
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(4, 3))
+    # Set the main title to distance.
+    fig.suptitle(f'Distance: {distance:.4f}', fontsize=14)
+    
+    # anchor in the left
+    ax1.imshow(Image.open(anchor_path))
+    ax1.set_title("Anchor")
     ax1.axis('off')
     
-    # Display the signature to be verified in the right subplot.
-    ax2.imshow(Image.open(test_path))
-    ax2.set_title("Signature to Verify")
+    # verified in the right
+    ax2.imshow(Image.open(verify_path))
+    ax2.set_title("Genuine" if is_genuine else "Forged")
     ax2.axis('off')
     
-    # Render the final plot.
+    plt.tight_layout()
     plt.show()
-    """ 
+     
 
 if __name__ == "__main__":
+    
     saved_filename = "sig_siamese.pth"
     current_dir = Path(__file__).parent
-    signature_base_dir = "E:\\PDF\\pytorch\\C3M1\\signatures_train"
-
-    # """ Verfification """
-    img_real = os.path.join(signature_base_dir, "DigitalReal", "digital_real_114_3.jpg")
-    img_fake = os.path.join(signature_base_dir, "DigitalFake", "digital_fake_27_3.jpg")
-    verify_signature(genuine_path=img_real, test_path=img_fake)
-
-
-    '''
+    signature_base_dir = ""  # <<---- change this line to your own data path
     
     mean = [0.861, 0.861, 0.861]
     std = [0.274, 0.274, 0.274]
@@ -196,8 +174,14 @@ if __name__ == "__main__":
         transforms.ToTensor(),
         transforms.Normalize(mean=mean, std=std)
     ])
-    
 
+    val_transform = transforms.Compose([
+        # transforms.Resize((224,224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=mean, std=std)
+    ])
+    
+    # ==== training progress ====
     n_epochs = 10
     embedding_dim = 128
     embedding_net = SimpleEmbeddingNetwork(embedding_dim=embedding_dim)
@@ -210,9 +194,8 @@ if __name__ == "__main__":
     dataset:Dataset = SignatureTripletDataset(base_data_dir=signature_base_dir, triplets_per_user=10, transform=train_transform)
     dataloader:DataLoader = DataLoader(dataset, batch_size=24, shuffle=True)
 
-    # ==== Training ====
     model.train()
-    lowest_loss = None
+    training_lowest_loss = None
     for epoch in range(1, n_epochs + 1):
         running_train_loss = 0.0
         for triplets, _  in dataloader:        
@@ -226,62 +209,33 @@ if __name__ == "__main__":
             
             # Weight loss by batch size for correct averaging
             batch_size = anchors.size(0)
-            print(f"---> batch size: {batch_size}")
             running_train_loss += loss.item() * batch_size
         
         train_loss = running_train_loss / len(dataset)
 
-        # # --- Validation Phase ---
-        # model.eval()
-        # correct_predictions = 0
-        # total_pairs = 0
-        # running_val_loss = 0.0
-        # val_samples_processed = 0
-        # val_progress_bar = tqdm(val_loader, desc=f"Epoch {epoch}/{n_epochs} [Validation]", leave=False)
-        
-        # with torch.no_grad():
-        #     for data_batch in val_progress_bar:
-        #         anchors, positives, negatives = data_batch
-        #         anchors, positives, negatives = anchors.to(device), positives.to(device), negatives.to(device)
-                
-        #         anchor_out, pos_out, neg_out = model(anchors, positives, negatives)
-        #         val_loss_item = loss_fcn(anchor_out, pos_out, neg_out)
-
-        #         # Weight loss by batch size for correct averaging
-        #         batch_size = anchors.size(0)
-        #         running_val_loss += val_loss_item.item() * batch_size
-        #         val_samples_processed += batch_size
-
-        #         # Accuracy calculation
-        #         dist_pos = F.pairwise_distance(anchor_out, pos_out)
-        #         correct_predictions += torch.sum(dist_pos < threshold).item()
-        #         dist_neg = F.pairwise_distance(anchor_out, neg_out)
-        #         correct_predictions += torch.sum(dist_neg >= threshold).item()
-        #         total_pairs += len(dist_pos) + len(dist_neg)
-
-        #         # Update running metrics on the progress bar
-        #         current_acc = correct_predictions / total_pairs if total_pairs > 0 else 0
-        #         display_loss = running_val_loss / val_samples_processed
-        #         val_progress_bar.set_postfix(acc=f'{current_acc:.2%}', loss=f'{display_loss:.4f}')
-
-        # val_accuracy = correct_predictions / total_pairs if total_pairs > 0 else 0
-        # val_loss = running_val_loss / len(val_loader.dataset)
-
-        # Print a summary for the epoch
+        # summary for the epoch
         current_lr = optimizer.param_groups[0]['lr']
         print(f"Epoch {epoch}/{n_epochs} | Train Loss: {train_loss:.4f} | LR: {current_lr:.6f}")
 
-        # save the lowest loss model parameter
-        if not lowest_loss or lowest_loss > train_loss:
-            lowest_loss = train_loss
+        # save the model parameters when it is the lowest loss
+        if not training_lowest_loss or training_lowest_loss > train_loss:
+            training_lowest_loss = train_loss
             torch.save(model.state_dict(), current_dir / saved_filename)
-            print(f"==== save loss: {train_loss}")
+            print(f"==== Save model at loss of {train_loss}")
 
         # Update the learning rate scheduler, if one is provided
         if scheduler:
             scheduler.step()
-    '''
-            
+
+
+    # ==== Evaluation =====
+    # saved_file = Path(__file__).parent / saved_filename
+    # model.load_state_dict(torch.load(saved_file))
+    # anchor_img_path = os.path.join(signature_base_dir, "DigitalReal", "digital_real_114_3.jpg")
+    # verified_img_path = os.path.join(signature_base_dir, "DigitalFake", "digital_fake_27_3.jpg")
+    # verify_signature(model, anchor_img_path, verified_img_path, val_transform, threshold=0.7)
+    
+
     # ==== Test code for preview the triplets ====
     # fig, axses = plt.subplots(nrows=3, ncols=3)
     # for i in range(axses.shape[0]):
@@ -293,45 +247,3 @@ if __name__ == "__main__":
     #         axs.set_title(triplet_filename[j])
     # plt.tight_layout()
     # plt.show()
-
-
-    """
-    # ==== Evaluation =====
-    img_real = os.path.join(signature_base_dir, "DigitalReal", "digital_real_114_3.jpg")
-    img_fake = os.path.join(signature_base_dir, "DigitalFake", "digital_fake_27_3.jpg")
-    val_transform = transforms.Compose([
-            # transforms.Resize((224,224)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=mean, std=std)
-    ])
-
-    try:
-        img_genuine = val_transform(Image.open(img_real).convert("RGB")).unsqueeze(0)
-        img_test = val_transform(Image.open(img_fake).convert("RGB")).unsqueeze(0)
-    except FileNotFoundError as e:
-        print(f"Error loading image: {e}")
-        sys.exit()
-
-    threshold = 0.7
-    model.eval() 
-    with torch.no_grad():
-
-        emb_genuine = model.get_embedding(img_genuine)
-        emb_test = model.get_embedding(img_test)
-        
-        # Calculate the euclidean distance between the two embeddings.
-        distance = F.pairwise_distance(emb_genuine, emb_test).item()
-        
-        # Make a prediction based on whether the distance is below the threshold.
-        is_genuine = distance < threshold
-        
-    # Display the numerical results of the verification.
-    print(f"--- Verification Result ---")
-    print(f"Distance: {distance:.4f}")
-    print(f"Decision Threshold: {threshold:.4f}")
-    # Print the final prediction outcome.
-    if is_genuine:
-        print("Prediction: ✅ Genuine Signature\n")
-    else:
-        print("Prediction: ❌ Forgery Detected\n")
-    """

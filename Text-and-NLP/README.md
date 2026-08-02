@@ -191,7 +191,7 @@ By using `collate_fn` parameter with Dataloader, we are able to dynamically adju
 
 ### text_classifier.py
 
-We are using  the `flatten` way with `nn.EmbeddingBag` in a simple architecture which consists of `Embedding layer`, `Dropout` and `FC Layer`. 
+We are using  the `flatten` way with `nn.EmbeddingBag` in a simple architecture which consists of `Embedding Layer`, `Dropout` and `FC Layer`. 
 
 ```python
 class EmbeddingBagClassifier(nn.Module):
