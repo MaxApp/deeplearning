@@ -2,6 +2,10 @@
 
 This is the experimental sections about torch vision. We'll hands on some simple labcodes to get an intuition about convolutional network.
 
+* [feature maps](#feature-maps)
+* [saliency maps](#saliency-maps)
+* [class activation maps](#class-activation-maps)
+
 ### Feature Maps
 
 What's the output of the conv layer? What do they do after images pass through a conv layer and max pool? How do filters affect the results? We'll retrieve the output of a layer and display every channel using plot, that's called `feature maps`.
@@ -33,5 +37,14 @@ utils.plot_channels(output_conv_layer)
 ```
 
 ![feature_map](imgs/feature_maps_1.png)
+
+
+### Saliency Maps
+
+Take a example for image classification, which of those pixels by input has big influence on the prediction? How do we visualize them? That comes to `saliency maps` which can measure input images pixel by pixel to reveal which parts most affect the prediction.
+
+
+
+### Class Activation Maps
 
 
