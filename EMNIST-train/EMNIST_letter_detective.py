@@ -23,18 +23,18 @@ else:
 
 # Load the EMNIST Letters training set
 train_dataset = datasets.EMNIST(
-    root=data_path,  # Specify the root directory for the dataset
-    split='letters',  # Use the 'letters' subset (26 lowercase classes)
-    train=True,  # Indicate that this is the training set
-    download=download  # Download the dataset if needed (based on the previous check)
+    root=data_path, 
+    split='letters',  # use the 'letters' subset (26 lowercase classes)
+    train=True, 
+    download=download  
 )
 
 # Load the EMNIST Letters test set
 test_dataset = datasets.EMNIST(
-    root=data_path,  # Specify the root directory for the dataset
-    split='letters',  # Use the 'letters' subset (26 lowercase classes)
-    train=False,  # Indicate that this is the test set
-    download=download  # Download the dataset if needed (based on the previous check)
+    root=data_path,
+    split='letters',  # use the 'letters' subset (26 lowercase classes)
+    train=False, 
+    download=download 
 )
 
 # Precomputed mean and std for EMNIST Letters dataset
@@ -43,8 +43,8 @@ std = (0.3317,)
 
 # Create a transform that converts images to tensors and normalizes them
 transform = transforms.Compose([
-    transforms.ToTensor(),  # Converts images to PyTorch tensors and scales pixel values to [0, 1]
-    transforms.Normalize(mean=mean, std=std)   # Applies normalization using the computed mean and std
+    transforms.ToTensor(),  
+    transforms.Normalize(mean=mean, std=std) 
 ])
 
 # Assign the transform to both the training and test datasets
@@ -53,16 +53,7 @@ test_dataset.transform = transform
 
 def create_emnist_dataloaders(train_dataset, test_dataset, batch_size=64):
     """
-    Creates DataLoader objects for the EMNIST training and testing datasets.
-
-    Args:
-        train_dataset (torch.utils.data.Dataset): The training dataset.
-        test_dataset (torch.utils.data.Dataset): The testing dataset.
-        batch_size (int, optional): The batch size for the DataLoaders. Defaults to 64.
-
-    Returns:
-        tuple (torch.utils.data.DataLoader, torch.utils.data.DataLoader):
-            A tuple containing the training and testing DataLoaders (train_loader, test_loader).
+    Creates DataLoader objects for the EMNIST training and testing datasets
     """
 
     # Create a DataLoader for the training dataset
@@ -91,14 +82,7 @@ def create_emnist_dataloaders(train_dataset, test_dataset, batch_size=64):
 # construct models
 def initialize_emnist_model(num_classes=26):
     """
-    Initializes a sequential neural network model for EMNIST classification.
-
-    Args:
-        num_classes (int): The number of output classes. Defaults to 26.
-
-    Returns:
-        tuple: A tuple containing the model, loss function, and optimizer.
-               (model, loss_function, optimizer)
+    Initializes a sequential neural network model for EMNIST classification
     """
 
     torch.manual_seed(42)  # Set seed for reproducibility
@@ -129,25 +113,7 @@ def initialize_emnist_model(num_classes=26):
 # training
 def train_epoch(model, loss_function, optimizer, train_loader, device, verbose=True):
     """
-    Trains the model for one epoch and calculates the average loss and accuracy.
-
-    Args:
-        model (nn.Module): The PyTorch model to be trained.
-        loss_function (nn.Module): The loss function used for training.
-        optimizer (optim.Optimizer): The optimizer used for updating model parameters.
-        train_loader (DataLoader): DataLoader for the training dataset, providing batches of data.
-        device (torch.device): The device (CPU or CUDA) where the model and data will be moved.
-        verbose (bool, optional): If True, prints the average loss and accuracy for the epoch. Defaults to True.
-
-    Returns:
-        tuple: A tuple containing:
-            - nn.Module: The trained model after one epoch.
-            - float: The average loss for the epoch.
-            - float: The accuracy percentage for the epoch.
-
-    Note:
-        - The target labels in the `train_loader` (EMNIST letters) are 1-indexed and so the function adjusts them
-          to 0-indexed before calculating the loss.
+    Trains the model for one epoch and calculates the average loss and accuracy
     """
 
     # Move the model to the specified device (CPU or GPU)
@@ -226,20 +192,7 @@ def train_epoch(model, loss_function, optimizer, train_loader, device, verbose=T
 # evaluate
 def evaluate(model, test_loader, device, verbose=True):
     """
-    Evaluates the model on the test dataset and returns the accuracy percentage.
-
-    Args:
-        model (nn.Module): The PyTorch model to be evaluated.
-        test_loader (DataLoader): DataLoader for the testing dataset.
-        device (torch.device): The device to use (CPU or CUDA).
-        verbose (bool, optional): If True, prints the test accuracy. Defaults to True.
-
-    Returns:
-        float: The accuracy percentage of the model on the test dataset.
-
-    Note:
-        - The target labels in the `test_loader` (EMNIST letters) are 1-indexed and so the function adjusts them 
-          to 0-indexed before calculating the accuracy.
+    Evaluates the model on the test dataset and returns the accuracy percentage
     """
     
     # Set the model to evaluate mode
