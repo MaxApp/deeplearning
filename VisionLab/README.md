@@ -43,7 +43,7 @@ utils.plot_channels(output_conv_layer)
 
 Take a example for image classification, which of those pixels by input has big influence on the prediction? How do we visualize them? That comes to `saliency maps` which can measure input images pixel by pixel to reveal which parts most affect the prediction.
 
-
+![saliency cat](imgs/saliency_cat.png)
 
 ### Class Activation Maps
 
