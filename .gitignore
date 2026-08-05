@@ -5,3 +5,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# 忽略所有 test.py 本地测试文件
+test.py
+
