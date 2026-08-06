@@ -58,7 +58,7 @@ Calculate average gradients as weights of correlative feature map, then sum up a
 2. You can register hook **ONLY FOR** target tensor with `register_hook`
 
 
-
+![cam_preview](imgs/cam.png)
 
 
 

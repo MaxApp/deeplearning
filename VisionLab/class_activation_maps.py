@@ -82,43 +82,35 @@ def visualize_gradcam(img_display, heatmap):
 
     # 1: Original image
     ax1.imshow(img_display)
-    # ax1.set_title(f'Original Image: {title}', fontsize=14)
+    ax1.set_title(f'Original')
     ax1.axis('off')
 
     # 2: Standalone heatmap
     ax2.imshow(heatmap, cmap='jet')
-    # ax2.set_title('GradCAM Heatmap', fontsize=14)
+    ax2.set_title('GradCAM')
     ax2.axis('off')
 
-    """
-    # TF.resize expects (C, H, W) tensor; heatmap is (H, W)
+    # make heatmap overlay
+    img_display_np = np.array(img_display)
     heatmap_tensor = torch.from_numpy(heatmap).unsqueeze(0)  # (1, H, W)
     heatmap_resized = TF.resize(
         heatmap_tensor,
-        size=(img_display.shape[0], img_display.shape[1]),
+        size=(img_display_np.shape[0], img_display_np.shape[1]),                       # size 参数为 (H, W)
         interpolation=TF.InterpolationMode.BILINEAR
-    ).squeeze(0).numpy()  # back to (H, W)
+    ).squeeze(0).numpy()
 
-    # --- cv2.applyColorMap → matplotlib colormap ---
     jet_cmap = colormaps['jet']
     heatmap_norm = np.clip(heatmap_resized, 0, 1)
-    heatmap_color = jet_cmap(heatmap_norm)[:, :, :3]   # (H, W, 4) -> (H, W, 3) RGB
+    heatmap_color = jet_cmap(heatmap_norm)[:, :, :3]   # (H, W, 3) RGB
     heatmap_color = (heatmap_color * 255).astype(np.uint8)
 
-    # --- cv2.cvtColor(BGR2RGB) → 不需要，matplotlib 输出已是 RGB ---
-    # 若后续遇到 BGR 转 RGB，可用: arr = arr[..., ::-1]
-
-    # --- cv2.addWeighted → numpy 加权叠加 ---
     superimposed = (
-        img_display.astype(np.float32) * 0.6
+        img_display_np.astype(np.float32) * 0.6
         + heatmap_color.astype(np.float32) * 0.4
     ).astype(np.uint8)
-    """
-    ax3.imshow(heatmap)
-    # ax3.set_title(
-    #     f'GradCAM Overlay\nPrediction: {pred_class}\n'
-    #     f'Confidence: {pred_score:.2f}', fontsize=14
-    # )
+    
+    ax3.imshow(superimposed)
+    ax3.set_title("Overlay")
     ax3.axis('off')
 
     plt.tight_layout()
