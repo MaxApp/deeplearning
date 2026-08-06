@@ -47,9 +47,17 @@ Take a example for image classification, which of those pixels by input has big 
 
 ### Class Activation Maps
 
-Instead of showing high lights of pixels, with `Grad-CAM` (Gradient weighted Class Activation Mapping), we can show regions on original image with influences.
-The main idea is based on feature maps. Usually we grab the activations from last layer, also with gradients.
+Instead of showing high lights of pixels, with `Grad-CAM` (Gradient weighted Class Activation Mapping), we can show regions on original image with influences. That make more sense. 
+
+The main idea is based on feature maps. Since each feature map represents from a special angle, all the feature maps reflects what a neural network seen. Therefore we grab the activations from last layer which directly affects prediction, also with backward gradients.
 Calculate average gradients as weights of correlative feature map, then sum up all the feature maps multipled by their weights. Finally smoothing with interpolation and stack back to the top of original image, we got our heat map.
+
+**Note:** There're two ways of using hook to grab gradient.
+
+1. You can register your hook function on target layer by using `register_forward_hook` and `register_full_backward_hook`
+2. You can register hook **ONLY FOR** target tensor with `register_hook`
+
+
 
 
 
