@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
 def plot_image(image_tensor, title="", **kwargs):
     """
@@ -39,3 +40,9 @@ def plot_channels(out_tensor):
     plt.tight_layout()  
     # Display the plot with all filters
     plt.show()
+
+def load_image(img_path):
+    img = Image.open(img_path)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+    return img

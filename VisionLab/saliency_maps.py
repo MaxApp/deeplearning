@@ -3,17 +3,11 @@ import torch.nn.functional as F
 import torchvision.models as tv_models
 import torchvision.transforms as transforms
 from pathlib import Path
-from PIL import Image
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+import utils
 
-
-def load_image(img_path):
-    img = Image.open(img_path)
-    if img.mode != 'RGB':
-        img = img.convert('RGB')
-    return img
 
 def compute_saliency_map(model, input_image, target_class=None):
     """
@@ -119,7 +113,7 @@ if "__main__" == __name__:
     if not Path(img_path).exists():
         raise FileNotFoundError("Image not found")
 
-    img_pil = load_image(img_path)
+    img_pil = utils.load_image(img_path)
     img_tensor = transform(img_pil).unsqueeze(0)
 
     saliency_map, pred_class, pred_prob = compute_saliency_map(resnet50, img_tensor)
