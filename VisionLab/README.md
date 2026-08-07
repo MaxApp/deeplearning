@@ -61,4 +61,12 @@ Calculate average gradients as weights of correlative feature map, then sum up a
 ![cam_preview](imgs/cam.png)
 
 
+### Diffusion Model
+
+It's a generative model for images. Other than classification, diffusion models can generate creative images according to your prompts.
+
+The process is train the model to learn **accumulate noise** at first, then using that learned noise to predict the noise one step before over and over, eventually reach the orginal image. The progress is known as "denoise" gradually.
+
+We'll use the Stable Diffusion 2 model from Hugging Face to accomplish the task.
+
 
