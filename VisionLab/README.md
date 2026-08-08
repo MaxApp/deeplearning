@@ -69,7 +69,15 @@ The process is training a model to learn **accumulate noise** at first, then usi
 
 We'll use the [Stable Diffusion XL-1.0-base](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) model from Hugging Face with `Diffusers` tool to accomplish the task.
 
+```bash
+pip install -U diffusers transformers accelerate
+```
+
+![astronauts](imgs/astronauts.png)
+
 Other than playing with the model, we also inspect the progress during the denoising. With pipeline's callback functionality, we capture intermediate images to visualizing the steps.
+
+
 
 **Conceptual Notes:**
 
