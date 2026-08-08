@@ -63,10 +63,28 @@ Calculate average gradients as weights of correlative feature map, then sum up a
 
 ### Diffusion Model
 
-It's a generative model for images. Other than classification, diffusion models can generate creative images according to your prompts.
+It's a generative model for images other than discriminative, diffusion models can generate creative images according to your prompts.
 
-The process is train the model to learn **accumulate noise** at first, then using that learned noise to predict the noise one step before over and over, eventually reach the orginal image. The progress is known as "denoise" gradually.
+The process is training a model to learn **accumulate noise** at first, then using that learned noise to predict the noise one step before, then implements this operation over and over, eventually reach the orginal image. The progress is known as "denoise" gradually.
 
-We'll use the Stable Diffusion 2 model from Hugging Face to accomplish the task.
+We'll use the [Stable Diffusion XL-1.0-base](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) model from Hugging Face with `Diffusers` tool to accomplish the task.
+
+Other than playing with the model, we also inspect the progress during the denoising. With pipeline's callback functionality, we capture intermediate images to visualizing the steps.
+
+**Conceptual Notes:**
+
+* **DDPM**: it's the fundament of Stable Diffusion, mainly create images through two phase:
+  - forward process
+  - reverse process
+* **Pixel space DDPM**  vs. **Latent space Diffusion**
+  - **latent space** is compressed features from original image which makes them much more efficient and scalable, but less intuitive to visualize.
+  - we can use an autoencoder to compress images to latent space and decode back to pixels.
+
+
+
+
+
+
+
 
 
