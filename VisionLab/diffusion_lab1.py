@@ -1,9 +1,7 @@
 from diffusers import DiffusionPipeline
 import matplotlib.pyplot as plt
 import torch
-from PIL import Image
 import os
-import numpy as np
 
 if __name__ == "__main__":
     """Generate 3 images by prompt words and display with matplotlib"""
@@ -43,8 +41,6 @@ if __name__ == "__main__":
 
     # display images
     fig, axs = plt.subplots(1, 3, figsize=(15,5))
-
-    # Display each image
     for idx, img in enumerate(images):
         axs[idx].imshow(img)
         axs[idx].axis('off')

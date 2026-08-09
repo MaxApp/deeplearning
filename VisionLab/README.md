@@ -77,7 +77,28 @@ pip install -U diffusers transformers accelerate
 
 Other than playing with the model, we also inspect the progress during the denoising. With pipeline's callback functionality, we capture intermediate images to visualizing the steps.
 
+![denosing_steps]()
 
+**Caution**: If runnning with float16 by SD-XL-1.0-base，there is a VAE bug when decoding the latent. You need to fix this issue with `AutoencoderKL` from community.
+
+```python
+from diffusers import DiffusionPipeline, AutoencoderKL
+
+# fixed for float16 from community
+vae = AutoencoderKL.from_pretrained(
+    "madebyollin/sdxl-vae-fp16-fix",
+    torch_dtype=torch.float16
+)
+
+pipe = DiffusionPipeline.from_pretrained(
+    repo_id, 
+    vae=vae,  # substitute with AutoencoderKL
+    torch_dtype=torch.float16, 
+    variant="fp16", 
+    cache_dir=cache_dir,
+    local_files_only=model_is_cached
+)
+```
 
 **Conceptual Notes:**
 
