@@ -5,6 +5,7 @@ This is the experimental sections about torch vision. We'll hands on some simple
 * [feature maps](#feature-maps)
 * [saliency maps](#saliency-maps)
 * [class activation maps](#class-activation-maps)
+* [diffusion model](#diffusion-model)
 
 ### Feature Maps
 
