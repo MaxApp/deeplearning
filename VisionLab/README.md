@@ -77,7 +77,7 @@ pip install -U diffusers transformers accelerate
 
 Other than playing with the model, we also inspect the progress during the denoising. With pipeline's callback functionality, we capture intermediate images to visualizing the steps.
 
-![denosing_steps]()
+![denosing_steps](imgs/denoising.png)
 
 **Caution**: If runnning with float16 by SD-XL-1.0-base，there is a VAE bug when decoding the latent. You need to fix this issue with `AutoencoderKL` from community.
 
