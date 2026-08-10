@@ -211,6 +211,14 @@ class EmbeddingBagClassifier(nn.Module):
         return self.fc(embedded)
 ```
 
+## Attention and Transformer
+
+Transformer is one of the most morden architecture these days, it enables models like BERT, GPT and other models to understand languages. Self-attention is the core conception that powers the model.
+
+Unlike traditional sequential models which process words one by one, self-attention computes relationships by all words simultaneously.
+
+In the section, we'll build a simple transformer from scratch with attentions.
+
 
 
 
