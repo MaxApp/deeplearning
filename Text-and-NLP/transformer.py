@@ -12,6 +12,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 
+import utils
+
 
 class SimpleTokenizer:
     """splits by words and lowercases"""
@@ -55,18 +57,21 @@ class MyDataset(Dataset):
         return self.inputs[idx], self.targets[idx]
 
 
-class MyAttention(nn.Module):
+class MyAttentionModel(nn.Module):
     
-    def __init__(self, d):
+    def __init__(self, token_dim, represent_dim):
         super().__init__()
-        self.to_q = nn.Linear(d, d, bias=False)
-        self.to_k = nn.Linear(d, d, bias=False)
-        self.to_v = nn.Linear(d, d, bias=False)
+        # Q,K,V
+        self.to_q = nn.Linear(token_dim, represent_dim, bias=False)
+        self.to_k = nn.Linear(token_dim, represent_dim, bias=False)
+        self.to_v = nn.Linear(token_dim, represent_dim, bias=False)
 
-    def forward(self, x):
-        Q = self.to_q(x)
-        K = self.to_k(x)
-        V = self.to_v(x)
+    def forward(self, token_ids):
+        # position embedding
+        batch_size, token_ids.shape
+        Q = self.to_q(token_ids)
+        K = self.to_k(token_ids)
+        V = self.to_v(token_ids)
 
         # scaled dot-product: (Q @ K^T) / sqrt(dim)
         scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(Q.size(-1))
@@ -95,7 +100,6 @@ def build_vocab(sentences, tokenizer, min_freq=1):
 
 
 
-
 if __name__ == "__main__":
 
     # sample sentences
@@ -118,6 +122,26 @@ if __name__ == "__main__":
 
     dataset = MyDataset(sentences, word2idx)
     loader = DataLoader(dataset, batch_size=4, shuffle=True)
+
+    # embedding the word
+    torch.manual_seed(42)
+    embedding_dim = 4
+    qkv_dim = 6
+    embed = nn.Embedding(len(vocab), embedding_dim)
+
+
+    sent = "I go to the park"
+    tokens = tokenizer(sent)
+    token_ids = [word2idx.get(tok, word2idx['<unk>']) for tok in tokens]
+    token_embeddings = embed(torch.tensor(token_ids).unsqueeze(0)) 
+
+    attention_model = MyAttentionModel(embedding_dim, represent_dim=6)
+    out, attn = attention_model(token_embeddings)
+
+    print(f"attention weights:\n {attn[0].detach().numpy()}") # [5,5]
+    print(f"weighted V:\n {out[0].detach().numpy()}") # [5,6]
+
+    # utils.plot_attention(attn, tokens)
 
     # for inputs, targets in loader:
     #     for inp, tgt in zip(inputs, targets):

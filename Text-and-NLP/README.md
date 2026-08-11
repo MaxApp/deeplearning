@@ -217,8 +217,18 @@ Transformer is one of the most morden architecture these days, it enables models
 
 Unlike traditional sequential models which process words one by one, self-attention computes relationships by all words simultaneously.
 
-In the section, we'll build a simple transformer from scratch with attentions.
+In the section, we'll build a simple transformer from scratch with attentions. The main process including:
 
+1. tokenizer
+2. embedding + positioning
+3. attention calculation with Q,K,V
+4. train with sentences
+5. show attention in heat map
+6. predict next words
+
+**about position embeddings**:
+
+There're different methods of position embeddings, here we use a simple learned embeddings like token embedding. For more advanced, we can use **sin/cos** encoding method.
 
 
 
