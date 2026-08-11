@@ -25,11 +25,11 @@ class SimpleTokenizer:
 
 
 class MyDataset(Dataset):
-
+    """
+    Build training data for predict next word.
+    generate with `SEQ_LEN` words(input) paired with next word(target)
+    """
     def __init__(self, sentences, word2idx):
-
-        SEQ_LEN = 3   # length of input sequence for each example
-
         # convert to token id
         encoded_sentences = []
         for s in sentences:
@@ -41,9 +41,9 @@ class MyDataset(Dataset):
         inputs = []
         targets = []
         for ids in encoded_sentences:
-            for i in range(len(ids) - SEQ_LEN):
-                window = ids[i:i+SEQ_LEN]    
-                target = ids[i+SEQ_LEN]
+            for i in range(len(ids) - seq_len):
+                window = ids[i:i+seq_len]    
+                target = ids[i+seq_len]
                 inputs.append(window)
                 targets.append(target)
 
@@ -59,45 +59,98 @@ class MyDataset(Dataset):
 
 class MyAttentionModel(nn.Module):
     
-    def __init__(self, token_dim, represent_dim):
+    def __init__(self, vocab_size, token_dim, max_seq_len, represent_dim):
         super().__init__()
+        # embedding layer
+        self.embedding = nn.Embedding(vocab_size, token_dim)
+        # position embedding layer
+        self.pos_embedding = nn.Embedding(max_seq_len, token_dim)
+
         # Q,K,V
         self.to_q = nn.Linear(token_dim, represent_dim, bias=False)
         self.to_k = nn.Linear(token_dim, represent_dim, bias=False)
         self.to_v = nn.Linear(token_dim, represent_dim, bias=False)
 
+        # FC layer
+        self.fc = nn.Linear(represent_dim, vocab_size)
+
     def forward(self, token_ids):
-        # position embedding
-        batch_size, token_ids.shape
-        Q = self.to_q(token_ids)
-        K = self.to_k(token_ids)
-        V = self.to_v(token_ids)
+        # because we have an uniform dimensions for inputs
+        batch_size, seq_len = token_ids.shape
+        # position indices for each input sequence by order in each batch
+        positions = torch.arange(seq_len, device=token_ids.device).unsqueeze(0).expand(batch_size, seq_len)
+        tk_emb = self.embedding(token_ids)
+        pos_emb = self.embedding(positions)
+        input_vecs = tk_emb + pos_emb   # sum word and position embeddings
+        
+        Q = self.to_q(input_vecs)
+        K = self.to_k(input_vecs)
+        V = self.to_v(input_vecs)
 
         # scaled dot-product: (Q @ K^T) / sqrt(dim)
         scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(Q.size(-1))
 
         # apply softmax for each row
-        attn = F.softmax(scores, dim=-1)
+        attn_weights = F.softmax(scores, dim=-1)
 
-        # combine with V
-        output = torch.matmul(attn, V)
-        return output, attn
+        # combined with V
+        attn_out = torch.matmul(attn_weights, V)
 
-def build_vocab(sentences, tokenizer, min_freq=1):
-    # calculate in global range
-    counter = Counter()
-    for s in sentences:
-        counter.update(tokenizer(s))
+        last_hidden = attn_out[:, -1, :] # get the last word weighted values for prediction
+        logits = self.fc(last_hidden)
 
-    # add <pad>,<unk>
-    vocab = ['<pad>', '<unk>'] + [w for w, c in counter.items() if c >= min_freq]
+        return logits, attn_weights
 
-    # create mappings
-    word2idx = {w: i for i, w in enumerate(vocab)}
-    idx2word = {i: w for i, w in enumerate(vocab)}
+class Vocabulary:
 
-    return vocab, word2idx, idx2word
+    def __init__(self, tokenizer, min_freq=1) -> None:
+        self.tokenizer = tokenizer
+        self.min_freq = min_freq
+        # init with <pad>,<unk>
+        self.vocab = ["<pad>","<unk>"]
+        self.word2idx = {}
+        self.idx2word = {}
 
+    def __len__(self):
+        return len(self.vocab)
+
+    def build_vocab(self, sentences):
+        # calculate in global range
+        counter = Counter()
+        for s in sentences:
+            counter.update(self.tokenizer(s))
+
+        self.vocab += [w for w, c in counter.items() if c >= self.min_freq]
+
+        # create mappings
+        self.word2idx = {w: i for i, w in enumerate(self.vocab)}
+        self.idx2word = {i: w for i, w in enumerate(self.vocab)}
+
+        return self.vocab, self.word2idx, self.idx2word
+
+    # def get_token_ids(self, sentences):
+    #     tk_sent = []
+    #     for s in sentences:
+    #         tk = [word2idx.get(tk, word2idx.get('<unk>')) for tk in self.tokenizer(s)]
+    #         tk_sent.append(tk)
+    #     return tk_sent
+            
+
+def train_model(model, loader, loss_fn, optimizer, epochs=20, device='cpu'):
+    model.to(device)
+    model.train()
+    for epoch in range(epochs):
+        total_loss = 0.0
+        for inputs, targets in loader:
+            inputs, targets = inputs.to(device), targets.to(device)
+            optimizer.zero_grad()
+            logits, _ = model(inputs)
+            loss = loss_fn(logits, targets)
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item() * inputs.size(0) # accumulate total loss
+        avg_loss = total_loss / len(loader.dataset)    # average loss
+        print(f"Epoch {epoch+1}: avg loss = {avg_loss:.4f}")
 
 
 if __name__ == "__main__":
@@ -116,9 +169,14 @@ if __name__ == "__main__":
         "my brother drove hosre with me",
         "my mother bought a horse for me"
     ]
+    seq_len = 3   # length of input sequence for training example
 
     tokenizer = SimpleTokenizer()
-    vocab, word2idx, idx2word = build_vocab(sentences, tokenizer)
+    vocabulary = Vocabulary(tokenizer)
+    vocab, word2idx, idx2word = vocabulary.build_vocab(sentences)
+
+    # token_ids = vocabulary.get_token_ids(sentences)
+    # print(f"{token_ids}")
 
     dataset = MyDataset(sentences, word2idx)
     loader = DataLoader(dataset, batch_size=4, shuffle=True)
@@ -127,19 +185,43 @@ if __name__ == "__main__":
     torch.manual_seed(42)
     embedding_dim = 4
     qkv_dim = 6
-    embed = nn.Embedding(len(vocab), embedding_dim)
+    max_length = max(len(s) for s in sentences)
 
+    attention_model = MyAttentionModel(vocab_size=len(vocabulary), 
+                                       token_dim=embedding_dim, 
+                                       max_seq_len=max_length, 
+                                       represent_dim=qkv_dim)
 
-    sent = "I go to the park"
-    tokens = tokenizer(sent)
-    token_ids = [word2idx.get(tok, word2idx['<unk>']) for tok in tokens]
-    token_embeddings = embed(torch.tensor(token_ids).unsqueeze(0)) 
+    optimizer = optim.AdamW(attention_model.parameters(), lr=0.01)
+    loss_fn = nn.CrossEntropyLoss()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # train model
+    train_model(attention_model, loader, loss_fn, optimizer, epochs=100, device=device)
 
-    attention_model = MyAttentionModel(embedding_dim, represent_dim=6)
-    out, attn = attention_model(token_embeddings)
+    print(f"== Training Finished ==")
+    # plot the heat map to show attentions between words after training
+    test_sentence = "I and mother"
+    sample_tokens = tokenizer(test_sentence)
+    max_tokens = 5 # how many new words to generate
+    attention_model.eval()
+    for _ in range(max_tokens):
+        window = sample_tokens[-seq_len:] if len(sample_tokens) >= seq_len \
+                     else ['<pad>'] * (seq_len - len(sample_tokens)) + sample_tokens
+        # print(f"generate with window: '{window}'")
+        input_ids = torch.tensor([[word2idx.get(w, word2idx['<unk>']) for w in window]], dtype=torch.long).to(device)
 
-    print(f"attention weights:\n {attn[0].detach().numpy()}") # [5,5]
-    print(f"weighted V:\n {out[0].detach().numpy()}") # [5,6]
+        with torch.no_grad():
+            logits, attn = attention_model(input_ids)
+            # print(f"out: {logits}")
+            # print(f"weights: {attn}")
+            next_id = logits.argmax(dim=-1).item()
+
+        next_word = idx2word[next_id]
+        sample_tokens.append(next_word) 
+        print(f"{sample_tokens}")
+
+    # print(f"attention weights:\n {attn[0].detach().numpy()}") # [5,5]
+    # print(f"weighted V:\n {out[0].detach().numpy()}") # [5,6]
 
     # utils.plot_attention(attn, tokens)
 
