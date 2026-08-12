@@ -230,6 +230,14 @@ In the section, we'll build a simple transformer from scratch with attentions. T
 
 There're different methods of position embeddings, here we use a simple learned embeddings like token embedding. For more advanced, we can use **sin/cos** encoding method.
 
+After training with a small corpus, we provide a simple sentence "I and tom go to" and let the model to predict next two words. Also we display the heat map of original sentence to get an intuition.
+
+![attention_map](imgs/attn_heat_map.png)
+
+> ['i', 'and', 'tom', 'go', 'to', 'the'] <br/>
+> ['i', 'and', 'tom', 'go', 'to', 'the', 'park']
+
+
 
 
 
