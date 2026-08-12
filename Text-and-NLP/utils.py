@@ -224,7 +224,7 @@ def plot_attention(attn_weights, tokens, title="Self-Attention Map"):
     Plots a self-attention map for a single input sequence
     """
     aw = attn_weights[0].detach().numpy()
-    plt.figure(figsize=(1.2 * len(tokens), 5))
+    plt.figure(figsize=(3, 3))
     plt.imshow(aw, cmap='gray')
     plt.xticks(range(len(tokens)), tokens, rotation=45)
     plt.yticks(range(len(tokens)), tokens)
