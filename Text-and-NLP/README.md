@@ -217,7 +217,11 @@ Transformer is one of the most morden architecture these days, it enables models
 
 Unlike traditional sequential models which process words one by one, self-attention computes relationships by all words simultaneously.
 
-In the section, we'll build a simple transformer from scratch with attentions. The main process including:
+In the section, we'll start from building a simple attention model, use it to predict next word. Next we'll build `Encoder`,`Decoder`,`Encoder-Decoder` model individually.
+
+* **self_attn_predict.py**
+
+A prediction model using self-attention. Trained by sliding window to predict next word. The main process including:
 
 1. tokenizer
 2. embedding + positioning
