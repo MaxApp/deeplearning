@@ -91,7 +91,7 @@ class MyAttentionModel(nn.Module):
         # create embeddings
         tk_emb = self.embedding(token_ids)
         pos_emb = self.pos_embedding(positions)
-        padding_mask = (token_ids == 0).unsqueeze(1)
+        padding_mask = (token_ids == 0).unsqueeze(1)  # <pad> mask
         input_vecs = tk_emb + pos_emb   # sum word and position embeddings
         
         Q = self.to_q(input_vecs)
@@ -101,6 +101,7 @@ class MyAttentionModel(nn.Module):
         # scaled dot-product: (Q @ K^T) / sqrt(dim)
         scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(Q.size(-1))
 
+        # set masked positions to -inf before softmax
         scores = scores.masked_fill(padding_mask, float('-inf'))
         # apply softmax for each row
         attn_weights = F.softmax(scores, dim=-1)
