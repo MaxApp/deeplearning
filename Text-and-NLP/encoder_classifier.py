@@ -39,60 +39,40 @@ class EncoderBlock(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
+    """
+    This module could be saved with transformer model,
+    it use pre-created sin/cos encodings instead of creating them on-the-fly
+    """
     
     def __init__(self, max_len, d_model):
-        """
-        Initialize positional encoding matrix.
-        
-        Args:
-            max_len (int): Maximum sequence length the model will handle
-                          (e.g., 100 for sentences up to 100 tokens)
-            d_model (int): Dimension of the model's embeddings 
-                          (e.g., 256 or 512 - must match embedding size)
-        
-        Creates a fixed sinusoidal pattern matrix of shape [max_len, d_model]
-        where each row represents the positional encoding for that position.
-        """
         super().__init__()
         self.max_len = max_len
         self.d_model = d_model
         
-        # Create positional encoding matrix
-        pe = torch.zeros(max_len, d_model)
+        # pre-create maximum positional encoding matrix
+        pos_enc = torch.zeros(max_len, d_model)
         position = torch.arange(0, max_len).unsqueeze(1).float()
         
-        # Create div_term for the sinusoidal pattern
+        # sinusoidal pattern, div_term is 1/2 dimension of d_model
         div_term = torch.exp(torch.arange(0, d_model, 2).float() *
-                           -(torch.log(torch.tensor(10000.0)) / d_model))
+                            -(torch.log(torch.tensor(10000.0)) / d_model))
         
-        # Apply sin to even indices
-        pe[:, 0::2] = torch.sin(position * div_term)
-        # Apply cos to odd indices  
-        pe[:, 1::2] = torch.cos(position * div_term)
+        # apply sin to even indices, 1/2 dimensions
+        pos_enc[:, 0::2] = torch.sin(position * div_term)
+        # apply cos to odd indices, 1/2 dimensions
+        pos_enc[:, 1::2] = torch.cos(position * div_term)
         
-        # Register as buffer (not trained, but saved with model)
-        self.register_buffer('pe', pe.unsqueeze(0))
+        # register as buffer (not trained, but saved with model)
+        self.register_buffer('pos_enc', pos_enc.unsqueeze(0))
         
     def forward(self, x):
         """
-        Return positional encodings for the input sequence length.
-        
-        Args:
-            x (Tensor): Token embeddings of shape [batch_size, seq_len, d_model]
-                       where seq_len <= max_len from initialization
-        
-        Returns:
-            Tensor: Positional encodings of shape [batch_size, seq_len, d_model]
-                   (same shape as input, ready to be added to embeddings)
-        
-        Example:
-            If x represents embeddings for "I love cats" (3 tokens):
-            - Input x shape: [batch_size, 3, 256]
-            - Output shape: [batch_size, 3, 256]
-            - Returns positions 0, 1, 2 encoded as 256-dim vectors
+        truncate pre-created positional encodings for input tensor.
+        input seq_len should <= max_len
+        returns same shape as input
         """
-        seq_len = x.size(1)
-        return self.pe[:, :seq_len, :]
+        seq_len = x.size(1) # actual input length
+        return self.pos_enc[:, :seq_len, :]
     
 
 if __name__ == "__main__":
@@ -102,19 +82,6 @@ if __name__ == "__main__":
     random.seed(42)
 
     # Create a simple encoder block with small dimensions for demonstration
-    encoder_demo = EncoderBlock(embedding_dim=4, nhead=1, ffn_mult=4)
+    # encoder_demo = EncoderBlock(embedding_dim=4, nhead=1, ffn_mult=4)
 
-    # Create a sample input: (batch_size=2, sequence_length=3, d_model=4)
-    sample_input = torch.randn(2, 3, 4)
 
-    print("Input shape:", sample_input.shape)
-    print("Input tensor:\n", sample_input)
-
-    # Pass through encoder block
-    output = encoder_demo(sample_input)
-
-    print("\nOutput shape:", output.shape)
-    print("Output tensor:\n", output)
-
-    # Notice that the shape remains the same
-    print("\nShape preserved: Input shape == Output shape:", sample_input.shape == output.shape)
