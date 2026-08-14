@@ -215,9 +215,9 @@ class EmbeddingBagClassifier(nn.Module):
 
 Transformer is one of the most morden architecture these days, it enables models like BERT, GPT and other models to understand languages. Self-attention is the core conception that powers the model.
 
-Unlike traditional sequential models which process words one by one, self-attention computes relationships by all words simultaneously.
+Unlike traditional sequential models which process words one by one, self-attention module computes relationships by all words simultaneously.
 
-In the section, we'll start from building a simple attention model, use it to predict next word. Next we'll build `Encoder`,`Decoder`,`Encoder-Decoder` model individually.
+In the section, we'll start from building a simple attention model with `Q,K,V` and use it to predict next word. Next we'll build the core `Encoder`,`Decoder`,`Encoder-Decoder` model individually in a more formal way.
 
 * **self_attn_predict.py**
 
@@ -241,6 +241,15 @@ After training with a small corpus, we provide a simple sentence "I and tom go t
 > ['i', 'and', 'tom', 'go', 'to', 'the'] <br/>
 > ['i', 'and', 'tom', 'go', 'to', 'the', 'park']
 
+* **encoder_classifier.py**
+
+A sentiment analyser with `Encoder` architecture. Includes the main components of transformer:
+
+1. Layer Normalization
+2. Sinusoidal Positional Encoding
+3. Multi-head Attention
+4. Residual Connection
+5. FeedForward Network
 
 
 
