@@ -73,6 +73,70 @@ class PositionalEncoding(nn.Module):
         """
         seq_len = x.size(1) # actual input length
         return self.pos_enc[:, :seq_len, :]
+
+
+class IMDBVocabManager:
+
+    def __init__(self, vocab_size=10000):
+        # the target vocabulary size, not exceed
+        self.vocab_size = vocab_size
+        # special tokens
+        self.word_to_idx = {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3}
+        self.idx_to_word = {0: '<pad>', 1: '<unk>', 2: '<sos>', 3: '<eos>'}
+        self.word_freq = Counter()
+    
+    def build_vocab(self, texts, min_freq=2):
+        """build vocabulary"""
+        # count word frequencies
+        for text in texts:
+            words = self.tokenize(text)
+            self.word_freq.update(words)
+        
+        # most common words within (vocab_size - 4),
+        # reserve 4 spots for special tokens
+        most_common = self.word_freq.most_common(self.vocab_size - 4)
+        
+        idx = 4  # after special tokens
+        for word, freq in most_common:
+            if freq >= min_freq:
+                self.word_to_idx[word] = idx
+                self.idx_to_word[idx] = word
+                idx += 1
+        
+        # print(f"Vocabulary size: {len(self.word_to_idx)}")
+    
+    def tokenize(self, text):
+        text = text.lower()
+        # remove HTML tags
+        text = re.sub(r'<.*?>', '', text)
+        # remove all punctuations, digits, keep only letters and spaces
+        text = re.sub(r'[^a-z\s]', '', text)
+        words = text.split()
+        return words
+        
+    def encode(self, text, max_len=256):
+
+        words = self.tokenize(text)[:max_len-2]  # Leave space for SOS/EOS tokens
+        
+        # start with '<sos>': 2
+        indices = [2]
+        
+        for word in words:
+            if word in self.word_to_idx:
+                indices.append(self.word_to_idx[word])
+            else:
+                # '<unk>': 1
+                indices.append(1)
+        
+        # '<eos>': 3
+        indices.append(3)
+        
+        # '<pad>': 0
+        while len(indices) < max_len:
+            indices.append(0)
+        
+        return indices[:max_len]
+
     
 
 if __name__ == "__main__":
