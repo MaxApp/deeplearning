@@ -7,6 +7,7 @@ from collections import Counter
 import re
 import os
 import random
+from pathlib import Path
 
 
 class EncoderBlock(nn.Module):
@@ -78,44 +79,41 @@ class PositionalEncoding(nn.Module):
 
 class IMDBTokenizer:
 
-    def __call__(self, text):
-        text = text.lower()
-        # remove HTML tags
-        text = re.sub(r'<.*?>', '', text)
-        # remove all punctuations, digits, keep only letters and spaces
-        text = re.sub(r'[^a-z\s]', '', text)
-        words = text.split()
-        return words
-
-
-class IMDBVocabVocabulary:
-
-    def __init__(self, tokenizer, vocab_size=10000):
-        self.tokenizer = tokenizer
+    def __init__(self, max_len, max_vocab_size=10000):
+        self.max_len = max_len
         # the target vocabulary size, not exceed
-        self.vocab_size = vocab_size
+        self.max_vocab_size = max_vocab_size
         # special tokens
         self.word_to_idx = {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3}
         self.idx_to_word = {0: '<pad>', 1: '<unk>', 2: '<sos>', 3: '<eos>'}
         self.word_freq = Counter()
 
+    def __call__(self, text):
+        return torch.tensor(self.encode(text), dtype=torch.long)
+
     def size(self) -> int:
         return len(self.word_to_idx)
     
-    def build_vocab(self, train_dataloader, test_dataloader, min_freq=2):
+    def build_vocab(self, directory:str, min_freq=2):
         """build vocabulary"""
-        # count word frequencies
-        for _, _, reviews in train_dataloader:
-            words = self.tokenizer(reviews)
-            self.word_freq.update(words)
-        for _, _, reviews in test_dataloader:
-            words = self.tokenizer(reviews)
-            self.word_freq.update(words)
+        # read all the .txt files in the path
+        dir_path = Path(directory)
+        if not dir_path.exists():
+            raise FileNotFoundError(f"Path Not Exist: {directory}")
+
+        txt_files = list(dir_path.rglob('*.txt'))
+        for f in txt_files:
+            with f.open('r', encoding='utf-8') as f:
+                review = f.read()
+                words = self.tokenize(review)
+                # count word frequencies
+                self.word_freq.update(words)
         
         # most common words within (vocab_size - 4),
         # reserve 4 spots for special tokens
-        most_common = self.word_freq.most_common(self.vocab_size - 4)
-        
+        most_common = self.word_freq.most_common(self.max_vocab_size - 4)
+
+        # build w2i, i2w
         idx = 4  # after special tokens
         for word, freq in most_common:
             if freq >= min_freq:
@@ -124,10 +122,19 @@ class IMDBVocabVocabulary:
                 idx += 1
         
         print(f"Vocabulary size: {len(self.word_to_idx)}")
-        
-    def encode(self, text, max_len=256):
 
-        words = self.tokenizer(text)[:max_len-2]  # Leave space for SOS/EOS tokens
+
+    def tokenize(self, text):
+        text = text.lower()
+        # remove HTML tags
+        text = re.sub(r'<.*?>', '', text)
+        # remove all punctuations, digits, keep only letters and spaces
+        text = re.sub(r'[^a-z\s]', '', text)
+        words = text.split()
+        return words
+    
+    def encode(self, text):
+        words = self.tokenize(text)[:self.max_len-2]  # reserve space for SOS/EOS tokens
         
         # start with '<sos>': 2
         indices = [2]
@@ -143,10 +150,10 @@ class IMDBVocabVocabulary:
         indices.append(3)
         
         # '<pad>': 0
-        while len(indices) < max_len:
+        while len(indices) < self.max_len:
             indices.append(0)
         
-        return indices[:max_len]
+        return indices[:self.max_len]
 
     def decode(self, indicies):
         return [self.idx_to_word[i] for i in indicies]
@@ -290,11 +297,19 @@ if __name__ == "__main__":
     np.random.seed(42)
     random.seed(42)
 
-    tokenizer = IMDBTokenizer()
-    vocab = IMDBVocabVocabulary(tokenizer)
+    tokenizer = IMDBTokenizer(max_len=15)
+    tokenizer.build_vocab(directory="E:/PDF/pytorch/C3M3/imdb")
+    print(f"total: {tokenizer.size()}")
+    test = "I am agree with that, i like this movie a lot."
+    print(f"tokens:    {tokenizer.tokenize(test)}")
+    encoded_txt = tokenizer.encode(test)
+    print(f"encoded:   {encoded_txt}")
+    print(f"decoded:   {tokenizer.decode(encoded_txt)}")
+    print(f"tensors: {tokenizer(test)}")
+    # vocab = IMDBVocabVocabulary(tokenizer)
     
-    train_dataset = IMDBDataset(tokenizer=tokenizer, vocab=vocab, train=True)
-    test_dataset = IMDBDataset(tokenizer=tokenizer, vocab=vocab, train=False)
+    # train_dataset = IMDBDataset(tokenizer=tokenizer, vocab=vocab, train=True)
+    # test_dataset = IMDBDataset(tokenizer=tokenizer, vocab=vocab, train=False)
 
     """
     train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
@@ -302,9 +317,9 @@ if __name__ == "__main__":
     vocab.build_vocab(train_dataloader, test_dataloader)
     """
 
-    for i in range(10):
-        _, label, review = test_dataset[i]
-        print(f"REVIEW: {review}")
+    # for i in range(10):
+    #     _, label, review = test_dataset[i]
+    #     print(f"REVIEW: {review}")
         # token_text = vocab.encode(review)
         # print(f"TOKEN: {token_text}")
         # review_text = vocab.decode(token_text)
