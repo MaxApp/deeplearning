@@ -79,16 +79,23 @@ class PositionalEncoding(nn.Module):
 
 class IMDBTokenizer:
 
-    def __init__(self, max_len, max_vocab_size=10000):
-        self.max_len = max_len
-        # the target vocabulary size, not exceed
+    """
+    Tokenize the inputs to ids or tensors.
+    Also manage the vocabulary and padding,truncating.
+    """
+
+    def __init__(self, token_len, max_vocab_size=10000):
+        # the max length of tokenized inputs
+        self.token_len = token_len
+        # the max vocabulary size, not exceed
         self.max_vocab_size = max_vocab_size
-        # special tokens
+        # special tokens were reserved
         self.word_to_idx = {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3}
         self.idx_to_word = {0: '<pad>', 1: '<unk>', 2: '<sos>', 3: '<eos>'}
         self.word_freq = Counter()
 
     def __call__(self, text):
+        """encode to tensors for model"""
         return torch.tensor(self.encode(text), dtype=torch.long)
 
     def size(self) -> int:
@@ -115,16 +122,22 @@ class IMDBTokenizer:
 
         # build w2i, i2w
         idx = 4  # after special tokens
+        # uncollected_words = []
         for word, freq in most_common:
             if freq >= min_freq:
                 self.word_to_idx[word] = idx
                 self.idx_to_word[idx] = word
                 idx += 1
+            # else:
+            #     uncollected_words.append(word)
+
         
         print(f"Vocabulary size: {len(self.word_to_idx)}")
+        # print(f"Uncollected: {uncollected_words}")
 
 
     def tokenize(self, text):
+        """splits inputs for human readable"""
         text = text.lower()
         # remove HTML tags
         text = re.sub(r'<.*?>', '', text)
@@ -134,7 +147,8 @@ class IMDBTokenizer:
         return words
     
     def encode(self, text):
-        words = self.tokenize(text)[:self.max_len-2]  # reserve space for SOS/EOS tokens
+        """encode tokenized words to indicies, including <pad>,<unk>,<sos>,<eos>"""
+        words = self.tokenize(text)[:self.token_len-2]  # reserve space for SOS/EOS tokens
         
         # start with '<sos>': 2
         indices = [2]
@@ -150,67 +164,62 @@ class IMDBTokenizer:
         indices.append(3)
         
         # '<pad>': 0
-        while len(indices) < self.max_len:
+        while len(indices) < self.token_len:
             indices.append(0)
         
-        return indices[:self.max_len]
+        return indices[:self.token_len]
 
-    def decode(self, indicies):
-        return [self.idx_to_word[i] for i in indicies]
+    def decode(self, sequence, is_tensor=False):
+        """convert inidicies back to tokens for readable"""
+        if is_tensor:
+            return [self.idx_to_word[i.item()] for i in sequence]
+        else:
+            return [self.idx_to_word[i] for i in sequence]
 
 
 class IMDBDataset(Dataset):
-    def __init__(self, tokenizer, vocab, train=True):
-        data_path = os.path.join("E:/PDF/pytorch/C3M3/imdb", "train" if train else "test")
+    def __init__(self, data_dir, tokenizer, train=True):
+        data_path = os.path.join(data_dir, "train" if train else "test")
         self.tokenizer = tokenizer
-        self.data = []
-        self.labels = []
         self.reviews = []
+        self.labels = []
 
         # load positive
         data_dir = os.path.join(data_path, "pos")
         data_files = os.listdir(data_dir)
         for filename in data_files:
             with open(os.path.join(data_dir, filename), 'r', encoding='utf-8') as f:
-                self.reviews.append(f.read())
-                self.labels.append(1) # pos
+                content = f.read()
+                self.reviews.append(tokenizer(content))
+                self.labels.append(torch.tensor(1)) # pos
 
         # load negative
         data_dir = os.path.join(data_path, "neg")
         data_files = os.listdir(data_dir)
         for filename in data_files:
             with open(os.path.join(data_dir, filename), 'r', encoding='utf-8') as f:
-                self.reviews.append(f.read())
-                self.labels.append(0) # neg
+                content = f.read()
+                self.reviews.append(tokenizer(content))
+                self.labels.append(torch.tensor(0)) # neg
 
         # shuffle
-        indicies = list(range(len(self.reviews)))
+        indicies = list(range(len(self.labels)))
         random.shuffle(indicies)
         self.reviews = [self.reviews[i] for i in indicies]
         self.labels = [self.labels[i] for i in indicies]
 
-        for review, label in zip(self.reviews, self.labels):
-            # encode with pad and truncate
-            tokens = tokenizer(review)
-            indicies = vocab.encode(tokens)
-            self.data.append(indicies)
-            self.labels.append(label)
-        
-        # convert to tensors
-        self.data = torch.LongTensor(self.data)
-        self.labels = torch.LongTensor(self.labels)
     
     def __len__(self):
-        return len(self.data)
+        return len(self.labels)
     
     def __getitem__(self, idx):
-        return self.data[idx], self.labels[idx], self.reviews[idx]
+        return self.reviews[idx], self.labels[idx]
 
 
 
 class IMDBSentimentAnalyser(nn.Module):
 
-    def __init__(self, vocab_size, embedding_dim=128, num_layers=2, max_len=512, dropout=0.1):
+    def __init__(self, vocab_size, max_position_len, embedding_dim=128, num_layers=2, dropout=0.1):
 
         super().__init__()
         self.emb_dim = embedding_dim
@@ -218,7 +227,7 @@ class IMDBSentimentAnalyser(nn.Module):
         # word embedding
         self.embedding = nn.Embedding(vocab_size, embedding_dim, padding_idx=0)
         # positional embedding
-        self.positional_encoding = PositionalEncoding(max_len, embedding_dim)
+        self.positional_encoding = PositionalEncoding(max_position_len, embedding_dim)
         # dropout
         self.dropout = nn.Dropout(dropout)
         
@@ -250,7 +259,7 @@ class IMDBSentimentAnalyser(nn.Module):
         output = self.classifier(x)
         return output
 
-def train_encoder(model, dataloader, optimizer, loss_func, lr=0.001, num_epoch=100):
+def train_encoder(model, dataloader, optimizer, loss_func, num_epoch=100):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
     model.train()
@@ -258,8 +267,8 @@ def train_encoder(model, dataloader, optimizer, loss_func, lr=0.001, num_epoch=1
         train_total = 0
         train_correct = 0
         train_loss = 0.0
-        for reviews, labels, _ in dataloader:
-            optimizer.zero_grads()
+        for reviews, labels in dataloader:
+            optimizer.zero_grad()
             reviews = reviews.to(device)
             labels = labels.to(device)
             outputs = model(reviews)
@@ -283,7 +292,7 @@ def eval_model(model, dataloader):
     with torch.no_grad():
         correct = 0
         total = 0
-        for reviews, labels, _ in dataloader:
+        for reviews, labels in dataloader:
             outputs = model(reviews)
             predicted = torch.argmax(outputs, dim=1)
             correct += (predicted == labels).sum().item()
@@ -297,40 +306,28 @@ if __name__ == "__main__":
     np.random.seed(42)
     random.seed(42)
 
-    tokenizer = IMDBTokenizer(max_len=15)
-    tokenizer.build_vocab(directory="E:/PDF/pytorch/C3M3/imdb")
-    print(f"total: {tokenizer.size()}")
-    test = "I am agree with that, i like this movie a lot."
-    print(f"tokens:    {tokenizer.tokenize(test)}")
-    encoded_txt = tokenizer.encode(test)
-    print(f"encoded:   {encoded_txt}")
-    print(f"decoded:   {tokenizer.decode(encoded_txt)}")
-    print(f"tensors: {tokenizer(test)}")
-    # vocab = IMDBVocabVocabulary(tokenizer)
-    
-    # train_dataset = IMDBDataset(tokenizer=tokenizer, vocab=vocab, train=True)
-    # test_dataset = IMDBDataset(tokenizer=tokenizer, vocab=vocab, train=False)
+    token_len = 512 # hyper parameters need to changed
+    corpus_dir = "./imdb" # change to your own
 
-    """
+    tokenizer = IMDBTokenizer(token_len=token_len)
+    tokenizer.build_vocab(directory=corpus_dir, min_freq=2)
+    
+    train_dataset = IMDBDataset(data_dir=corpus_dir, tokenizer=tokenizer, train=True)
+    test_dataset = IMDBDataset(data_dir=corpus_dir, tokenizer=tokenizer, train=False)
+
     train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
-    vocab.build_vocab(train_dataloader, test_dataloader)
-    """
 
-    # for i in range(10):
-    #     _, label, review = test_dataset[i]
-    #     print(f"REVIEW: {review}")
-        # token_text = vocab.encode(review)
-        # print(f"TOKEN: {token_text}")
-        # review_text = vocab.decode(token_text)
-        # print(f"TURN BACK: {review_text}")
-    
+    model = IMDBSentimentAnalyser(tokenizer.size(), max_position_len=token_len)
+    loss_function = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # model = IMDBSentimentAnalyser(vocab.size())
-    # loss_function = nn.CrossEntropyLoss()
-    # optimizer = optim.Adam(model.parameters(), lr=0.001)
+    train_encoder(model=model, 
+                  dataloader=train_dataloader, 
+                  optimizer=optimizer, 
+                  loss_func=loss_function, 
+                  num_epoch=70)
 
-    # Create a simple encoder block with small dimensions for demonstration
-    # encoder_demo = EncoderBlock(embedding_dim=4, nhead=1, ffn_mult=4)
+    eval_model(model=model, dataloader=test_dataloader)
 
 
