@@ -251,7 +251,11 @@ A sentiment analyser with `Encoder` architecture. Includes the main components o
 4. Residual Connection
 5. FeedForward Network
 
+The training data is from [IMDB](https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz) dataset, for this practice just using a subsets of it.
 
+![train_loss](imgs/encoder_loss.png)
+
+![accuracy](imgs/encoder_accuracy.png)
 
 
 

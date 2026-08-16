@@ -232,3 +232,27 @@ def plot_attention(attn_weights, tokens, title="Self-Attention Map"):
     plt.title(title)
     plt.tight_layout()
     plt.show()
+
+# ======= for transformer encoder ======
+def plot_training_losses(losses):
+    x_values = range(len(losses))
+    plt.figure(figsize=(5,3))
+    plt.plot(losses)
+    plt.title("Training Losses")
+    plt.xticks(x_values, labels=[str(x+1) for x in x_values])
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
+def plot_accuracy(train_accuracy, test_accuracy):
+    x = range(1, len(train_accuracy)+1)
+    plt.figure(figsize=(5,3))
+    plt.plot(x, train_accuracy, label="train")
+    plt.plot(x, test_accuracy, color="purple", label="test")
+    plt.xticks(x)
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuarcy (%)")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()

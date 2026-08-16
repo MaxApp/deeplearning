@@ -8,6 +8,7 @@ import re
 import os
 import random
 from pathlib import Path
+import utils
 
 
 class EncoderBlock(nn.Module):
@@ -259,15 +260,19 @@ class IMDBSentimentAnalyser(nn.Module):
         output = self.classifier(x)
         return output
 
-def train_encoder(model, dataloader, optimizer, loss_func, num_epoch=100):
+def train_encoder(model, train_dataloader, test_dataloader, optimizer, loss_func, num_epoch=100) -> tuple[list, list, list]:
+    epoch_losses = []
+    epoch_accuracy = []
+    val_accuracy = []
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = model.to(device)
-    model.train()
     for i in range(num_epoch):
+        print(f"Start training...")
+        model.train()
         train_total = 0
         train_correct = 0
         train_loss = 0.0
-        for reviews, labels in dataloader:
+        for reviews, labels in train_dataloader:
             optimizer.zero_grad()
             reviews = reviews.to(device)
             labels = labels.to(device)
@@ -281,9 +286,17 @@ def train_encoder(model, dataloader, optimizer, loss_func, num_epoch=100):
             train_correct += (predicted == labels).sum().item()
             train_loss += loss.item() * labels.size(0)
 
-        epoch_avg_loss = train_loss / len(dataloader)
-        if (i+1) % 10 == 0:
-            print(f"Epoch: {i+1}/{num_epoch}   Loss: {epoch_avg_loss}")
+        epoch_avg_loss = train_loss / len(train_dataloader)
+        epoch_losses.append(epoch_avg_loss)
+        accuracy = (train_correct / train_total) * 100
+        epoch_accuracy.append(accuracy)
+        # if (i+1) % 10 == 0:
+        print(f"Epoch: {i+1}/{num_epoch}   Loss: {epoch_avg_loss:.2f}  Accuracy: {accuracy:.2f}%")
+
+        test_accuracy = eval_model(model, test_dataloader)
+        val_accuracy.append(test_accuracy)
+
+    return epoch_losses, epoch_accuracy, val_accuracy
 
 def eval_model(model, dataloader):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -297,7 +310,9 @@ def eval_model(model, dataloader):
             predicted = torch.argmax(outputs, dim=1)
             correct += (predicted == labels).sum().item()
             total += labels.size(0)
-    print(f"Accuracy: {(correct / total) * 100:.2f}%")
+    accuracy = (correct / total) * 100
+    print(f"Test Accuracy: {accuracy:.2f}%")
+    return accuracy
     
 
 if __name__ == "__main__":
@@ -322,12 +337,14 @@ if __name__ == "__main__":
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    train_encoder(model=model, 
-                  dataloader=train_dataloader, 
-                  optimizer=optimizer, 
-                  loss_func=loss_function, 
-                  num_epoch=70)
+    train_losses, train_accuracy, val_accuracy = train_encoder(model=model, 
+                                                               train_dataloader=train_dataloader,
+                                                               test_dataloader=test_dataloader, 
+                                                               optimizer=optimizer, 
+                                                               loss_func=loss_function, 
+                                                               num_epoch=10)
 
-    eval_model(model=model, dataloader=test_dataloader)
+    utils.plot_training_losses(train_losses)
+    utils.plot_accuracy(train_accuracy=train_accuracy, test_accuracy=val_accuracy)
 
 
