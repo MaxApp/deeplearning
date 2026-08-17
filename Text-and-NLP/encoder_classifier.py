@@ -27,9 +27,9 @@ class EncoderBlock(nn.Module):
             nn.Linear(hidden, embedding_dim)
         )
     
-    def forward(self, x):        
+    def forward(self, x, key_padding_mask=None):        
         x_norm = self.layer_norm1(x)
-        attn_out, _ = self.mha(x_norm, x_norm, x_norm)
+        attn_out, _ = self.mha(x_norm, x_norm, x_norm, key_padding_mask=key_padding_mask)
         # residual
         x = x + attn_out
         
@@ -245,6 +245,7 @@ class IMDBSentimentAnalyser(nn.Module):
         )
     
     def forward(self, x):
+        key_padding_mask = (x == 0)
         x = self.embedding(x)
         pos_encoding = self.positional_encoding(x)
         x = x + pos_encoding
@@ -252,7 +253,7 @@ class IMDBSentimentAnalyser(nn.Module):
         x = self.dropout(x)
         
         for encoder_layer in self.encoder_layers:
-            x = encoder_layer(x)
+            x = encoder_layer(x, key_padding_mask=key_padding_mask)
         
         # pooling, average all tokens per sentence
         x = x.mean(dim=1)  # (batch_size, emb_dim)
@@ -334,7 +335,7 @@ if __name__ == "__main__":
     test_dataloader = DataLoader(test_dataset, batch_size=32, shuffle=False)
 
     model = IMDBSentimentAnalyser(tokenizer.size(), max_position_len=token_len)
-    loss_function = nn.CrossEntropyLoss()
+    loss_function = nn.CrossEntropyLoss(ignore_index=tokenizer.word_to_idx['<pad>']) # ignore padding
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     train_losses, train_accuracy, val_accuracy = train_encoder(model=model, 

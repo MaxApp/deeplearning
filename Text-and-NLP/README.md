@@ -269,9 +269,13 @@ In this part we'll include:
 * decode block
 
 ```python
-def create_causal_mask(size: int):
-    mask = torch.full((size, size), float('-inf'))
-    mask = torch.triu(mask, diagonal=1)
+def create_causal_mask(size: int, is_bool=True):
+    if is_bool:
+        mask = torch.ones(size, size)
+        mask = torch.triu(mask, diagonal=1).bool()
+    else:
+        mask = torch.full((size, size), float('-inf'))
+        mask = torch.triu(mask, diagonal=1)
     return mask
 ```
 
