@@ -219,7 +219,7 @@ Unlike traditional sequential models which process words one by one, self-attent
 
 In the section, we'll start from building a simple attention model with `Q,K,V` and use it to predict next word. Next we'll build the core `Encoder`,`Decoder`,`Encoder-Decoder` model individually in a more formal way.
 
-* **self_attn_predict.py**
+### **1. self_attn_predict.py**
 
 A prediction model using self-attention. Trained by sliding window to predict next word. The main process including:
 
@@ -241,7 +241,7 @@ After training with a small corpus, we provide a simple sentence "I and tom go t
 > ['i', 'and', 'tom', 'go', 'to', 'the'] <br/>
 > ['i', 'and', 'tom', 'go', 'to', 'the', 'park']
 
-* **encoder_classifier.py**
+### **2. encoder_classifier.py**
 
 A sentiment analyser with `Encoder` architecture. Includes the main components of transformer:
 
@@ -257,5 +257,22 @@ The training data is from [IMDB](https://ai.stanford.edu/~amaas/data/sentiment/a
 
 ![accuracy](imgs/encoder_accuracy.png)
 
+### **3. decoder_generator.py**
+
+The other half part of the transformer architecture that can generate sequences autogressively with coherence. The key insight is self-attention with `causal masking`.
+
+In this part we'll include:
+
+* causal masking
+* positional encoding
+* padding mask
+* decode block
+
+```python
+def create_causal_mask(size: int):
+    mask = torch.full((size, size), float('-inf'))
+    mask = torch.triu(mask, diagonal=1)
+    return mask
+```
 
 
