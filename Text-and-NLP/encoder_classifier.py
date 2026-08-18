@@ -29,7 +29,7 @@ class EncoderBlock(nn.Module):
     
     def forward(self, x, key_padding_mask=None):        
         x_norm = self.layer_norm1(x)
-        attn_out, _ = self.mha(x_norm, x_norm, x_norm, key_padding_mask=key_padding_mask)
+        attn_out, attn_output_weights = self.mha(x_norm, x_norm, x_norm, key_padding_mask=key_padding_mask)
         # residual
         x = x + attn_out
         

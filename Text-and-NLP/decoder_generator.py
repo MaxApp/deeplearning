@@ -34,7 +34,7 @@ class DecoderBlock(nn.Module):
     def forward(self, x, causal_mask):
         x_norm = self.layer_norm1(x)
         # masked self-attention with residual
-        attn_out, _ = self.mha(x_norm, x_norm, x_norm, attn_mask=causal_mask)
+        attn_out, attn_out_weights = self.mha(x_norm, x_norm, x_norm, attn_mask=causal_mask)
         x = x + self.dropout1(attn_out)
         
         # FFN
