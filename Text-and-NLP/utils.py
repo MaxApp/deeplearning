@@ -3,6 +3,111 @@ import matplotlib.pyplot as plt
 import random
 import pandas as pd
 import ast
+from pathlib import Path
+from collections import Counter
+import re
+import torch
+
+
+class IMDBTokenizer:
+
+    """
+    Tokenize the inputs to ids or tensors.
+    Also manage the vocabulary and padding,truncating.
+    """
+
+    def __init__(self, token_len, max_vocab_size=10000):
+        # the max length of tokenized inputs
+        self.token_len = token_len
+        # the max vocabulary size, not exceed
+        self.max_vocab_size = max_vocab_size
+        # special tokens were reserved
+        self.word_to_idx = {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3}
+        self.idx_to_word = {0: '<pad>', 1: '<unk>', 2: '<sos>', 3: '<eos>'}
+        self.word_freq = Counter()
+
+    def __call__(self, text):
+        """encode to tensors for model"""
+        return torch.tensor(self.encode(text), dtype=torch.long)
+
+    def size(self) -> int:
+        return len(self.word_to_idx)
+    
+    def build_vocab(self, directory:str, min_freq=2):
+        """build vocabulary"""
+        # read all the .txt files in the path
+        dir_path = Path(directory)
+        if not dir_path.exists():
+            raise FileNotFoundError(f"Path Not Exist: {directory}")
+
+        txt_files = list(dir_path.rglob('*.txt'))
+        for f in txt_files:
+            with f.open('r', encoding='utf-8') as f:
+                review = f.read()
+                words = self.tokenize(review)
+                # count word frequencies
+                self.word_freq.update(words)
+        
+        # most common words within (vocab_size - 4),
+        # reserve 4 spots for special tokens
+        most_common = self.word_freq.most_common(self.max_vocab_size - 4)
+
+        # build w2i, i2w
+        idx = 4  # after special tokens
+        # uncollected_words = []
+        for word, freq in most_common:
+            if freq >= min_freq:
+                self.word_to_idx[word] = idx
+                self.idx_to_word[idx] = word
+                idx += 1
+            # else:
+            #     uncollected_words.append(word)
+
+        
+        print(f"Vocabulary size: {len(self.word_to_idx)}")
+        # print(f"Uncollected: {uncollected_words}")
+
+
+    def tokenize(self, text):
+        """splits inputs for human readable"""
+        text = text.lower()
+        # remove HTML tags
+        text = re.sub(r'<.*?>', '', text)
+        # remove all punctuations, digits, keep only letters and spaces
+        text = re.sub(r'[^a-z\s]', '', text)
+        words = text.split()
+        return words
+    
+    def encode(self, text):
+        """encode tokenized words to indicies, including <pad>,<unk>,<sos>,<eos>"""
+        words = self.tokenize(text)[:self.token_len-2]  # reserve space for SOS/EOS tokens
+        
+        # start with '<sos>': 2
+        indices = [2]
+        
+        for word in words:
+            if word in self.word_to_idx:
+                indices.append(self.word_to_idx[word])
+            else:
+                # '<unk>': 1
+                indices.append(1)
+        
+        # '<eos>': 3
+        indices.append(3)
+        
+        # '<pad>': 0
+        while len(indices) < self.token_len:
+            indices.append(0)
+        
+        return indices[:self.token_len]
+
+    def decode(self, sequence, is_tensor=False):
+        """convert inidicies back to tokens for readable"""
+        if is_tensor:
+            return [self.idx_to_word[i.item()] for i in sequence]
+        else:
+            return [self.idx_to_word[i] for i in sequence]
+
 
 def clean_and_tokenize(corpus):
     data = re.sub(r'[,!?;-]+', '.', corpus)

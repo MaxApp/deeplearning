@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import random
-import math
+import os
+
+from utils import IMDBTokenizer
 
 
 class DecoderBlock(nn.Module):
@@ -130,6 +132,35 @@ class PositionalEncoding(nn.Module):
         seq_len = x.size(1) # actual input length
         return self.pos_enc[:, :seq_len, :]
 
+class IMDBReviewDataset(Dataset):
+    def __init__(self, data_dir, tokenizer, train=True):
+        data_path = os.path.join(data_dir, "train" if train else "test")
+        self.tokenizer = tokenizer
+        self.reviews = []
+
+        # load positive
+        data_dir = os.path.join(data_path, "pos")
+        data_files = os.listdir(data_dir)
+        for filename in data_files:
+            with open(os.path.join(data_dir, filename), 'r', encoding='utf-8') as f:
+                content = f.read()
+                self.reviews.append(tokenizer(content))
+
+        # load negative
+        data_dir = os.path.join(data_path, "neg")
+        data_files = os.listdir(data_dir)
+        for filename in data_files:
+            with open(os.path.join(data_dir, filename), 'r', encoding='utf-8') as f:
+                content = f.read()
+                self.reviews.append(tokenizer(content))
+
+    def __len__(self):
+            return len(self.reviews)
+    
+    def __getitem__(self, idx):
+        return self.reviews[idx], self.reviews[idx]
+
+
 def create_causal_mask(size: int, is_bool=True):
     if is_bool:
         # fill with type of bool
@@ -141,6 +172,35 @@ def create_causal_mask(size: int, is_bool=True):
         mask = torch.triu(mask, diagonal=1)
     return mask
 
+def train_model(model, train_dataloader, optimizer, loss_func, vocab_size, num_epoch):
+     for epoch in range(num_epoch):
+        model.train()
+        epoch_losses = []  # Track losses for averaging
+        for reviews, labels in train_dataloader:
+            optimizer.zero_grad()
+            logits = model(reviews)
+
+            # shift for predict
+            shifted_logits = logits[:, :-1, :].contiguous().view(-1, vocab_size)
+            shifted_labels = labels[:, 1:].contiguous().view(-1)
+            loss = loss_fn(shifted_logits, shifted_labels)
+            # Backward pass
+            loss.backward()
+            
+            # Gradient clipping (ADD THIS!)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
+            # Update parameters
+            optimizer.step()
+            
+            # Track loss
+            epoch_losses.append(loss.item())
+    
+        # Calculate average loss - simple mean
+        avg_loss = sum(epoch_losses) / len(epoch_losses)
+        print(f"Epoch {epoch+1:2d}: avg loss = {avg_loss:.4f}")
+
+
 if __name__ == "__main__":
 
     torch.manual_seed(42)
@@ -148,30 +208,34 @@ if __name__ == "__main__":
     random.seed(42)
 
     # test
-    vocab_size = 100  # Small vocabulary for demo
+    # vocab_size = 100  # Small vocabulary for demo
     d_model = 128
     nhead = 4
     num_layers = 2
 
-    decoder = Generator(
-        vocab_size=vocab_size,
+    token_len = 512 # hyper parameters need to changed
+    corpus_dir = "E:/PDF/pytorch/C3M3/imdb" # change to your own
+
+    tokenizer = IMDBTokenizer(token_len=token_len)
+    tokenizer.build_vocab(directory=corpus_dir, min_freq=2)
+
+    train_dataset = IMDBReviewDataset(data_dir="E:/PDF/pytorch/C3M3/imdb", tokenizer=tokenizer)
+    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=32)
+
+    # Setup training components
+
+    model = Generator(
+        vocab_size=tokenizer.size(),
         embedding_dim=d_model,
         nhead=nhead,
         num_layers=num_layers,
         dim_feedforward=512,
         dropout=0.1
     )
-    decoder.eval()
 
-    batch_size = 2
-    seq_len = 8
-    input_ids = torch.randint(1, vocab_size, (batch_size, seq_len))  # random token ids
+    loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer.word_to_idx['<pad>'])
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
-    print(f"Input shape: {input_ids.shape}")
-    print(f"Sample input: {input_ids[0]}")
+    train_model(model=model, train_dataloader=train_dataloader, vocab_size=tokenizer.size(),
+                optimizer=optimizer, loss_func=loss_fn, num_epoch=10)
 
-    with torch.no_grad():
-        output = decoder(input_ids)
-
-    print(f"Output shape: {output.shape}")
-    print(f"batch_size={batch_size}, seq_len={seq_len}, vocab_size={vocab_size}")
