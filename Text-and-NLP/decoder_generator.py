@@ -1,9 +1,11 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
+from collections import Counter
 import numpy as np
 import random
 import os
+import re
 
 from utils import IMDBTokenizer
 
@@ -200,6 +202,261 @@ def train_model(model, train_dataloader, optimizer, loss_func, vocab_size, num_e
         avg_loss = sum(epoch_losses) / len(epoch_losses)
         print(f"Epoch {epoch+1:2d}: avg loss = {avg_loss:.4f}")
 
+def generate_tokens(model, prompt_ids, max_length=100, temperature=1.0, 
+                   top_k=50, top_p=0.95, repetition_penalty=1.2, 
+                   eos_token_id=None, device='cpu'):
+    """
+    Advanced token generation with multiple sampling strategies.
+    
+    Args:
+        model: The trained model
+        prompt_ids: Starting token IDs (list or tensor)
+        max_length: Maximum length to generate
+        temperature: Controls randomness (0.1=conservative, 2.0=creative)
+        top_k: Keep only top k tokens (0=disabled)
+        top_p: Nucleus sampling threshold (0.95=default)
+        repetition_penalty: Penalty for repeated tokens
+        eos_token_id: End of sequence token ID
+        device: Device to run on
+    
+    Returns:
+        Generated token IDs as tensor
+    """
+    model.eval()
+    
+    # Handle different input formats
+    if isinstance(prompt_ids, list):
+        prompt_ids = torch.tensor([prompt_ids], dtype=torch.long).to(device)
+    elif len(prompt_ids.shape) == 1:
+        prompt_ids = prompt_ids.unsqueeze(0).to(device)
+    else:
+        prompt_ids = prompt_ids.to(device)
+    
+    generated = prompt_ids.clone()
+    past_tokens = list(prompt_ids[0].cpu().numpy())
+    
+    for _ in range(max_length - len(prompt_ids[0])):
+        logits = model(generated)
+        
+        # Get the last token's logits
+        next_token_logits = logits[0, -1, :].float()
+        
+        # Apply temperature
+        if temperature != 1.0:
+            next_token_logits = next_token_logits / temperature
+        
+        # Apply repetition penalty
+        if repetition_penalty != 1.0:
+            # Penalize all previously generated tokens
+            for token_id in set(past_tokens):
+                next_token_logits[token_id] /= repetition_penalty
+            
+            # Extra penalty for very recent tokens
+            if len(past_tokens) > 3:
+                for token_id in past_tokens[-3:]:
+                    next_token_logits[token_id] /= 1.5
+        
+        # Apply top-k filtering
+        if top_k > 0:
+            indices_to_remove = next_token_logits < torch.topk(next_token_logits, min(top_k, len(next_token_logits)))[0][-1]
+            next_token_logits[indices_to_remove] = -float('inf')
+        
+        # Apply nucleus (top-p) filtering
+        if top_p < 1.0:
+            sorted_logits, sorted_indices = torch.sort(next_token_logits, descending=True)
+            cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+            
+            # Remove tokens with cumulative probability above threshold
+            sorted_indices_to_remove = cumulative_probs > top_p
+            sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+            sorted_indices_to_remove[..., 0] = 0
+            
+            indices_to_remove = sorted_indices[sorted_indices_to_remove]
+            next_token_logits[indices_to_remove] = -float('inf')
+        
+        # Sample from the distribution
+        probs = F.softmax(next_token_logits, dim=-1)
+        next_token = torch.multinomial(probs, 1)
+        
+        # Append to generated sequence
+        generated = torch.cat([generated, next_token.unsqueeze(0)], dim=1)
+        past_tokens.append(next_token.item())
+        
+        # Stop if we hit the EOS token
+        if eos_token_id is not None and next_token.item() == eos_token_id:
+            break
+    
+    return generated.squeeze(0)
+
+
+def generate_text(model, prompt, tokenizer,
+                 max_length=100, temperature=0.8, top_k=50, top_p=0.95,
+                 repetition_penalty=1.2, device='cpu'):
+    # tokenize prompt
+    if not prompt or prompt.isspace():
+        # start with 'the' if no prompt
+        prompt = 'the'
+    # convert to indices
+    prompt_ids = tokenizer.encode(prompt)
+    
+    # ensure have at least one token
+    if not prompt_ids:
+        prompt_ids = [2] # '<sos>'
+    
+    # eos token IDs
+    eos_token_id = 3 # '<eos>'
+    
+    generated_ids = generate_tokens(
+        model,
+        prompt_ids,
+        max_length=max_length,
+        temperature=temperature,
+        top_k=top_k,
+        top_p=top_p,
+        repetition_penalty=repetition_penalty,
+        eos_token_id=eos_token_id,
+        device=device
+    )
+    
+    # convert to text
+    tokens = []
+    for idx in generated_ids:
+        # idx_val = idx.item() if hasattr(idx, 'item') else idx
+        token = tokenizer.decode(idx)
+        
+        # Handle special tokens
+        # if token == '<nl>' or token == '<newline>':
+        #     tokens.append('\n')
+        # elif token not in ['<pad>', '<unk>', '<eos>', '<start>']:
+        #     tokens.append(token)
+        if token not in ['<pad>', '<unk>', '<sos>', '<eos>']:
+            tokens.append(token)
+    
+    # Join and clean up
+    text = ' '.join(tokens)
+    
+    # Fix punctuation spacing
+    text = text.replace(' ,', ',').replace(' .', '.').replace(' !', '!')
+    text = text.replace(' ?', '?').replace(' ;', ';').replace(' :', ':')
+    text = text.replace(' \'', '\'').replace('\' ', '\'')
+    text = text.replace(' \n ', '\n').replace('\n ', '\n')
+    
+    return text.strip()
+
+class CustomTokenizer:
+    """handles words and punctuation"""
+    def __init__(self, token_len, max_vocab_size=10000):
+            # the max length of tokenized inputs
+            self.token_len = token_len
+            # the max vocabulary size, not exceed
+            self.max_vocab_size = max_vocab_size
+            # special tokens were reserved
+            self.word_to_idx = {'<pad>': 0, '<unk>': 1, '<sos>': 2, '<eos>': 3}
+            self.idx_to_word = {0: '<pad>', 1: '<unk>', 2: '<sos>', 3: '<eos>'}
+            self.word_freq = Counter()
+
+    def __call__(self, text):
+        pass
+        
+
+    def tokenize(self, text):
+        """splits inputs for human readable"""
+        text = text.lower()
+        # remove HTML tags
+        text = re.sub(r'<.*?>', '', text)
+        # remove line breaks
+        text = text.replace('\n', '')
+        # tokenize words and punctuation
+        return re.findall(r"\w+(?:'\w+)?|[^\w\s]", text)
+
+    def encode(self, text):
+        """encode tokenized words to indicies, including <pad>,<unk>,<sos>,<eos>"""
+        words = self.tokenize(text)[:self.token_len-2]  # reserve space for SOS/EOS tokens
+        
+        # start with '<sos>': 2
+        indices = [2]
+        
+        for word in words:
+            if word in self.word_to_idx:
+                indices.append(self.word_to_idx[word])
+            else:
+                # '<unk>': 1
+                indices.append(1)
+        
+        # '<eos>': 3
+        indices.append(3)
+        
+        # '<pad>': 0
+        while len(indices) < self.token_len:
+            indices.append(0)
+        
+        return indices[:self.token_len]
+
+    def decode(self, sequence, is_tensor=False):
+        """convert inidicies back to tokens for readable"""
+        if is_tensor:
+            all_tokens = [self.idx_to_word[i.item()] for i in sequence]
+        else:
+            all_tokens = [self.idx_to_word[i] for i in sequence]
+
+        return all_tokens
+        
+
+    def build_vocabulary(self, text, vocab_size=5000, tokenizer=None):
+        """
+        Build vocabulary from Shakespeare text using top-k most frequent tokens.
+        
+        Args:
+            text: Raw Shakespeare text
+            vocab_size: Maximum vocabulary size (default: 5000)
+            tokenizer: Tokenizer instance (if None, creates ShakespeareTokenizer)
+        
+        Returns:
+            vocab: List of vocabulary words
+            word2idx: Dictionary mapping words to indices
+            idx2word: Dictionary mapping indices to words
+            tokenizer: The tokenizer used
+        """
+        if tokenizer is None:
+            tokenizer = ShakespeareTokenizer()
+        
+        # Count all tokens
+        tokens = tokenizer(text)
+        token_counts = Counter(tokens)
+        
+        # Always include special tokens
+        special_tokens = ['<pad>', '<unk>', '<nl>']
+        
+        # Get top-k most frequent tokens (excluding space for special tokens)
+        most_common = token_counts.most_common(vocab_size - len(special_tokens))
+        
+        # Build vocab - special tokens first, then top frequent tokens
+        vocab = special_tokens.copy()
+        for token, count in most_common:
+            if token not in special_tokens:
+                vocab.append(token)
+        
+        # Create mappings
+        word2idx = {word: idx for idx, word in enumerate(vocab)}
+        idx2word = {idx: word for word, idx in word2idx.items()}
+        
+        # Calculate coverage statistics
+        total_token_occurrences = sum(token_counts.values())
+        covered_token_occurrences = sum(token_counts[token] for token in vocab if token in token_counts)
+        coverage = covered_token_occurrences / total_token_occurrences
+        
+        # Calculate unknown rate
+        unknown_count = sum(count for token, count in token_counts.items() if token not in word2idx)
+        unknown_rate = unknown_count / total_token_occurrences
+        
+        print(f"Vocabulary size: {len(vocab)}")
+        print(f"Unique tokens in text: {len(token_counts)}")
+        print(f"Coverage: {coverage:.1%} of token occurrences")
+        print(f"Unknown token rate: {unknown_rate:.1%}")
+        print(f"Most common tokens: {vocab[3:13]}")
+        print(f"Least common in vocab: {vocab[-10:]}")
+        
+        return vocab, word2idx, idx2word, tokenizer
 
 if __name__ == "__main__":
 
@@ -238,4 +495,6 @@ if __name__ == "__main__":
 
     train_model(model=model, train_dataloader=train_dataloader, vocab_size=tokenizer.size(),
                 optimizer=optimizer, loss_func=loss_fn, num_epoch=10)
+
+    eval_model()
 

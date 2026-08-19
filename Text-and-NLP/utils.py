@@ -361,3 +361,178 @@ def plot_accuracy(train_accuracy, test_accuracy):
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.show()
+
+
+# ======= RESERVED CODE =========
+def generate_text(model, prompt, tokenizer, word2idx, idx2word, 
+                 max_length=100, temperature=0.8, top_k=50, top_p=0.95,
+                 repetition_penalty=1.2, device='cpu'):
+    """
+    Generate text from a string prompt using advanced sampling.
+    
+    Args:
+        model: Trained model
+        prompt: String prompt
+        tokenizer: Tokenizer instance
+        word2idx: Word to index dictionary
+        idx2word: Index to word dictionary
+        max_length: Maximum generation length
+        temperature: Sampling temperature (0.1-2.0 typical)
+        top_k: Top-k filtering (50 is good default)
+        top_p: Nucleus sampling (0.95 is good default)
+        repetition_penalty: Penalty for repetition (1.2 is good default)
+        device: Device to run on
+    
+    Returns:
+        Generated text as string
+    """
+    # Tokenize prompt
+    if not prompt or prompt.isspace():
+        # Start with a common word if no prompt
+        prompt_tokens = ['the']
+    else:
+        prompt_tokens = tokenizer(prompt.lower())
+    
+    # Convert to indices
+    prompt_ids = []
+    for token in prompt_tokens:
+        if token in word2idx:
+            prompt_ids.append(word2idx[token])
+        else:
+            # Try to find similar token
+            token_lower = token.lower()
+            if token_lower in word2idx:
+                prompt_ids.append(word2idx[token_lower])
+            else:
+                prompt_ids.append(word2idx['<unk>'])
+    
+    # Ensure we have at least one token
+    if not prompt_ids:
+        prompt_ids = [word2idx.get('the', word2idx['<unk>'])]
+    
+    # Generate token IDs
+    eos_token_id = word2idx.get('<eos>', None)
+    
+    generated_ids = generate_tokens(
+        model,
+        prompt_ids,
+        max_length=max_length,
+        temperature=temperature,
+        top_k=top_k,
+        top_p=top_p,
+        repetition_penalty=repetition_penalty,
+        eos_token_id=eos_token_id,
+        device=device
+    )
+    
+    # Convert to text
+    tokens = []
+    for idx in generated_ids:
+        idx_val = idx.item() if hasattr(idx, 'item') else idx
+        token = idx2word.get(idx_val, '<unk>')
+        
+        # Handle special tokens
+        if token == '<nl>' or token == '<newline>':
+            tokens.append('\n')
+        elif token not in ['<pad>', '<unk>', '<eos>', '<start>']:
+            tokens.append(token)
+    
+    # Join and clean up
+    text = ' '.join(tokens)
+    
+    # Fix punctuation spacing
+    text = text.replace(' ,', ',').replace(' .', '.').replace(' !', '!')
+    text = text.replace(' ?', '?').replace(' ;', ';').replace(' :', ':')
+    text = text.replace(' \'', '\'').replace('\' ', '\'')
+    text = text.replace(' \n ', '\n').replace('\n ', '\n')
+    
+    return text.strip()
+
+@torch.no_grad()
+def generate_tokens(model, prompt_ids, max_length=100, temperature=1.0, 
+                   top_k=50, top_p=0.95, repetition_penalty=1.2, 
+                   eos_token_id=None, device='cpu'):
+    """
+    Advanced token generation with multiple sampling strategies.
+    
+    Args:
+        model: The trained model
+        prompt_ids: Starting token IDs (list or tensor)
+        max_length: Maximum length to generate
+        temperature: Controls randomness (0.1=conservative, 2.0=creative)
+        top_k: Keep only top k tokens (0=disabled)
+        top_p: Nucleus sampling threshold (0.95=default)
+        repetition_penalty: Penalty for repeated tokens
+        eos_token_id: End of sequence token ID
+        device: Device to run on
+    
+    Returns:
+        Generated token IDs as tensor
+    """
+    model.eval()
+    
+    # Handle different input formats
+    if isinstance(prompt_ids, list):
+        prompt_ids = torch.tensor([prompt_ids], dtype=torch.long).to(device)
+    elif len(prompt_ids.shape) == 1:
+        prompt_ids = prompt_ids.unsqueeze(0).to(device)
+    else:
+        prompt_ids = prompt_ids.to(device)
+    
+    generated = prompt_ids.clone()
+    past_tokens = list(prompt_ids[0].cpu().numpy())
+    
+    for step in range(max_length - len(prompt_ids[0])):
+        # Get model predictions
+        with torch.cuda.amp.autocast(enabled=(device.type=='cuda')):
+            logits = model(generated)
+        
+        # Get the last token's logits
+        next_token_logits = logits[0, -1, :].float()
+        
+        # Apply temperature
+        if temperature != 1.0:
+            next_token_logits = next_token_logits / temperature
+        
+        # Apply repetition penalty
+        if repetition_penalty != 1.0:
+            # Penalize all previously generated tokens
+            for token_id in set(past_tokens):
+                next_token_logits[token_id] /= repetition_penalty
+            
+            # Extra penalty for very recent tokens
+            if len(past_tokens) > 3:
+                for token_id in past_tokens[-3:]:
+                    next_token_logits[token_id] /= 1.5
+        
+        # Apply top-k filtering
+        if top_k > 0:
+            indices_to_remove = next_token_logits < torch.topk(next_token_logits, min(top_k, len(next_token_logits)))[0][-1]
+            next_token_logits[indices_to_remove] = -float('inf')
+        
+        # Apply nucleus (top-p) filtering
+        if top_p < 1.0:
+            sorted_logits, sorted_indices = torch.sort(next_token_logits, descending=True)
+            cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+            
+            # Remove tokens with cumulative probability above threshold
+            sorted_indices_to_remove = cumulative_probs > top_p
+            sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
+            sorted_indices_to_remove[..., 0] = 0
+            
+            indices_to_remove = sorted_indices[sorted_indices_to_remove]
+            next_token_logits[indices_to_remove] = -float('inf')
+        
+        # Sample from the distribution
+        probs = F.softmax(next_token_logits, dim=-1)
+        next_token = torch.multinomial(probs, 1)
+        
+        # Append to generated sequence
+        generated = torch.cat([generated, next_token.unsqueeze(0)], dim=1)
+        past_tokens.append(next_token.item())
+        
+        # Stop if we hit the EOS token
+        if eos_token_id is not None and next_token.item() == eos_token_id:
+            break
+    
+    return generated.squeeze(0)
