@@ -441,12 +441,12 @@ if __name__ == "__main__":
     corpus_dir = "E:/PDF/pytorch/C3M3/imdb" # change to your own
 
     tokenizer = CustomTokenizer(token_len=token_len)
-    tokenizer.build_vocabulary(directory=corpus_dir, min_freq=1)
+    tokenizer.build_vocabulary(directory=corpus_dir, min_freq=2)
 
-    train_dataset = IMDBReviewDataset(data_dir="E:/PDF/pytorch/C3M3/imdb", tokenizer=tokenizer)
+    train_dataset = IMDBReviewDataset(data_dir=corpus_dir, tokenizer=tokenizer)
     train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=32)
 
-    # Setup training components
+    # model
     model = Generator(
         vocab_size=tokenizer.size(),
         embedding_dim=d_model,
@@ -457,10 +457,10 @@ if __name__ == "__main__":
     )
 
     loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer.word_to_idx['<pad>'])
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     train_model(model=model, train_dataloader=train_dataloader, vocab_size=tokenizer.size(),
-                optimizer=optimizer, loss_func=loss_fn, num_epoch=5)
+                optimizer=optimizer, loss_func=loss_fn, num_epoch=20)
 
     # test prompt 
     import time
