@@ -10,9 +10,6 @@ import random
 import os
 import re
 
-from utils import IMDBTokenizer
-
-
 class DecoderBlock(nn.Module):
 
     """
@@ -179,7 +176,7 @@ def create_causal_mask(size: int, is_bool=True):
 def train_model(model, train_dataloader, optimizer, loss_func, vocab_size, num_epoch):
      for epoch in range(num_epoch):
         model.train()
-        epoch_losses = []  # Track losses for averaging
+        epoch_losses = []
         for reviews, labels in train_dataloader:
             optimizer.zero_grad()
             logits = model(reviews)
@@ -187,20 +184,17 @@ def train_model(model, train_dataloader, optimizer, loss_func, vocab_size, num_e
             # shift for predict
             shifted_logits = logits[:, :-1, :].contiguous().view(-1, vocab_size)
             shifted_labels = labels[:, 1:].contiguous().view(-1)
-            loss = loss_fn(shifted_logits, shifted_labels)
+            loss = loss_func(shifted_logits, shifted_labels)
             # Backward pass
             loss.backward()
             
-            # Gradient clipping (ADD THIS!)
+            # gradient clipping
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             
-            # Update parameters
             optimizer.step()
-            
-            # Track loss
             epoch_losses.append(loss.item())
     
-        # Calculate average loss - simple mean
+        # average loss
         avg_loss = sum(epoch_losses) / len(epoch_losses)
         print(f"Epoch {epoch+1:2d}: avg loss = {avg_loss:.4f}")
 
@@ -243,35 +237,35 @@ def generate_tokens(model, prompt_ids, max_length=100, temperature=1.0,
     for _ in range(max_length - len(prompt_ids[0])):
         logits = model(generated)
         
-        # Get the last token's logits
+        # the last token's logits
         next_token_logits = logits[0, -1, :].float()
         
-        # Apply temperature
+        # temperature
         if temperature != 1.0:
             next_token_logits = next_token_logits / temperature
         
-        # Apply repetition penalty
+        # repetition penalty
         if repetition_penalty != 1.0:
             # Penalize all previously generated tokens
             for token_id in set(past_tokens):
                 next_token_logits[token_id] /= repetition_penalty
             
-            # Extra penalty for very recent tokens
+            # extra penalty for very recent tokens
             if len(past_tokens) > 3:
                 for token_id in past_tokens[-3:]:
                     next_token_logits[token_id] /= 1.5
         
-        # Apply top-k filtering
+        # top-k filtering
         if top_k > 0:
             indices_to_remove = next_token_logits < torch.topk(next_token_logits, min(top_k, len(next_token_logits)))[0][-1]
             next_token_logits[indices_to_remove] = -float('inf')
         
-        # Apply nucleus (top-p) filtering
+        # top-p filtering
         if top_p < 1.0:
             sorted_logits, sorted_indices = torch.sort(next_token_logits, descending=True)
             cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
             
-            # Remove tokens with cumulative probability above threshold
+            # remove tokens with cumulative probability above threshold
             sorted_indices_to_remove = cumulative_probs > top_p
             sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
             sorted_indices_to_remove[..., 0] = 0
@@ -279,17 +273,17 @@ def generate_tokens(model, prompt_ids, max_length=100, temperature=1.0,
             indices_to_remove = sorted_indices[sorted_indices_to_remove]
             next_token_logits[indices_to_remove] = -float('inf')
         
-        # Sample from the distribution
+        # sample from the distribution
         probs = F.softmax(next_token_logits, dim=-1)
         next_token = torch.multinomial(probs, 1)
         # print(f"next_token : {next_token}")
         
-        # Append to generated sequence
+        # append to generated sequence
         generated = torch.cat([generated, next_token.unsqueeze(0)], dim=1)
         past_tokens.append(next_token.item())
         yield next_token.unsqueeze(0)
         
-        # Stop if we hit the EOS token
+        # stop if we hit the EOS token
         if eos_token_id is not None and next_token.item() == eos_token_id:
             break
 
@@ -432,13 +426,12 @@ if __name__ == "__main__":
     random.seed(42)
 
     # test
-    # vocab_size = 100  # Small vocabulary for demo
     d_model = 128
     nhead = 4
     num_layers = 2
 
-    token_len = 512 # hyper parameters need to changed
-    corpus_dir = "E:/PDF/pytorch/C3M3/imdb" # change to your own
+    token_len = 512 # hyper parameters need to be changed
+    corpus_dir = "imdb" # change to your own
 
     tokenizer = CustomTokenizer(token_len=token_len)
     tokenizer.build_vocabulary(directory=corpus_dir, min_freq=2)
@@ -460,7 +453,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     train_model(model=model, train_dataloader=train_dataloader, vocab_size=tokenizer.size(),
-                optimizer=optimizer, loss_func=loss_fn, num_epoch=20)
+                optimizer=optimizer, loss_func=loss_fn, num_epoch=10)
 
     # test prompt 
     import time
@@ -474,6 +467,6 @@ if __name__ == "__main__":
                                     ):
         if next_token not in ['<pad>', '<unk>', '<sos>', '<eos>']:
             print(f" {str(next_token).strip()}", end="", flush=True)
-            time.sleep(1)
+            time.sleep(0.5)
             
 

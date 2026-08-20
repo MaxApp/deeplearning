@@ -259,7 +259,7 @@ The training data is from [IMDB](https://ai.stanford.edu/~amaas/data/sentiment/a
 
 ### **3. decoder_generator.py**
 
-The other half part of the transformer architecture that can generate sequences autogressively with coherence. The key insight is self-attention with `causal masking`.
+Decoder is the other half part of the transformer architecture that can generate sequences autogressively with coherence. The key insight is self-attention with `causal masking`.
 
 In this part we'll include:
 
@@ -278,5 +278,22 @@ def create_causal_mask(size: int, is_bool=True):
         mask = torch.triu(mask, diagonal=1)
     return mask
 ```
+
+We use `IMDB` dataset as corpus again with little modified tokenizer. Most of the parts as positional embedding, decoder block, multihead attention are as the same before. But there's still something need to mention:
+
+1. we should pass the **causal mask to multi-head attention** block.
+2. we use `nn.TransformerDecoderLayer` as decode-only model although it is a encoder-decoder model essentially.
+3. we use a special training method that inputs and targets are the same while calculating the loss we `shift 1 words right`.
+4. we use `top-k`, `top-p` to make predictions
+5. we use `temprature` to reshape the distribution
+6. we use `torch.multinomial` to add distribution choice with random
+7. we use `yield` to generate one token at a time
+
+After training the model, we given a prompt with **"The film"** as the beginning, let the model to fill the next words to form a sentence. Only 5 epochs with 1000 movie reviews, the model "seems to be able to achieve".
+
+> **prompt**: The film <br/>
+> **generated**: The Film is a french film as an excellent of a legendary father , however . crawford ( william haines ) and bonnie jordan with his bowl ursula buchfellner to their cheating leopold kessler ( dell henderson ) in germany peter weston together in her chess star  , becomes legend bobby fischer . evelyn ransom on her husband from georgia watson ) penniless ; bonnie they suddenly deciding to her autograph advantage ( werner pochath ) . william haines is herself to him but unlike urban architecture by dr , mary ellen trainor laura crawford who becomes
+
+
 
 
