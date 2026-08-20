@@ -1,8 +1,11 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from collections import Counter
 import numpy as np
+from pathlib import Path
+from collections import Counter
 import random
 import os
 import re
@@ -137,7 +140,6 @@ class PositionalEncoding(nn.Module):
 class IMDBReviewDataset(Dataset):
     def __init__(self, data_dir, tokenizer, train=True):
         data_path = os.path.join(data_dir, "train" if train else "test")
-        self.tokenizer = tokenizer
         self.reviews = []
 
         # load positive
@@ -234,7 +236,10 @@ def generate_tokens(model, prompt_ids, max_length=100, temperature=1.0,
     
     generated = prompt_ids.clone()
     past_tokens = list(prompt_ids[0].cpu().numpy())
-    
+
+    # print(f"prompt_ids: {prompt_ids}")
+    # print(f"generated: {generated}")
+    # print(f"past_tokens: {past_tokens}")
     for _ in range(max_length - len(prompt_ids[0])):
         logits = model(generated)
         
@@ -277,16 +282,16 @@ def generate_tokens(model, prompt_ids, max_length=100, temperature=1.0,
         # Sample from the distribution
         probs = F.softmax(next_token_logits, dim=-1)
         next_token = torch.multinomial(probs, 1)
+        # print(f"next_token : {next_token}")
         
         # Append to generated sequence
         generated = torch.cat([generated, next_token.unsqueeze(0)], dim=1)
         past_tokens.append(next_token.item())
+        yield next_token.unsqueeze(0)
         
         # Stop if we hit the EOS token
         if eos_token_id is not None and next_token.item() == eos_token_id:
             break
-    
-    return generated.squeeze(0)
 
 
 def generate_text(model, prompt, tokenizer,
@@ -297,7 +302,7 @@ def generate_text(model, prompt, tokenizer,
         # start with 'the' if no prompt
         prompt = 'the'
     # convert to indices
-    prompt_ids = tokenizer.encode(prompt)
+    prompt_ids = tokenizer.encode(prompt, with_padding=False)
     
     # ensure have at least one token
     if not prompt_ids:
@@ -306,7 +311,7 @@ def generate_text(model, prompt, tokenizer,
     # eos token IDs
     eos_token_id = 3 # '<eos>'
     
-    generated_ids = generate_tokens(
+    for next_id in generate_tokens(
         model,
         prompt_ids,
         max_length=max_length,
@@ -316,32 +321,16 @@ def generate_text(model, prompt, tokenizer,
         repetition_penalty=repetition_penalty,
         eos_token_id=eos_token_id,
         device=device
-    )
-    
-    # convert to text
-    tokens = []
-    for idx in generated_ids:
-        # idx_val = idx.item() if hasattr(idx, 'item') else idx
-        token = tokenizer.decode(idx)
-        
-        # Handle special tokens
-        # if token == '<nl>' or token == '<newline>':
-        #     tokens.append('\n')
-        # elif token not in ['<pad>', '<unk>', '<eos>', '<start>']:
-        #     tokens.append(token)
-        if token not in ['<pad>', '<unk>', '<sos>', '<eos>']:
-            tokens.append(token)
-    
-    # Join and clean up
-    text = ' '.join(tokens)
+    ):
+        yield tokenizer.decode(next_id, is_tensor=True)[0]
     
     # Fix punctuation spacing
-    text = text.replace(' ,', ',').replace(' .', '.').replace(' !', '!')
-    text = text.replace(' ?', '?').replace(' ;', ';').replace(' :', ':')
-    text = text.replace(' \'', '\'').replace('\' ', '\'')
-    text = text.replace(' \n ', '\n').replace('\n ', '\n')
+    # text = text.replace(' ,', ',').replace(' .', '.').replace(' !', '!')
+    # text = text.replace(' ?', '?').replace(' ;', ';').replace(' :', ':')
+    # text = text.replace(' \'', '\'').replace('\' ', '\'')
+    # text = text.replace(' \n ', '\n').replace('\n ', '\n')
     
-    return text.strip()
+    # return text.strip()
 
 class CustomTokenizer:
     """handles words and punctuation"""
@@ -356,9 +345,9 @@ class CustomTokenizer:
             self.word_freq = Counter()
 
     def __call__(self, text):
-        pass
+        """encode to tensors for model"""
+        return torch.tensor(self.encode(text), dtype=torch.long)
         
-
     def tokenize(self, text):
         """splits inputs for human readable"""
         text = text.lower()
@@ -369,8 +358,9 @@ class CustomTokenizer:
         # tokenize words and punctuation
         return re.findall(r"\w+(?:'\w+)?|[^\w\s]", text)
 
-    def encode(self, text):
+    def encode(self, text, with_padding=True):
         """encode tokenized words to indicies, including <pad>,<unk>,<sos>,<eos>"""
+
         words = self.tokenize(text)[:self.token_len-2]  # reserve space for SOS/EOS tokens
         
         # start with '<sos>': 2
@@ -382,6 +372,9 @@ class CustomTokenizer:
             else:
                 # '<unk>': 1
                 indices.append(1)
+
+        if not with_padding:
+            return indices
         
         # '<eos>': 3
         indices.append(3)
@@ -398,65 +391,39 @@ class CustomTokenizer:
             all_tokens = [self.idx_to_word[i.item()] for i in sequence]
         else:
             all_tokens = [self.idx_to_word[i] for i in sequence]
-
         return all_tokens
         
+    def build_vocabulary(self, directory:str, min_freq=2):
+        # read all the .txt files in the path
+        dir_path = Path(directory)
+        if not dir_path.exists():
+            raise FileNotFoundError(f"Path Not Exist: {directory}")
 
-    def build_vocabulary(self, text, vocab_size=5000, tokenizer=None):
-        """
-        Build vocabulary from Shakespeare text using top-k most frequent tokens.
+        txt_files = list(dir_path.rglob('*.txt'))
+        for f in txt_files:
+            with f.open('r', encoding='utf-8') as f:
+                review = f.read()
+                words = self.tokenize(review)
+                # count word frequencies
+                self.word_freq.update(words)
         
-        Args:
-            text: Raw Shakespeare text
-            vocab_size: Maximum vocabulary size (default: 5000)
-            tokenizer: Tokenizer instance (if None, creates ShakespeareTokenizer)
+        # most common words within (vocab_size - 4),
+        # reserve 4 spots for special tokens
+        most_common = self.word_freq.most_common(self.max_vocab_size - 4)
+
+        # build w2i, i2w
+        idx = 4  # after special tokens
+        # uncollected_words = []
+        for word, freq in most_common:
+            if freq >= min_freq:
+                self.word_to_idx[word] = idx
+                self.idx_to_word[idx] = word
+                idx += 1
         
-        Returns:
-            vocab: List of vocabulary words
-            word2idx: Dictionary mapping words to indices
-            idx2word: Dictionary mapping indices to words
-            tokenizer: The tokenizer used
-        """
-        if tokenizer is None:
-            tokenizer = ShakespeareTokenizer()
-        
-        # Count all tokens
-        tokens = tokenizer(text)
-        token_counts = Counter(tokens)
-        
-        # Always include special tokens
-        special_tokens = ['<pad>', '<unk>', '<nl>']
-        
-        # Get top-k most frequent tokens (excluding space for special tokens)
-        most_common = token_counts.most_common(vocab_size - len(special_tokens))
-        
-        # Build vocab - special tokens first, then top frequent tokens
-        vocab = special_tokens.copy()
-        for token, count in most_common:
-            if token not in special_tokens:
-                vocab.append(token)
-        
-        # Create mappings
-        word2idx = {word: idx for idx, word in enumerate(vocab)}
-        idx2word = {idx: word for word, idx in word2idx.items()}
-        
-        # Calculate coverage statistics
-        total_token_occurrences = sum(token_counts.values())
-        covered_token_occurrences = sum(token_counts[token] for token in vocab if token in token_counts)
-        coverage = covered_token_occurrences / total_token_occurrences
-        
-        # Calculate unknown rate
-        unknown_count = sum(count for token, count in token_counts.items() if token not in word2idx)
-        unknown_rate = unknown_count / total_token_occurrences
-        
-        print(f"Vocabulary size: {len(vocab)}")
-        print(f"Unique tokens in text: {len(token_counts)}")
-        print(f"Coverage: {coverage:.1%} of token occurrences")
-        print(f"Unknown token rate: {unknown_rate:.1%}")
-        print(f"Most common tokens: {vocab[3:13]}")
-        print(f"Least common in vocab: {vocab[-10:]}")
-        
-        return vocab, word2idx, idx2word, tokenizer
+        print(f"Vocabulary size: {len(self.word_to_idx)}")
+
+    def size(self):
+        return len(self.word_to_idx)
 
 if __name__ == "__main__":
 
@@ -473,14 +440,13 @@ if __name__ == "__main__":
     token_len = 512 # hyper parameters need to changed
     corpus_dir = "E:/PDF/pytorch/C3M3/imdb" # change to your own
 
-    tokenizer = IMDBTokenizer(token_len=token_len)
-    tokenizer.build_vocab(directory=corpus_dir, min_freq=2)
+    tokenizer = CustomTokenizer(token_len=token_len)
+    tokenizer.build_vocabulary(directory=corpus_dir, min_freq=1)
 
     train_dataset = IMDBReviewDataset(data_dir="E:/PDF/pytorch/C3M3/imdb", tokenizer=tokenizer)
     train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=32)
 
     # Setup training components
-
     model = Generator(
         vocab_size=tokenizer.size(),
         embedding_dim=d_model,
@@ -491,10 +457,23 @@ if __name__ == "__main__":
     )
 
     loss_fn = nn.CrossEntropyLoss(ignore_index=tokenizer.word_to_idx['<pad>'])
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
 
     train_model(model=model, train_dataloader=train_dataloader, vocab_size=tokenizer.size(),
-                optimizer=optimizer, loss_func=loss_fn, num_epoch=10)
+                optimizer=optimizer, loss_func=loss_fn, num_epoch=5)
 
-    eval_model()
+    # test prompt 
+    import time
+    prompt = "The Film"
+    print(f"{prompt}", end="", flush=True)
+    for next_token in generate_text(model=model,
+                                    prompt=prompt,
+                                    tokenizer=tokenizer,
+                                    max_length=100,
+                                    temperature=0.8,
+                                    ):
+        if next_token not in ['<pad>', '<unk>', '<sos>', '<eos>']:
+            print(f" {str(next_token).strip()}", end="", flush=True)
+            time.sleep(1)
+            
 
