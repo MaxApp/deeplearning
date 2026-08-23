@@ -89,5 +89,16 @@ Optimize your model to use less space, less memory and run faster. There're two 
 * Unstructured pruning
 * Structured pruning
 
+The core idea is dropout or cut off the tiny weights or neurons that influence prediction little to shrink the model.
+
 #### Quantization
+
+While precision of paramters is important during training because of gradient calculations and updates, they're not necessary in inference period. We can lower them before deployed to production. This could help in speed, memory and efficiency.
+
+* PTQ (Post Training Quantization)
+* QAT (Quantization Aware Training)
+
+The main difference between PTQ and QAT is whether influence backward calculation. In PTQ quantized modules mainly observe and make statistic for later optimization, but in QAT the modules influence the inputs and outputs, also backward calculation, that makes model more robust to lower precision mode.
+
+
 
