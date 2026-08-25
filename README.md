@@ -28,21 +28,21 @@ Different types of data uses different methods to precess and evaluate but the w
 
 ### Mathematics
 
-Theoretically you need a basic knowledge of calculous and linear algebra despite of that much is need. That will help you better understand what machine is doing during training.
+Theoretically you need a basic knowledge of *probability*, *calculous* and *linear algebra* despite of that much. They will help you better understand what machine is doing during training and what the target is.
 
-### Programming Language
+### Programming Languages
 
-Python is a popular programming language with a mess of tools and easy to learn. Although I mastered Java, C, Ruby, PHP, Javascripts and others, I found Python is really a convenient one.
+`Python` is a popular programming language with a mess of tools and easy to learn. Although I also mastered *Java*, *C*, *Ruby*, *PHP*, *Javascripts* and others, I found Python is really a convenient one.
 
-### Framework and Tools
+### Frameworks and Tools
 
-`Pytorch` is being used during my learning, `TensorFlow` is another common one although.
+`Pytorch` is being used during my learning, `TensorFlow` is another widely used one although. Both are most common frameworks for machine learning.
 
-Other than Pytorch itself, `Numpy`, `Pandas`, `scikit-learn` and `Matplotlib` is essential that you should master. They will help you processing data, tracking training and making dicisions.
+Other than learning framework itself, `Numpy`, `Pandas`, `scikit-learn` and `Matplotlib` is essential that you should master. They will help you processing data, tracking training and making comparisons. Visualization to your data is intuitive and important.
 
 ### Model Architectures and Components
 
-Familiar with common architectures like:
+Familiar with common and classic architectures like:
 
 * CNN
     * LeNet-5
