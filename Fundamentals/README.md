@@ -27,37 +27,56 @@ The basic concepts you should master before hands on.
 * vectorization
 * feature scaling
 * regularization
+* neural networks architectures
+* forward and backward propagation
+* activation functions
+* clustering with K-means
+* anomaly detection with normal distribution
+* collaborative filtering
+* content based filtering
+* PCA
+* state-actoin value function
 * 
 
+## Basic Trial 
 
-* simple_linear_dynamic.py
+### simple_linear_dynamic.py
 
-简单的一元变量线性拟合样例，展示了基础的数据训练过程。
-其中使用了 matplotlib 进行训练过程的动态可视化展现，更易于观察整个训练过程的渐进逼近。
+This script demonstrates the complete training loop for fitting a simple
+single-variable linear model. It creates synthetic observations from the
+relationship `y = w * x + b`, adds random noise, and trains a PyTorch
+`nn.Linear` layer to recover the underlying weight and bias.
 
-摘要：
-1. nn.Linear
-2. torch.linspace
-3. squeeze / unsqueeze
-4. torch.rand 及数据分布平移和缩放
-5. matplotlib 动态绘图 fig.set_data + plt.pause
-6. .detach.numpy()
+The script also updates a Matplotlib plot while training. Watching the
+predicted line move toward the noisy sample data makes the gradual effect of
+gradient descent easier to understand.
 
-效果示例：
+Basic concepts used:
+1. `nn.Linear` as a simple model
+2. `torch.linspace` for generating input values
+3. `unsqueeze` for reshaping
+4. `torch.rand` for generating random noise
+5. `nn.MSELoss` for loss function
+6. `optim.SGD` for gradient descent
+7. `loss.backward()` for backward propagation  
+8. `optimizer.step()` for updating
+
+Visualization example
 
 ![train1](imgs/simple_linear_dynamic_01.png)
 
-* simple_curve_dynamic.py
+### simple_curve_dynamic.py
 
-使用多层网络结构，拟合 log10 曲线。
-增加了更大范围的数据值，同时需要进行数据 Normalize 归一化，否则不同量度的范围值造成梯度消失，训练失败。
+This script demonstrates nonlinear regression by fitting noisy `y = log10(x)`
+data with a multi-layer neural network. It highlights the importance of
+`BatchNorm1d` for normalization and compares `Adam` with `SGD` during training.
 
-摘要：
-1. torch.log10
-2. BatchNorm1d 增强版 z-score (gamma, beta 1e-5)
-3. plt.subplots 多子图
-4. Adam vs. SGD
+Key features:
+1. Multi-layer network with `nn.Linear` and `nn.ReLU`
+2. Input and hidden-layer normalization with `BatchNorm1d`
+3. MSE loss and Adam/SGD optimizer comparison
+4. Loss tracking and dynamic Matplotlib visualization
 
-效果示例：
+Visualization example:
 
 ![train1](imgs/simple_curve_dynamic_01.png)
