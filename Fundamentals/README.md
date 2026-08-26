@@ -1,4 +1,35 @@
-### Hands on: fundations for Pytorch
+# Fundamentals and Theories
+
+Introduce the fundamentals and basic theories in machine learning with implementations. These're the pivots of next step for the real tasks to train a model. With a solid foundation in conception you could go further during the journey.
+
+## Overview of Machine Learning
+
+Here's the common categories of machine learning according to kinds of tasks.
+
+* Supervised
+    * regression model
+    * classification model
+* Unsupervised
+    * clustering
+    * anomaly detection
+    * dimensionality reduction
+* Reinforcement Learning
+
+## Concepts
+
+The basic concepts you should master before hands on.
+
+* linear regression
+* logistic regression
+* cost function
+* gradient descent
+* learning rate
+* vectorization
+* feature scaling
+* regularization
+* 
+
+
 * simple_linear_dynamic.py
 
 简单的一元变量线性拟合样例，展示了基础的数据训练过程。
