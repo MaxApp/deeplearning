@@ -25,7 +25,7 @@ The basic concepts you should master before hands on.
 * gradient descent
 * learning rate
 * vectorization
-* feature scaling
+* feature scaling with normalization
 * regularization
 * neural networks architectures
 * forward and backward propagation
