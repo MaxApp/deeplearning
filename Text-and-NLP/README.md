@@ -6,9 +6,14 @@ In this part of project we'll discover how to process text and how to encode it 
 We'll move from raw, unstructured text to a functional predictive model, covering the main workflows of NLP task.
 
 - [Preprocess: From Corpus to Vocabulary ](#preprocess-from-corpus-to-vocabulary)
+    - tokenization.py
 - [Word Representations: Embeddings](#word-representations-and-embeddings)
-- [Models and Applications](#)
-
+    - embedding_model.py
+- [Models and Applications](#models-and-applications)
+    - text_classifier.py
+    - self_attn_predict.py
+    - encoder_classifier.py
+    - decoder_generator.py
 
 ## Preprocess: From Corpus to Vocabulary 
 
@@ -163,7 +168,9 @@ After training loop, we fetch out the embedding weights and use `scikit-learn` t
 
 Beyond the static embeddings, dynamic embeddings is more powerful and meaningful, but need more resources and computational. `BERT`, `GPT` are the popular ones recently with transformer architecture. You need to choose the proper model according to your cases.
 
-## Text Classification
+## Models and Applications
+
+### Text Classification
 
 In this scenario, we're provided with a dataset of recipes which is retrieved from [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions) and is refined for simplicity. The dataset includes a recipe name, ingredients, steps, category, label etc. Our aim is to identify whether its category is fruit or vegetable by recipe name. The dataset is in `.csv` format and processed by pandas like below:
 
@@ -219,7 +226,7 @@ Sentences are normally by different length, size of words is variable, whereas w
 
 By using `collate_fn` parameter with Dataloader, we are able to dynamically adjust length in batches and improve the performance.
 
-### text_classifier.py
+[text_classifier.py](./text_classifier.py)
 
 We are using  the `flatten` way with `nn.EmbeddingBag` in a simple architecture which consists of `Embedding Layer`, `Dropout` and `FC Layer`. 
 
@@ -241,7 +248,7 @@ class EmbeddingBagClassifier(nn.Module):
         return self.fc(embedded)
 ```
 
-## Attention and Transformer
+### Attention and Transformer
 
 Transformer is one of the most morden architecture these days, it enables models like BERT, GPT and other models to understand languages. Self-attention is the core conception that powers the model.
 
@@ -249,7 +256,7 @@ Unlike traditional sequential models which process words one by one, self-attent
 
 In the section, we'll start from building a simple attention model with `Q,K,V` and use it to predict next word. Next we'll build the core `Encoder`,`Decoder`,`Encoder-Decoder` model individually in a more formal way.
 
-### **1. self_attn_predict.py**
+[self_attn_predict.py](./self_attn_predict.py)
 
 A prediction model using self-attention. Trained by sliding window to predict next word. The main process including:
 
@@ -271,7 +278,7 @@ After training with a small corpus, we provide a simple sentence "I and tom go t
 > ['i', 'and', 'tom', 'go', 'to', 'the'] <br/>
 > ['i', 'and', 'tom', 'go', 'to', 'the', 'park']
 
-### **2. encoder_classifier.py**
+[encoder_classifier.py](./encoder_classifier.py)
 
 A sentiment analyser with `Encoder` architecture. Includes the main components of transformer:
 
@@ -287,7 +294,7 @@ The training data is from [IMDB](https://ai.stanford.edu/~amaas/data/sentiment/a
 
 ![accuracy](imgs/encoder_accuracy.png)
 
-### **3. decoder_generator.py**
+[decoder_generator.py](./decoder_generator.py)
 
 Decoder is the other half part of the transformer architecture that can generate sequences autogressively with coherence. The key insight is self-attention with `causal masking`.
 
