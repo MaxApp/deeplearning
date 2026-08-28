@@ -1,10 +1,20 @@
 # Text processing and NLP applications
 
-This part of projects relevant to sequence models, concretely focus on text processing and NLP applications. We'll moving from raw, unstructured text to a functional predictive model, covering the main workflows of NLP task.
+Text is one of the most common data format we used in real world therefore becoming one of the pivots in the machine learning.
 
-## Corpus and Preprocess
+In this part of project we'll discover how to process text and how to encode it properly for processing at the start. Then we'll apply it to a variety of tasks with different methods, from simple probabilistic model to complicated transformer.
+We'll move from raw, unstructured text to a functional predictive model, covering the main workflows of NLP task.
 
-Corpus consists of a full context with predicted words and other symbols, you need to clean and tokenize them to build a vocabulary which is the foundation of text task. What would be taken into account includes:
+- [Preprocess: From Corpus to Vocabulary ](#preprocess-from-corpus-to-vocabulary)
+- [Word Representations: Embeddings](#word-representations-and-embeddings)
+- [Models and Applications](#)
+
+
+## Preprocess: From Corpus to Vocabulary 
+
+### Data collection and cleaning
+
+Corpus consists of a full context with predicted words and other symbols, you need to clean them at first to build a vocabulary. What would be taken into account includes:
 
 * case sensitive
 * punctuations
@@ -13,7 +23,7 @@ Corpus consists of a full context with predicted words and other symbols, you ne
 * emoji
 * ...
 
-There're various of tools for pre-processing the words including `NLTK`, `emoji` libraries etc. By using these tools make it much easier and efficient for data preparation.
+There're various of tools for pre-processing the raw text such as `NLTK`, `emoji` libraries etc. By using these tools make it much easier and efficient for data preparation.
 
 ```python
 import nltk
@@ -28,12 +38,11 @@ data = nltk.word_tokenize(data)
 data = [ch.lower() for ch in data]
 ```
 
-## Tokenization
+### Tokenization
 
-The first step of processing text is to split sentences into small parts of units and convert them into numerics which can be understand by machines, that's **tokenization**.
+The next step is to split sentences into smaller units called **tokens**. Tokenization only determines the boundaries and content of these units; it does not yet assign them numeric IDs.
 
-There're different granularities and methods of tokenization, let's take 
-a glance:
+There're different granularities and methods of tokenization, let's take a glance:
 
 * Words
 * **Subwords**
@@ -42,13 +51,15 @@ a glance:
   * SentencePiece
 * Characters
 
-Subwords is a common way and we'll use it to tokenize sentences into small pieces.
+Subwords are common because they can represent both frequent words and previously unseen words. The appropriate strategy depends on the model and task.
 
-### tokenization.py
+#### Pre-trained Tokenizer and Numerical Encoding
 
-In most cases we'll not build tokenizer from scratch, a pre-trained one would be a better choice. There're lots of popular models from `HuggineFace transformers`, we use `BERT` and `GPT` respectively to do practice.
+In most cases we will not build a tokenizer from scratch. A pre-trained tokenizer from `Hugging Face Transformers` is usually a better choice. Here we use `BERT` and `GPT` for practice.
 
-**Remark:** It's a more common way to use `AutoTokenizer` to automatically matches the strategy and model.
+**Remark:** `AutoTokenizer` automatically selects the tokenizer configuration required by a model. A pre-trained tokenizer normally combines three operations: splitting text into tokens, mapping tokens to its existing vocabulary, and converting them into token IDs. Therefore, the BERT and GPT examples below show both tokens and their numeric representations.
+
+[tokenization.py](./tokenization.py)
 
 ```python
 def get_tokenizer(tk_name):
@@ -67,19 +78,36 @@ def get_tokenizer(tk_name):
     return tokenizer
 ```
 
-> BERT Tokens: <br/>
-[['[CLS]', 'i', "'", 'm', 'feeling', 'happy', 'today', 'because', 'doing', 'deep', '##lea', '##rn', '##ing', '[SEP]'],<br/>
- ['[CLS]', 'don', "'", 't', 'drop', 'garbage', 'anywhere', 'in', 'din', '##ning', 'room', '~', '[SEP]', '[PAD]']]<br/>
-BERT Token IDs:<br/> tensor([[  101,  1045,  1005,  1049,  3110,  3407,  2651,  2138,  2725,  2784,
+BERT Tokens:
+> [['[CLS]', 'i', "'", 'm', 'feeling', 'happy', 'today', 'because', 'doing', 'deep', '##lea', '##rn', '##ing', '[SEP]'],<br/>
+> ['[CLS]', 'don', "'", 't', 'drop', 'garbage', 'anywhere', 'in', 'din', '##ning', 'room', '~', '[SEP]', '[PAD]']]<br/>
+
+BERT Token IDs:
+>tensor([[  101,  1045,  1005,  1049,  3110,  3407,  2651,  2138,  2725,  2784,
          19738,  6826,  2075,   102],
         [  101,  2123,  1005,  1056,  4530, 13044,  5973,  1999, 11586,  5582,
           2282,  1066,   102,     0]])
 
-> GPT Tokens: <br/>
-[['I', "'m", 'Ġfeeling', 'Ġhappy', 'Ġtoday', 'Ġbecause', 'Ġdoing', 'Ġdeep', 'learning', '<|endoftext|>'], <br/>
-['Don', "'t", 'Ġdrop', 'Ġgarbage', 'Ġanywhere', 'Ġin', 'Ġdin', 'ning', 'Ġroom', '~']]<br/>
-GPT Token IDs: <br/>tensor([[   40,  1101,  4203,  3772,  1909,   780,  1804,  2769, 40684, 50256],[ 3987,   470,  4268, 15413,  6609,   287, 16278,   768,  2119,    93]])
+GPT Tokens:
+> [['I', "'m", 'Ġfeeling', 'Ġhappy', 'Ġtoday', 'Ġbecause', 'Ġdoing', 'Ġdeep', 'learning', '<|endoftext|>'], <br/>
+> ['Don', "'t", 'Ġdrop', 'Ġgarbage', 'Ġanywhere', 'Ġin', 'Ġdin', 'ning', 'Ġroom', '~']]
 
+GPT Token IDs:
+> tensor([[   40,  1101,  4203,  3772,  1909,   780,  1804,  2769, 40684, 50256],[ 3987,   470,  4268, 15413,  6609,   287, 16278,   768,  2119,    93]])
+
+### Remove Stop Words
+
+Stop words are frequent words such as `the`, `is`, and `of` that often contribute little to a particular task. Removing them can reduce the vocabulary size for traditional text-processing workflows, although they should usually be kept when word order or sentence meaning matters.
+
+### Apply Stemming
+
+Stemming reduces related words to a common root by removing or modifying word endings. For example, `connect`, `connected`, and `connecting` may be reduced to a similar stem. It is simple and fast, but the resulting stems are not always valid words.
+
+### Build Vocabulary
+
+For a custom word-level pipeline, collect the unique tokens from the training corpus to build a vocabulary. Assign each token an integer ID and reserve special tokens such as `<pad>`, `<unk>`, `<sos>` and `<eos>`. This mapping is then used for **numericalization**, which converts a token sequence such as `['hello', 'world']` into an ID sequence such as `[12, 45]`.
+
+Use the **training split** to build the vocabulary so that validation and test data do not leak information into the model. When using a pre-trained BERT or GPT tokenizer, do not build a new vocabulary; use the vocabulary supplied with that tokenizer instead.
 
 ## Word Representations and Embeddings
 
@@ -87,9 +115,11 @@ Embedding models evolute from classic static to modern contextual ones which can
 
 Same as before, in real-world applications you won't create embeddings from scratch. Usually you'll use them by mature models as libraries. 
 
-### embedding_model.py
+### Create an embedding model
 
 We build a model with tow layers, one for look up embeddings, the other for mapping to indices. That is to say `nn.Embedding` layer and `nn.Linear`.
+
+[embedding_model.py](./embedding_model.py)
 
 ```python
 class MyEmbeddingModel(nn.Module):
