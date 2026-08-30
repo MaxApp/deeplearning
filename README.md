@@ -13,7 +13,7 @@ As mentioned before, ML is a wide range in topics but typically seperated in **V
 
 ## Overview of ML workflow
 
-From the start point to the real product being used, a model with production has a workflow to pregress regularly, basically it includes:
+From the start point to the real world product being used, a model with production has a workflow to pregress regularly, basically it includes:
 
 * Data Collection
 * Data Cleaning and Preparation
@@ -22,13 +22,28 @@ From the start point to the real product being used, a model with production has
 * Evaluation
 * Compression and Deployment
 
-Different types of data uses different methods to precess and evaluate but the workflow keeps the same.
+In general different types of data use different methods to precess, train and evaluate a model, but the workflow usually keeps the same.
 
 ## Knowledge Maps
 
 ### Mathematics
 
-Theoretically you need a basic knowledge of *probability*, *calculous* and *linear algebra* despite of that much. They will help you better understand what machine is doing during training and what the target is.
+Theoretically you need a basic knowledge of *probability*, *calculous* and *linear algebra* despite of that much. They will help you better understand what machine is doing during training and what the target is. To some extent, a well mastered math foundation will facilitate you go further and deeper on the journey.
+
+Parts of the conceptions that would be used during ML includes:
+* derivative
+* vector
+* matrix
+* linear algebra
+* probability distribution
+* ...
+
+In some applications to be more concretely:
+* Naive Bayes
+* Laplacian Smoothing
+* Log Likelihood
+* Cosine Similarity
+* ...
 
 ### Programming Languages
 
@@ -42,7 +57,7 @@ Other than learning framework itself, `Numpy`, `Pandas`, `scikit-learn` and `Mat
 
 ### Model Architectures and Components
 
-Familiar with common and classic architectures like:
+Familiar with common methods and classic architectures like:
 
 * CNN
     * LeNet-5
@@ -57,12 +72,19 @@ Familiar with common and classic architectures like:
     * LSTM
     * B-RNN
 * NLP
-    * Tokenize
+    * Tokenization
     * Word Embedding
+    * Sequence to Sequence Models
+    * Probabilistic Models
+    * Transformer Models
 * Transformer
     * Attention Model
     * Encoder
     * Decoder
+
+### Training, Evaluating and Tuning
+
+You could build your models in different architectures, even it's not based on neural network. Generally if you model based on neural network, you most likely to train it with `Gradient Descent`. In that way, you should master `Loss Function`, `Optimizer`, `Scheduler` etc during training. Also you should design how to evaluate your model's performance with metrics such as `Loss`, `Accuracy`, `Precision` and `Recall`. You should look out memory usage and efficiency too.
 
 ### Optimization and Deployment
 
