@@ -73,9 +73,14 @@ Familiar with common methods and classic architectures like:
     * B-RNN
 * NLP
     * Tokenization
-    * Word Embedding
+    * Word Embedding（Vector Space Models）
+        * KNN
+        * ANN (LSH)
     * Sequence to Sequence Models
     * Probabilistic Models
+        * Naive Bayes Classification Models（Laplacian Smoothing + Log Likelihood）
+        * Markov Models
+        * 
     * Transformer Models
 * Transformer
     * Attention Model
