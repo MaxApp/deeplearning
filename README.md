@@ -1,36 +1,56 @@
 # Practicals and Experiments of Machine Learning and Deep Learning
 
 ## Welcome and Foreword
-Hi guys, welcome to this page! 😀
+Hi everyone, welcome to my page! 😀
 
-The resources and code labs here are my learning maps about machine learning and deep learning. They're organized in various folders by different regions and specilizations.
+This repository is a collection of my learning notes, experiments, and practical labs in machine learning and deep learning. It is organized by topic and domain, with code examples and notes that reflect my hands-on learning journey.
 
-ML and AI is such a big topic that covers almost every aspect of our daily lives recently. The emerging techniques evolved rapidly than any other regions ever before. You can frequently see a new verison, a new model or a new application is released just in few months to even in few weeks by various companies, that's promising and thrilling.
+Machine learning and AI are transforming nearly every aspect of modern life. New models, methods, and releases appear at an accelerating pace, and that rapid evolution is both exciting and motivating. As a software engineer with years of programming experience, I have found machine learning and deep learning both intellectually challenging and practically rewarding.
 
-As a classic programmer for many years，the ML and DL has made a deep impression on me and driven me to understand and master the technicals from start to deep. Despite a bit of sophisticated in theories at the beginning, I found more and more interests during progress and learned with more pleasure and ease.
+What started as curiosity gradually grew into a deeper interest in understanding the theory, building models, and applying them to real-world problems. Along the way, I learned that ML is not limited to deep learning alone. It spans a broad landscape of methods, including vision, text, audio, probabilistic models, decision trees, Naive Bayes, support vector machines, clustering, and reinforcement learning. I have also highlighted the core concepts and techniques that I found most useful in practical work.
 
-As mentioned before, ML is a wide range in topics but typically seperated in **Visions**, **Texts** and **Audios** in form of inputs and processing format. Other than **Audios** I haven't refer yet, I marked some of the important learning point during practical labs. It's useful and helpful for realistic works.
+```mermaid
+flowchart LR
+    ML[Machine Learning]
+    ML --> DL[Deep Learning]
+    ML --> CL[Classical ML]
+    ML --> RL[Reinforcement Learning]
+
+    DL --> NN[Neural Networks]
+    NN --> CNN[CNN]
+    NN --> RNN[RNN]
+    NN --> TF[Transformer]
+
+    CL --> PM[Probabilistic Models]
+    CL --> DT[Decision Trees]
+    CL --> SVM[SVM]
+    CL --> KNN[KNN]
+    CL --> ENS[Ensemble Methods]
+
+    RL --> PL[Policy Learning]
+    RL --> VL[Value Learning]
+```
 
 ## Overview of ML workflow
 
-From the start point to the real world product being used, a model with production has a workflow to pregress regularly, basically it includes:
+From the initial idea to a production-ready system, a machine learning project typically follows a clear workflow. It usually includes:
 
 * Data Collection
 * Data Cleaning and Preparation
-* Model Archetecture
+* Model Architecture
 * Model Training
 * Evaluation
 * Compression and Deployment
 
-In general different types of data use different methods to precess, train and evaluate a model, but the workflow usually keeps the same.
+Different types of data may require different preprocessing, training, and evaluation techniques, but the overall workflow remains broadly consistent.
 
 ## Knowledge Maps
 
 ### Mathematics
 
-Theoretically you need a basic knowledge of *probability*, *calculous* and *linear algebra* despite of that much. They will help you better understand what machine is doing during training and what the target is. To some extent, a well mastered math foundation will facilitate you go further and deeper on the journey.
+A solid foundation in *probability*, *calculus*, and *linear algebra* is essential for understanding how models learn and why they behave the way they do. These concepts support a deeper understanding of training dynamics, optimization, and model behavior in real applications.
 
-Parts of the conceptions that would be used during ML includes:
+Key concepts frequently used in ML include:
 * derivative
 * vector
 * matrix
@@ -38,7 +58,7 @@ Parts of the conceptions that would be used during ML includes:
 * probability distribution
 * ...
 
-In some applications to be more concretely:
+In practical applications, some common concepts include:
 * Naive Bayes
 * Laplacian Smoothing
 * Log Likelihood
@@ -47,17 +67,17 @@ In some applications to be more concretely:
 
 ### Programming Languages
 
-`Python` is a popular programming language with a mess of tools and easy to learn. Although I also mastered *Java*, *C*, *Ruby*, *PHP*, *Javascripts* and others, I found Python is really a convenient one.
+`Python` is the primary language used throughout this learning journey. It offers a rich ecosystem of tools and libraries that make experimentation, model training, and data analysis efficient and accessible. In addition to Python, I have also worked with *Java*, *C*, *Ruby*, *PHP*, *JavaScript*, and other languages, but Python remains the most practical choice for machine learning work.
 
 ### Frameworks and Tools
 
-`Pytorch` is being used during my learning, `TensorFlow` is another widely used one although. Both are most common frameworks for machine learning.
+`PyTorch` is the main deep learning framework used in this project, while `TensorFlow` is another widely adopted option in the field. Both are commonly used for building and training machine learning models.
 
-Other than learning framework itself, `Numpy`, `Pandas`, `scikit-learn` and `Matplotlib` is essential that you should master. They will help you processing data, tracking training and making comparisons. Visualization to your data is intuitive and important.
+Beyond the frameworks themselves, tools such as `NumPy`, `Pandas`, `scikit-learn`, and `Matplotlib` are essential for data processing, model evaluation, and visualization. These libraries help transform raw data into meaningful insights and make model comparison more intuitive.
 
 ### Model Architectures and Components
 
-Familiar with common methods and classic architectures like:
+I have explored several common model families and classic architectures, including:
 
 * CNN
     * LeNet-5
@@ -70,17 +90,16 @@ Familiar with common methods and classic architectures like:
 * RNN
     * GRU
     * LSTM
-    * B-RNN
+    * Bi-RNN
 * NLP
     * Tokenization
-    * Word Embedding（Vector Space Models）
+    * Word Embedding (Vector Space Models)
         * KNN
         * ANN (LSH)
-    * Sequence to Sequence Models
+    * Sequence-to-Sequence Models
     * Probabilistic Models
-        * Naive Bayes Classification Models（Laplacian Smoothing + Log Likelihood）
+        * Naive Bayes Classification Models (Laplacian Smoothing + Log Likelihood)
         * Markov Models
-        * 
     * Transformer Models
 * Transformer
     * Attention Model
@@ -89,23 +108,21 @@ Familiar with common methods and classic architectures like:
 
 ### Training, Evaluating and Tuning
 
-You could build your models in different architectures, even it's not based on neural network. Generally if you model based on neural network, you most likely to train it with `Gradient Descent`. In that way, you should master `Loss Function`, `Optimizer`, `Scheduler` etc during training. Also you should design how to evaluate your model's performance with metrics such as `Loss`, `Accuracy`, `Precision` and `Recall`. You should look out memory usage and efficiency too.
+Models can be built using different architectures, including methods that are not based on neural networks. In general, neural network models are commonly trained using `Gradient Descent`, along with a chosen `Loss Function`, `Optimizer`, and `Scheduler`. During training, it is also important to evaluate the model using appropriate metrics such as `Loss`, `Accuracy`, `Precision`, and `Recall`, while keeping an eye on efficiency and memory usage.
 
 ### Optimization and Deployment
 
-After a model is well trained, you still need to do some extra work in order to refine it to deployment.
+Once a model is trained, additional work is often required before it is ready for deployment.
 
-Transform your model to inference engine is a common way. You need to convert it to `ONNX` format or other for crossing platforms and gain a better performance.
+Converting a model to an inference engine is a common step. This may involve exporting it to `ONNX` or another format to support cross-platform deployment and improve runtime performance.
 
-Before that, you could also do optimizing with `pruning` and `quantization`. That can makes significant improving to your model while in deployment.
-
-Beside, with a management platform such like `MLFlow` could help you training and monitoring your model.
+Before deployment, optimization techniques such as `pruning` and `quantization` can significantly reduce model size and improve efficiency. In addition, tools such as `MLflow` can help with experimentation, tracking, and model monitoring throughout the training lifecycle.
 
 ## Conclusion
 
-The page is just an overview of the whole labs, it is still being updated during learning. To get more details of each part, you could dive into folders for variety of regions.
+This page is intended to provide a broad overview of my learning journey in machine learning and deep learning. It is still being updated as I continue to explore new topics and deepen my understanding.
 
-All the annotations are personal understanding, not for teaching aims. If there are any errors, please don't hesitate to touch me.<br/>
+All of the notes and annotations here reflect my personal learning process and are not intended as formal teaching material. If you notice any mistakes or have suggestions for improvement, I would be very glad to hear from you.
+
 Thanks for reading!
-
 
