@@ -14,6 +14,10 @@ We'll move from raw, unstructured text to a functional predictive model, coverin
     - self_attn_predict.py
     - encoder_classifier.py
     - decoder_generator.py
+- [Algorithms]
+    - min_edit_distance.py
+    - viterbi.py
+
 
 ## Preprocess: From Corpus to Vocabulary 
 
@@ -331,6 +335,24 @@ After training the model, we given a prompt with **"The film"** as the beginning
 > **prompt**: The film <br/>
 > **generated**: The Film is a french film as an excellent of a legendary father , however . crawford ( william haines ) and bonnie jordan with his bowl ursula buchfellner to their cheating leopold kessler ( dell henderson ) in germany peter weston together in her chess star  , becomes legend bobby fischer . evelyn ransom on her husband from georgia watson ) penniless ; bonnie they suddenly deciding to her autograph advantage ( werner pochath ) . william haines is herself to him but unlike urban architecture by dr , mary ellen trainor laura crawford who becomes
 
+## Common Algorithms
 
+### Min Edit Distance
+
+[min_edit_distance.py](./min_edit_distance.py)
+
+Min edit distance is a dynamic programming algorithm that measures how many operations are needed to transform one string into another. In this implementation, the cost is based on three operations: insertion, deletion, and replacement, with default costs of 1, 1, and 2 respectively. A matrix is built where each cell stores the minimum cost to convert a prefix of the source string into a prefix of the target string. This makes it useful for comparing strings, correcting typos, and aligning sequences in text processing and NLP tasks.
+
+```text
+   #  p  r  o  c  e  e  d
+#  0  1  2  3  4  5  6  7
+p  1  0  1  2  3  4  5  6
+r  2  1  0  1  2  3  4  5
+e  3  2  1  2  3  2  3  4
+c  4  3  2  3  2  3  4  5
+e  5  4  3  4  3  2  3  4
+d  6  5  4  5  4  3  4  3
+e  7  6  5  6  5  4  3  4
+```
 
 
