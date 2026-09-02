@@ -14,9 +14,9 @@ We'll move from raw, unstructured text to a functional predictive model, coverin
     - self_attn_predict.py
     - encoder_classifier.py
     - decoder_generator.py
-- [Algorithms]
+- [Algorithms](#common-algorithms)
     - min_edit_distance.py
-    - viterbi.py
+    - HMM and viterbi
 
 
 ## Preprocess: From Corpus to Vocabulary 
@@ -354,5 +354,9 @@ e  5  4  3  4  3  2  3  4
 d  6  5  4  5  4  3  4  3
 e  7  6  5  6  5  4  3  4
 ```
+
+### HMM and Viterbi
+
+Hidden Markov Models (HMMs) are probabilistic sequence models that assume each hidden state emits observations over time, making them well suited for POS tagging, chunking, and speech recognition. The Viterbi algorithm efficiently finds the most likely sequence of hidden states by dynamic programming, balancing transition and emission probabilities while keeping the best path for each prefix.
 
 
