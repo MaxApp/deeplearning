@@ -2,7 +2,7 @@
 
 This is an individual notes during learning and for review.
 
-## Variety of ways for a task
+## Variety of ways to achieve a task
 
 ### Sentiment Classification
 
@@ -10,6 +10,15 @@ This is an individual notes during learning and for review.
 - naive bayes with probabilistic model
 - neural network
 - transformer
+
+### Auto Correction
+
+- minimum edit distance
+- N-grams
+
+### NER / POS
+- HMM and Viterbi
+- 
 
 ### Translation
 
