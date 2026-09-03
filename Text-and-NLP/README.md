@@ -17,6 +17,7 @@ We'll move from raw, unstructured text to a functional predictive model, coverin
 - [Algorithms](#common-algorithms)
     - min_edit_distance.py
     - HMM and viterbi
+    - N-grams probabilities
 
 
 ## Preprocess: From Corpus to Vocabulary 
