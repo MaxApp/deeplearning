@@ -360,4 +360,8 @@ e  7  6  5  6  5  4  3  4
 
 Hidden Markov Models (HMMs) are probabilistic sequence models that assume each hidden state emits observations over time, making them well suited for POS tagging, chunking, and speech recognition. The Viterbi algorithm efficiently finds the most likely sequence of hidden states by dynamic programming, balancing transition and emission probabilities while keeping the best path for each prefix.
 
+### N-grams probability
+
+N-grams are a simple probabilistic language model that estimates the likelihood of a word based on the previous $n-1$ words. This makes N-grams useful for next-word prediction, text generation, and language modeling, while remaining easy to implement and fast to train. They work well on local context but struggle with long-range dependencies and unseen word combinations.
+
 
