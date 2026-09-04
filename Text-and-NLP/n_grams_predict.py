@@ -51,12 +51,14 @@ def count_words(tokenized_sentences) -> dict:
     
     return dict(word_counts)
 
-def build_vocab(tokenized_sentences, threshold):
+def build_vocab(tokenized_sentences, threshold, end_token='</s>', unknown_token='<unk>'):
     """
     create a vocabulary with token frequences >= threshold
     """
+    vocabulary = [end_token, unknown_token]
     word_counts = count_words(tokenized_sentences)
-    vocabulary = [word for word, cnt in word_counts.items() if cnt >= threshold]
+    vocabulary += [word for word, cnt in word_counts.items() if cnt >= threshold]
+
     return vocabulary
 
 def replace_by_unk(tk_sentences, vocabulary, unknown_token="<unk>"):
@@ -75,4 +77,54 @@ def preprocess_data(vocabulary, train_data, test_data):
     return train_data_replaced, test_data_replaced
 
 
+# ------ N-grams functions ------------
 
+def n_grams_count(sentences, n, start_token='<s>', end_token = '</s>') -> dict:    
+
+    n_grams = defaultdict(int)
+
+    for sentence in sentences:
+        # prepend <s> n-1 times, append </s> at the end
+        sentence = [start_token] * (n-1) + sentence + [end_token]
+        
+        for i in range(len(sentence) - n + 1):
+            n_gram = tuple(sentence[i:i+n])
+            n_grams[n_gram] += 1
+    
+    return dict(n_grams)
+
+
+def cal_smoothing_probability(word,
+                              n_minus_one_gram,
+                              n_minus_one_gram_counts,
+                              n_gram_counts,
+                              vocabulary_size, 
+                              k=1.0):
+    # convert list to tuple to use it as a dictionary key
+    n_minus_one_gram = tuple(n_minus_one_gram)
+    previous_n_minus_one_gram_count = n_minus_one_gram_counts.get(n_minus_one_gram, 0)    
+    # k-smoothing
+    denominator = previous_n_minus_one_gram_count + (k * vocabulary_size)
+
+    n_gram = n_minus_one_gram + (word, )
+    n_gram_count = n_gram_counts.get(n_gram, 0)
+    # apply smoothing
+    numerator = n_gram_count + k
+
+    probability = numerator / denominator    
+    return probability
+
+def cal_all_probabilities(n_minus_one_gram, n_minus_one_gram_counts, n_gram_counts, vocabulary, k=1.0):
+    """
+    calculate the probabilities of next words using the n-gram counts with k-smoothing
+    """
+    vocabulary_size = len(vocabulary)
+    
+    probabilities = {}
+    for word in vocabulary:
+        probability = cal_smoothing_probability(word, n_minus_one_gram, 
+                                                n_minus_one_gram_counts, n_gram_counts, 
+                                                vocabulary_size, k=k)
+        probabilities[word] = probability
+
+    return probabilities
