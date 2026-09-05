@@ -364,4 +364,37 @@ Hidden Markov Models (HMMs) are probabilistic sequence models that assume each h
 
 N-grams are a simple probabilistic language model that estimates the likelihood of a word based on the previous $n-1$ words. This makes N-grams useful for next-word prediction, text generation, and language modeling, while remaining easy to implement and fast to train. They work well on local context but struggle with long-range dependencies and unseen word combinations.
 
+The core idea of an n-gram probability model is to estimate the probability of each possible next word in the vocabulary given the previous $n-1$ words. In practice, this requires computing a co-occurrence matrix of word combinations to capture how often particular sequences appear together.
+
+The co-occurrence matrix:
+
+```text
+               i  like  this  dog   is    a  cat  </s>  <unk>
+(<s>, this)  0.0   0.0   0.0  1.0  0.0  0.0  0.0   0.0    0.0
+(is, like)   0.0   0.0   0.0  0.0  0.0  1.0  0.0   0.0    0.0
+(like, a)    0.0   0.0   0.0  0.0  0.0  0.0  2.0   0.0    0.0
+(a, cat)     0.0   0.0   0.0  0.0  0.0  0.0  0.0   2.0    0.0
+(<s>, <s>)   1.0   0.0   1.0  0.0  0.0  0.0  0.0   0.0    0.0
+(this, dog)  0.0   0.0   0.0  0.0  1.0  0.0  0.0   0.0    0.0
+(<s>, i)     0.0   1.0   0.0  0.0  0.0  0.0  0.0   0.0    0.0
+(i, like)    0.0   0.0   0.0  0.0  0.0  1.0  0.0   0.0    0.0
+(dog, is)    0.0   1.0   0.0  0.0  0.0  0.0  0.0   0.0    0.0
+```
+
+The probabilities matrix:
+
+```text
+                    i      like      this       dog       cat        is         a      </s>     <unk>
+(dog, is)    0.100000  0.200000  0.100000  0.100000  0.100000  0.100000  0.100000  0.100000  0.100000
+(like, a)    0.090909  0.090909  0.090909  0.090909  0.272727  0.090909  0.090909  0.090909  0.090909
+(this, dog)  0.100000  0.100000  0.100000  0.100000  0.100000  0.200000  0.100000  0.100000  0.100000
+(is, like)   0.100000  0.100000  0.100000  0.100000  0.100000  0.100000  0.200000  0.100000  0.100000
+(<s>, i)     0.100000  0.200000  0.100000  0.100000  0.100000  0.100000  0.100000  0.100000  0.100000
+(a, cat)     0.090909  0.090909  0.090909  0.090909  0.090909  0.090909  0.090909  0.272727  0.090909
+(<s>, this)  0.100000  0.100000  0.100000  0.200000  0.100000  0.100000  0.100000  0.100000  0.100000
+(<s>, <s>)   0.181818  0.090909  0.181818  0.090909  0.090909  0.090909  0.090909  0.090909  0.090909
+(i, like)    0.100000  0.100000  0.100000  0.100000  0.100000  0.100000  0.200000  0.100000  0.100000
+```
+
+
 
