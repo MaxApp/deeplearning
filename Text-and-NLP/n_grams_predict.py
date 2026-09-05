@@ -185,3 +185,49 @@ def make_probability_matrix(n_gram_counts, vocabulary, k):
     count_matrix += k
     prob_matrix = count_matrix.div(count_matrix.sum(axis=1), axis=0)
     return prob_matrix
+
+def calculate_perplexity(sentence, n_minus_one_gram_counts, n_gram_counts, vocabulary_size, k=1.0):
+    """
+    Calculate perplexity for a single sentences
+    """
+    # length of n-1
+    n_minus_one = len(list(n_minus_one_gram_counts.keys())[0]) 
+    
+    # prepend <s> and append </s>
+    sentence = ["<s>"] * n_minus_one + sentence + ["</s>"]
+    sentence = tuple(sentence)
+    sentence_len = len(sentence)
+    
+    cumu_prob = 1.0 # cumulated product
+    for t in range(n_minus_one, sentence_len):
+        n_minus_one_gram = sentence[t-n_minus_one:t]
+        word = sentence[t]
+        probability = cal_smoothing_probability(word, n_minus_one_gram, n_minus_one_gram_counts, n_gram_counts, vocabulary_size, k=k)
+        cumu_prob *= (1 / probability)
+
+    # n root of the product
+    perplexity = cumu_prob ** (1 / sentence_len)
+    return perplexity 
+
+def suggest_a_word(previous_tokens, n_minus_one_gram_counts, n_gram_counts, vocabulary, k=1.0):
+    """
+    suggest next word by probabilities
+    """
+    n = len(list(n_minus_one_gram_counts.keys())[0]) 
+    
+    # get the most recent 'n' words
+    previous_n_gram = previous_tokens[-n:]
+
+    # estimate the probabilities for each word in vocabulary
+    probabilities = cal_all_probabilities(previous_n_gram,
+                                           n_minus_one_gram_counts, n_gram_counts,
+                                           vocabulary, k=k)
+    suggestion = None
+    max_prob = 0
+    for word, prob in probabilities.items():
+        if prob > max_prob:
+            suggestion = word
+            max_prob = prob
+
+    return suggestion, max_prob
+
