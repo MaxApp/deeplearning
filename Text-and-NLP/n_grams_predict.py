@@ -69,36 +69,44 @@ def preprocess_data(vocabulary, train_data, test_data, n_gram, start_token='<s>'
     1. replace tokens not in vocabulary with <unk>
     2. add <s> at the start of sentence and </s> at the end of sentence
     """
-    train_data_replaced = replace_and_add(train_data, vocabulary, n_gram, start_token, end_token, unknown_token)
-    test_data_replaced = replace_and_add(test_data, vocabulary, n_gram, start_token, end_token, unknown_token)    
-    return train_data_replaced, test_data_replaced
+    train_data_processed = replace_by_unk(train_data, vocabulary, unknown_token)
+    test_data_processed = replace_by_unk(test_data, vocabulary, unknown_token)    
 
-def replace_and_add(tokenized_sentences, vocabulary, n, start_token, end_token, unknown_token):
+    train_data_processed = add_start_end_token(train_data_processed, n_gram, start_token, end_token)
+    test_data_processed = add_start_end_token(test_data_processed, n_gram, start_token, end_token)
     
-    processed_sentences = []
+    return train_data_processed, test_data_processed
+
+def replace_by_unk(tokenized_sentences, vocabulary, unknown_token):
+    replaced_sentences = []
     for sentence in tokenized_sentences:
-        pro_sent = []
+        replaced_sent = []
         for token in sentence:
             if token in vocabulary:
-                pro_sent.append(token)
+                replaced_sent.append(token)
             else:
-                pro_sent.append(unknown_token)
+                replaced_sent.append(unknown_token)
+        replaced_sentences.append(replaced_sent)
+    return replaced_sentences
 
-        # add start and end tokens
-        pro_sent = [start_token] * (n - 1) + pro_sent + [end_token]
-        processed_sentences.append(pro_sent)
-
-    return processed_sentences
+def add_start_end_token(tokenized_sentences, n, start_token='<s>', end_token = '</s>'):
+    proc_sentences = []
+    for sentence in tokenized_sentences:
+        if sentence:
+            processed_sent = [start_token] * (n - 1) + sentence + [end_token]
+            proc_sentences.append(processed_sent)
+    return proc_sentences
 
 
 # ------ N-grams functions ------------
 
-def n_grams_count(sentences, n, ) -> dict:
+def n_grams_count(sentences, n) -> dict:
     """
     calculate N-grams count by given sentences
     return dictionary with `n-gram` as key, `count` as value
     """
     n_grams = defaultdict(int)
+    sentences = add_start_end_token(sentences, n)
     for sentence in sentences:
         for i in range(len(sentence) - n + 1):
             n_gram = tuple(sentence[i:i+n])
@@ -106,19 +114,20 @@ def n_grams_count(sentences, n, ) -> dict:
     return dict(n_grams)
 
 
-def cal_smoothing_probability(word,
-                              n_minus_one_gram, # words before next one
-                              n_minus_one_gram_counts,
+def cal_smoothing_probability(word, # each target word
+                              n_minus_one_gram, # given n-1 words before
+                              n_minus_one_gram_counts,  # n-1 words appear count
                               n_gram_counts,
                               vocabulary_size, 
-                              k=1.0):
+                              k=1.0  # smoothing param
+                              ):
     # convert to tuple as dictionary key
     n_minus_one_gram = tuple(n_minus_one_gram)
     previous_n_minus_one_gram_count = n_minus_one_gram_counts.get(n_minus_one_gram, 0)    
     # k-smoothing
     denominator = previous_n_minus_one_gram_count + (k * vocabulary_size)
 
-    n_gram = n_minus_one_gram + (word, )
+    n_gram = n_minus_one_gram + (word, ) # create a new tuple which combines target word
     n_gram_count = n_gram_counts.get(n_gram, 0)
     # apply smoothing
     numerator = n_gram_count + k
@@ -142,36 +151,37 @@ def cal_all_probabilities(n_minus_one_gram, n_minus_one_gram_counts, n_gram_coun
     return probabilities
 
 def make_count_matrix(n_gram_counts, vocabulary):
-    """Display probability matrix by n-grams"""
+    """display count matrix by n-grams"""
+    n_minus_one_gram_keys = []
+    for n_gram_key in n_gram_counts.keys():
+        n_minus_one_gram_key = n_gram_key[0:-1]
+        n_minus_one_gram_keys.append(n_minus_one_gram_key)
+    n_minus_one_gram_keys = list(set(n_minus_one_gram_keys))
     
-    n_grams = []
-    for n_gram in n_gram_counts.keys():
-        n_gram = n_gram[0:-1]
-        n_grams.append(n_gram)
-    n_grams = list(set(n_grams))
-    
-    # mapping n-gram to row
-    row_index = {n_gram:i for i, n_gram in enumerate(n_grams)}
+    # mapping (n-1)-gram to row
+    row_index = {n_gram:i for i, n_gram in enumerate(n_minus_one_gram_keys)}
     # mapping next word to column
     col_index = {word:j for j, word in enumerate(vocabulary)}
     
-    nrow = len(n_grams)
+    nrow = len(n_minus_one_gram_keys)
     ncol = len(vocabulary)
     count_matrix = np.zeros((nrow, ncol))
-    for n_gram, count in n_gram_counts.items():
-        n_gram = n_gram[0:-1]
-        word = n_gram[-1]
+    for n_gram_key, count in n_gram_counts.items():
+        n_minus_one_gram_key = n_gram_key[0:-1]
+        word = n_gram_key[-1]
         if word not in vocabulary:
             continue
-        i = row_index[n_gram]
+        # fetch each pair of row index and col index with prefix and word
+        i = row_index[n_minus_one_gram_key]
         j = col_index[word]
         count_matrix[i, j] = count
     
-    count_matrix = pd.DataFrame(count_matrix, index=n_grams, columns=vocabulary)
+    count_matrix = pd.DataFrame(count_matrix, index=n_minus_one_gram_keys, columns=vocabulary)
     return count_matrix
 
-def make_probability_matrix(n_plus1_gram_counts, vocabulary, k):
-    count_matrix = make_count_matrix(n_plus1_gram_counts, unique_words)
+def make_probability_matrix(n_gram_counts, vocabulary, k):
+    count_matrix = make_count_matrix(n_gram_counts, vocabulary)
+    # smoothing
     count_matrix += k
     prob_matrix = count_matrix.div(count_matrix.sum(axis=1), axis=0)
     return prob_matrix
