@@ -362,6 +362,8 @@ Hidden Markov Models (HMMs) are probabilistic sequence models that assume each h
 
 ### N-grams probability
 
+[n_grams_predict.py](./n_grams_predict.py)
+
 N-grams are a simple probabilistic language model that estimates the likelihood of a word based on the previous $n-1$ words. This makes N-grams useful for next-word prediction, text generation, and language modeling, while remaining easy to implement and fast to train. They work well on local context but struggle with long-range dependencies and unseen word combinations.
 
 The core idea of an n-gram probability model is to estimate the probability of each possible next word in the vocabulary given the previous $n-1$ words. In practice, this requires computing a co-occurrence matrix of word combinations to capture how often particular sequences appear together.

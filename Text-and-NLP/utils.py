@@ -434,3 +434,34 @@ def generate_tokens(model, prompt_ids, max_length=100, temperature=1.0,
             break
     
     return generated.squeeze(0)
+
+def generate_context_center_word(sentence:str, window_size:int):
+    """
+    split sentences into context words and center word 
+    in form of Word2Vec training dataset
+
+    return:
+        - 2D array of context words
+        - array of center words
+    """
+
+    words = re.findall(r"\w+",sentence)
+    print(f"input words: {words}")
+
+    if len(words) < window_size:
+        raise ValueError("input length is less than window size")
+
+    if window_size % 2 == 0:
+        raise ValueError("window size should be odd")
+
+    context = []
+    center = []
+    half_len = int(window_size / 2)
+    for i in range(len(words)-window_size+1):
+        end = i + window_size
+        mid = i + half_len
+        context.append(words[i:mid] + words[mid+1:end])
+        center.append(words[mid])
+    return context, center
+
+
