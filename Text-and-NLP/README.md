@@ -175,6 +175,39 @@ Beyond the static embeddings, dynamic embeddings is more powerful and meaningful
 
 ## Models and Applications
 
+### RNN
+
+[rnn_model.py](./rnn_model.py)
+
+A vanilla RNN processes sequential data by reusing the same cell at each time step. At step $t$, it updates the hidden state using the current input and the previous hidden state:
+
+$$
+h_t = \tanh(W_{xh}x_t + W_{hh}h_{t-1} + b)
+$$
+
+In this PyTorch version, the recurrent unit is implemented as a small module with two linear transforms:
+
+```python
+out = self.W_xh(x_t) + self.W_hh(h_prev)
+h_t = torch.tanh(out)
+```
+
+This means:
+
+- `W_xh` projects the current input into hidden space
+- `W_hh` projects the previous hidden state into the next hidden state
+- `tanh` adds nonlinearity
+- the same weights are reused across all time steps
+
+The model then loops over the full sequence and keeps passing the hidden state forward. The final output is a sequence of hidden states, and the last hidden state can be used as the representation of the whole sequence for downstream prediction.
+
+This is the core idea behind vanilla RNNs: memory is carried through time. However, simple RNNs can struggle with long-range dependencies, which is why GRU and LSTM were introduced later.
+
+### GRU
+
+### LSTM
+
+
 ### Text Classification
 
 In this scenario, we're provided with a dataset of recipes which is retrieved from [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions) and is refined for simplicity. The dataset includes a recipe name, ingredients, steps, category, label etc. Our aim is to identify whether its category is fruit or vegetable by recipe name. The dataset is in `.csv` format and processed by pandas like below:
