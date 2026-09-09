@@ -81,3 +81,34 @@ class RNNModel(nn.Module):
         h_n = h_all
         
         return outputs, h_n
+
+
+if __name__ == "__main__":
+    # Simple test application for the custom RNN model.
+    # The model accepts input of shape: (batch_size, seq_len, input_size)
+    # and returns:
+    #  - outputs: (batch_size, seq_len, hidden_size)
+    #  - h_n: (num_layers, batch_size, hidden_size)
+
+    torch.manual_seed(42)
+
+    input_size = 3
+    hidden_size = 5
+    num_layers = 2
+    batch_size = 4
+    seq_len = 6
+
+    x = torch.randn(batch_size, seq_len, input_size)
+    model = RNNModel(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+    model.eval()
+
+    with torch.no_grad():
+        outputs, h_n = model(x)
+
+    print(f"Input shape: {x.shape}")
+    print(f"Output shape: {outputs.shape}")
+    print(f"Final hidden state shape: {h_n.shape}")
+    print("First sample output sequence:")
+    print(outputs[0, :, :])
+    print("Final hidden states for each layer:")
+    print(h_n)
