@@ -14,6 +14,7 @@ We'll move from raw, unstructured text to a functional predictive model, coverin
     - self_attn_predict.py
     - encoder_classifier.py
     - decoder_generator.py
+    - lstm_ner.py
 - [Algorithms](#common-algorithms)
     - min_edit_distance.py
     - HMM and viterbi

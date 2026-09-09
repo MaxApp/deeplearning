@@ -18,11 +18,13 @@ This is an individual notes during learning and for review.
 
 ### NER / POS
 - HMM and Viterbi
-- 
+- Word Embedding
+- Bi-LSTM / GRU
+- Transformer
 
 ### Translation
 
 - vector space mapping with KNN/ANN (LSH) search
 - RNN
-- transformer
+- Transformer
 
