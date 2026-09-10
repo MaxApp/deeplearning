@@ -1,6 +1,8 @@
 import random
 import pandas as pd
 import numpy as np
+import torch
+import torch.nn as nn
 
 # Preprocessing =================================================
 # dataset from Kaggle: https://www.kaggle.com/datasets/abhinavwalia95/entity-annotated-corpus
@@ -23,7 +25,7 @@ def grab_sentences_labels(csv_file_path):
 
     return df, sentences, labels
 
-def build_vocab(sentences, pad=0, unk=1):
+def build_vocab(sentences):
     word2idx = {}
     idx2word = {}
     for sent in sentences:
@@ -32,8 +34,10 @@ def build_vocab(sentences, pad=0, unk=1):
                 idx2word[len(word2idx)] = w
                 word2idx[w] = len(word2idx)
 
-    word2idx.update({"<unk>": unk, "<pad>": pad})
-    idx2word.update({unk: "<unk>", pad: "<pad>"})
+    unk_idx = len(word2idx)
+    pad_idx = unk_idx + 1
+    word2idx.update({"<unk>": unk_idx, "<pad>": pad_idx})
+    idx2word.update({unk_idx: "<unk>", pad_idx: "<pad>"})
     return word2idx, idx2word
 
 def build_tag(labels):
@@ -74,65 +78,44 @@ def data_loader(batch_size, x, y, pad, shuffle=False):
         random.shuffle(lines_index)
 
     # index of indicies which maybe shuffled
-    index = 0
-    while True:
-        buffer_x = []
-        buffer_y = []
+    for start in range(0, num_lines, batch_size):
+        batch_indices = lines_index[start:start + batch_size]
+        buffer_x = [x[index] for index in batch_indices]
+        buffer_y = [y[index] for index in batch_indices]
+        current_batch_size = len(buffer_x)
         
         # copy from x[index : index + batch_size] 
         # along with corresponding labels y[index : index + batch_size]
 
         max_len = 0 # the max_len of sentence in this batch
-        for i in range(batch_size):
-            if index >= num_lines:
-                # if reach the end of dataset, then reset the index to 0
-                index = 0
-                if shuffle:
-                    # shuffe indicies for each batch
-                    random.shuffle(lines_index)
-
-            sent = x[lines_index[index]]
-            buffer_x.append(sent)            
-            buffer_y.append(y[lines_index[index]])
-
-            # record the max len in this batch
-            cur_len = len(sent)
-            if cur_len > max_len:
-                max_len = cur_len
-            
-            index += 1
+        for sent in buffer_x:
+            max_len = max(max_len, len(sent))
 
         # (batch_size, max_len) 'full' of pad
-        X = np.full((batch_size, max_len), pad)
-        Y = np.full((batch_size, max_len), pad)
+        X = np.full((current_batch_size, max_len), pad)
+        Y = np.full((current_batch_size, max_len), pad)
 
         # copy from lists to np arrays
-        for i in range(batch_size):
-            X[i,:len(x[i])] = x[i]
-            Y[i,:len(y[i])] = y[i]
+        for i in range(current_batch_size):
+            X[i,:len(buffer_x[i])] = buffer_x[i]
+            Y[i,:len(buffer_y[i])] = buffer_y[i]
 
         yield((X,Y))
 
 
-# def NamedEntityRecognitionModel(vocab_size=35181, d_model=50, tags=tag_map):
-    '''
-      Input: 
-        vocab_size - integer containing the size of the vocabulary
-        d_model - integer describing the embedding size
-      Output:
-        model - a trax serial model
-    '''
-    ### START CODE HERE (Replace instances of 'None' with your code) ###
-    # model = tl.Serial(
-    #   tl.Embedding(vocab_size=vocab_size, d_feature=d_model), # Embedding layer
-    #   tl.LSTM(n_units=d_model), # LSTM layer
-    #   tl.Dense(n_units=len(tags)), # Dense layer with len(tags) units
-    #   tl.LogSoftmax()  # LogSoftmax layer
-    #   )
-    #   ### END CODE HERE ###
-    # return model
+class NamedEntityRecognitionModel(nn.Module):
 
+    def __init__(self, vocab_size, emb_dim, padding_idx, hidden_dim, num_tags):
+        super().__init__()
+        self.embedding = nn.Embedding(vocab_size, emb_dim, padding_idx=padding_idx)
+        self.lstm = nn.LSTM(emb_dim, hidden_dim, batch_first=True, bidirectional=True)
+        self.classifier = nn.Linear(hidden_dim * 2, num_tags)
 
+    def forward(self, x):
+        emb = self.embedding(x)
+        out, _ = self.lstm(emb)
+        logits = self.classifier(out)
+        return logits
 
 
 if __name__ == "__main__":
@@ -143,25 +126,54 @@ if __name__ == "__main__":
 
     # print(f"sentences: {len(sentences)},  labels: {len(labels)}")
 
-    pad_num = 35180
-    unk_num = 35179
-    
-    batch_size = 5
-    mini_sentences = sentences[0: 8]
-    mini_labels = labels[0: 8]
+    batch_size = 64
 
     tag2idx, idx2tag = build_tag(labels=labels)
-    w2i, i2w = build_vocab(sentences=sentences, pad=pad_num, unk=unk_num)
-    # print(w2i)
+    w2i, i2w = build_vocab(sentences=sentences)
 
-    x_8, y_8 = tokenize_sent_labels(mini_sentences, mini_labels, word2idx=w2i, tag2idx=tag2idx)
-    dg = data_loader(batch_size, x_8, y_8, 35180, shuffle=False)
-    X1, Y1 = next(dg)
-    X2, Y2 = next(dg)
-    print(Y1.shape, X1.shape, Y2.shape, X2.shape)
-    print(X1[0][:], "\n", Y1[0][:])
+    x, y = tokenize_sent_labels(
+        sentences, labels, word2idx=w2i, tag2idx=tag2idx
+    )
 
-    
+    criterion = nn.CrossEntropyLoss(ignore_index=w2i["<pad>"])
+
+    model = NamedEntityRecognitionModel(
+        vocab_size=len(w2i),
+        emb_dim=64,
+        padding_idx=w2i["<pad>"],
+        hidden_dim=64,
+        num_tags=len(tag2idx),
+    )
+    optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
+
+    epochs = 5
+    steps_per_epoch = (len(x) + batch_size - 1) // batch_size
+    model.train()
+    for epoch in range(epochs):
+        total_loss = 0.0
+        data_generator = data_loader(
+            batch_size, x, y, w2i["<pad>"], shuffle=True
+        )
+
+        for X_batch, Y_batch in data_generator:
+            X_batch = torch.from_numpy(X_batch).long()
+            Y_batch = torch.from_numpy(Y_batch).long()
+
+            logits = model(X_batch)
+            loss = criterion(
+                logits.reshape(-1, logits.size(-1)),
+                Y_batch.reshape(-1),
+            )
+
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            total_loss += loss.item()
+
+        print(
+            f"Epoch {epoch + 1:02d}/{epochs}, "
+            f"train loss: {total_loss / steps_per_epoch:.4f}"
+        )
 
     # import pprint
     # print(tag2idx)
