@@ -7,5 +7,5 @@ __pycache__/
 *.pyd
 
 # 忽略所有 test.py 本地测试文件
-test.py
+test*.py
 
