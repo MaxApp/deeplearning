@@ -208,6 +208,52 @@ This is the core idea behind vanilla RNNs: memory is carried through time. Howev
 
 ### LSTM
 
+[lstm_ner.py](./lstm_ner.py)
+
+Long Short-Term Memory (LSTM) is a type of recurrent neural network designed to capture long-range dependencies in sequential data. Unlike a basic RNN, LSTM introduces memory cells and gates to control what information to keep, forget, and update across time steps. This makes it effective for text processing tasks where word order and context matter.
+
+In the script `lstm_ner.py`, each token is first mapped to an embedding vector, then processed by an LSTM to build a context-aware representation for the whole sentence. The model uses a bidirectional LSTM, which reads the sentence from both left-to-right and right-to-left, enabling the network to use both past and future context when predicting labels.
+
+##### Named Entity Recognition (NER)
+
+Named Entity Recognition is a sequence labeling task. The model predicts whether each token belongs to entity labels such as `B-per`, `I-per`, `B-geo`, `I-geo`, `B-org`, `I-org`, or `O`, which indicate the beginning and inside of person, location, organization, and non-entity spans. In this project, each word is assigned a tag and the model learns to classify each token in context.
+
+The dataset used in training coming from Kaggle's [Annotated Corpus for Named Entity Recognition](https://www.kaggle.com/datasets/abhinavwalia95/entity-annotated-corpus).
+
+
+
+
+
+The basic pipeline in `lstm_ner.py` is:
+
+- build a vocabulary from the dataset
+- map words and labels to integer IDs
+- pad sequences in batches
+- feed token embeddings into Bi-LSTM
+- apply a linear classifier on each time step
+- train with cross-entropy loss over token-level labels
+
+This is a standard setup for NER: using contextualized word representations from the LSTM to predict the most likely tag for every token in the sentence.
+
+After training progress, make a test with another sample:
+
+```python
+# test a sample after training
+sample = "Tom and Lily flied to France on Friday morning when they were in Beijing during vocation .".split(" ")
+
+tks = [w2i.get(tok, w2i["<unk>"]) for tok in sample]
+
+model.eval()
+with torch.no_grad():
+    output = model(torch.tensor([tks]).long())
+    indicies = torch.argmax(output, dim=-1)
+    tags = [idx2tag[i.item()] for i in indicies[0]]
+    print(f"input tokens: {tks}")
+    print(f"POS tags: {tags}")
+```
+
+> input tokens: [3947, 13, 16290, 16290, 7, 1893, 63, 365, 3525, 278, 127, 189, 11, 1634, 194, 16290, 21] </br>
+> POS tags: ['O', 'O', 'O', 'O', 'O', 'B-geo', 'O', 'B-tim', 'I-tim', 'O', 'O', 'O', 'O', 'B-geo', 'O', 'O', 'O']
 
 ### Text Classification
 
