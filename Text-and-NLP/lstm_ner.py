@@ -100,7 +100,7 @@ def data_loader(batch_size, x, y, pad, shuffle=False):
             X[i,:len(buffer_x[i])] = buffer_x[i]
             Y[i,:len(buffer_y[i])] = buffer_y[i]
 
-        yield((X,Y))
+        yield X, Y
 
 
 class NamedEntityRecognitionModel(nn.Module):
@@ -121,12 +121,9 @@ class NamedEntityRecognitionModel(nn.Module):
 if __name__ == "__main__":
 
     # load csv dataset from disk
-    csv_file_path = r"E:\PDF\NLP\C3W2\ner_dataset_small.csv"
+    csv_file_path = r"..." # replace with your own NER.csv file path
     _, sentences, labels = grab_sentences_labels(csv_file_path)
-
     # print(f"sentences: {len(sentences)},  labels: {len(labels)}")
-
-    batch_size = 64
 
     tag2idx, idx2tag = build_tag(labels=labels)
     w2i, i2w = build_vocab(sentences=sentences)
@@ -135,8 +132,9 @@ if __name__ == "__main__":
         sentences, labels, word2idx=w2i, tag2idx=tag2idx
     )
 
+    # loss function
     criterion = nn.CrossEntropyLoss(ignore_index=w2i["<pad>"])
-
+    # model
     model = NamedEntityRecognitionModel(
         vocab_size=len(w2i),
         emb_dim=64,
@@ -146,7 +144,9 @@ if __name__ == "__main__":
     )
     optimizer = torch.optim.AdamW(model.parameters(), lr=0.001)
 
-    epochs = 5
+    # training
+    epochs = 10
+    batch_size = 64
     steps_per_epoch = (len(x) + batch_size - 1) // batch_size
     model.train()
     for epoch in range(epochs):
@@ -172,11 +172,18 @@ if __name__ == "__main__":
 
         print(
             f"Epoch {epoch + 1:02d}/{epochs}, "
-            f"train loss: {total_loss / steps_per_epoch:.4f}"
+            f"Train Loss: {total_loss / steps_per_epoch:.4f}"
         )
 
-    # import pprint
-    # print(tag2idx)
-    # print(idx2tag)
-    # print(w2i)
-    # print(w2i)
+    # test model
+    sample = "Tom and Lily flied to France on Friday morning when they were in Beijing during vocation .".split(" ")
+    tks = [w2i.get(tok, w2i["<unk>"]) for tok in sample]
+    model.eval()
+    with torch.no_grad():
+        output = model(torch.tensor([tks]).long())
+        # print(f"output shape: {output.shape}")
+        indicies = torch.argmax(output, dim=-1)
+        # print(f"indicies: {indicies}  shape: {indicies.shape}")
+        tags = [idx2tag[i.item()] for i in indicies[0]]
+        print(f"input tokens: {tks}")
+        print(f"POS tags: {tags}")
