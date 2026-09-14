@@ -206,6 +206,10 @@ This is the core idea behind vanilla RNNs: memory is carried through time. Howev
 
 ### GRU
 
+Gated Recurrent Unit (GRU) is a recurrent neural network designed to improve on vanilla RNNs by adding gates that decide what information to keep and what to forget over time. It uses a reset gate and an update gate to balance new information with past context, making it effective for modeling short and medium-length sequential dependencies.
+
+Compared with LSTM, GRU has a simpler structure with fewer parameters, which often makes it faster to train and easier to tune.
+
 ### LSTM
 
 [lstm_ner.py](./lstm_ner.py)
