@@ -1,4 +1,5 @@
 import re
+import math
 import matplotlib.pyplot as plt
 import random
 import pandas as pd
@@ -464,4 +465,32 @@ def generate_context_center_word(sentence:str, window_size:int):
         center.append(words[mid])
     return context, center
 
+# ----- transformer ------------
+def dot_product_attention(q, k, v, mask=None, scale=True):
+    """
+    Compute scaled dot-product attention.
 
+    Args:
+        q (torch.Tensor): query of shape (..., seq_len_q, depth)
+        k (torch.Tensor): key of shape (..., seq_len_k, depth)
+        v (torch.Tensor): value of shape (..., seq_len_v, depth_v)
+        mask (torch.Tensor | None): positions marked 0 are masked out.
+        scale (bool): whether to scale by 1 / sqrt(depth).
+
+    Returns:
+        torch.Tensor: attention output with shape (..., seq_len_q, depth_v)
+    """
+    # Compute attention scores
+    matmul_qk = torch.matmul(q, k.transpose(-1, -2))
+
+    if scale:
+        dk = k.size(-1)
+        matmul_qk = matmul_qk / math.sqrt(dk)
+
+    if mask is not None:
+        matmul_qk = matmul_qk.masked_fill(mask == 0, float('-inf'))
+
+    attention_weights = torch.softmax(matmul_qk, dim=-1)
+    attention_output = torch.matmul(attention_weights, v)
+
+    return attention_output
