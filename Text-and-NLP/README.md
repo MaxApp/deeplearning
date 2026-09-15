@@ -339,11 +339,37 @@ class EmbeddingBagClassifier(nn.Module):
 
 ### Attention and Transformer
 
-Transformer is one of the most morden architecture these days, it enables models like BERT, GPT and other models to understand languages. Self-attention is the core conception that powers the model.
+Transformer is a modern neural architecture widely used in models such as BERT and GPT. Its key mechanism is **attention**, which allows each token to model its relationship with all other tokens in the same sequence in parallel.
 
-Unlike traditional sequential models which process words one by one, self-attention module computes relationships by all words simultaneously.
+Unlike recurrent models, which process tokens sequentially, attention computes dependencies across the whole sequence at once. This makes it effective for long-range context modeling and parallel training.
 
-In the section, we'll start from building a simple attention model with `Q,K,V` and use it to predict next word. Next we'll build the core `Encoder`,`Decoder`,`Encoder-Decoder` model individually in a more formal way.
+In this section, we first build a simple attention mechanism using `Q`, `K`, and `V`, then extend it to the core Transformer components: `Encoder`, `Decoder`, and `Encoder-Decoder`.
+
+#### Scaled dot-product attention
+
+Scaled dot-product attention is the fundamental building block of Transformer models. Given query matrix $Q$, key matrix $K$, and value matrix $V$, the attention score is computed as:
+
+$$
+\mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+$$
+
+where $d_k$ is the dimension of the key vectors. Dividing by $\sqrt{d_k}$ keeps the scale of the scores stable and prevents large dot products from dominating the softmax.
+
+When a mask is provided, it is usually applied before softmax to prevent invalid positions from receiving attention probability, for example by setting masked values to $-\infty$ or a very small number.
+
+```python
+def dot_product_attention(q, k, v, mask=None):
+    scores = torch.matmul(q, k.transpose(-1, -2))
+    dk = k.size(-1)
+    scores = scores / math.sqrt(dk)
+
+    if mask is not None:
+        scores = scores.masked_fill(mask == 0, float('-inf'))
+
+    attention_weights = torch.softmax(scores, dim=-1)
+    output = torch.matmul(attention_weights, v)
+    return output
+```
 
 [self_attn_predict.py](./self_attn_predict.py)
 
