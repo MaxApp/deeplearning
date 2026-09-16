@@ -6,19 +6,26 @@ In this part of project we'll discover how to process text and how to encode it 
 We'll move from raw, unstructured text to a functional predictive model, covering the main workflows of NLP task.
 
 - [Preprocess: From Corpus to Vocabulary ](#preprocess-from-corpus-to-vocabulary)
-    - tokenization.py
+    - [Data collection and cleaning](#data-collection-and-cleaning)
+    - [Tokenization](#tokenization)
+    - [Build Vocabulary](#build-vocabulary)
 - [Word Representations: Embeddings](#word-representations-and-embeddings)
-    - embedding_model.py
+    - [Embeddings](#create-an-embedding-model)
+    - [Text Classification using embeddings](#text-classification)
 - [Models and Applications](#models-and-applications)
-    - text_classifier.py
-    - self_attn_predict.py
-    - encoder_classifier.py
-    - decoder_generator.py
-    - lstm_ner.py
+    - [RNN](#rnn)
+    - [GRU](#gru)
+    - [LSTM](#lstm)
+        - [Name Entity Recognition](#named-entity-recognition-ner)
+    - [Tranformer](#attention-and-transformer)
+        - [Positional Encoding](#positional-encodings)
+        - [Attention](#scaled-dot-product-attention)
+        - [Encoder](#encoder)
+        - [Decoder](#decoder)
 - [Algorithms](#common-algorithms)
-    - min_edit_distance.py
-    - HMM and viterbi
-    - N-grams probabilities
+    - [Min Edit Distance](#min-edit-distance)
+    - [HMM and viterbi](#hmm-and-viterbi)
+    - [N-grams probabilities](#n-grams-probability)
 
 
 ## Preprocess: From Corpus to Vocabulary 
@@ -218,7 +225,7 @@ Long Short-Term Memory (LSTM) is a type of recurrent neural network designed to 
 
 In the script `lstm_ner.py`, each token is first mapped to an embedding vector, then processed by an LSTM to build a context-aware representation for the whole sentence. The model uses a bidirectional LSTM, which reads the sentence from both left-to-right and right-to-left, enabling the network to use both past and future context when predicting labels.
 
-##### Named Entity Recognition (NER)
+#### Named Entity Recognition (NER)
 
 Named Entity Recognition is a sequence labeling task. The model predicts whether each token belongs to entity labels such as `B-per`, `I-per`, `B-geo`, `I-geo`, `B-org`, `I-org`, or `O`, which indicate the beginning and inside of person, location, organization, and non-entity spans. In this project, each word is assigned a tag and the model learns to classify each token in context.
 
@@ -345,6 +352,27 @@ Unlike recurrent models, which process tokens sequentially, attention computes d
 
 In this section, we first build a simple attention mechanism using `Q`, `K`, and `V`, then extend it to the core Transformer components: `Encoder`, `Decoder`, and `Encoder-Decoder`.
 
+#### Positional encodings
+
+When you train a Transformer network using multi-head attention, you feed your data into the model all at once. While this reduces training time, there is no information about the order of your data. This is where positional encoding is helpful. 
+
+There're different methods of position embeddings, here we use a simple learned embeddings like token embedding. For more advanced, we can use **sin/cos** encoding method.
+
+$$
+PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{model}}}\right)
+$$
+
+$$
+PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{model}}}\right)
+$$
+
+$$
+X' = X + PE
+$$
+
+Because the encoding is deterministic, it has no trainable parameters and can also be generated for sequence lengths not seen during training.
+
+
 #### Scaled dot-product attention
 
 Scaled dot-product attention is the fundamental building block of Transformer models. Given query matrix $Q$, key matrix $K$, and value matrix $V$, the attention score is computed as:
@@ -371,6 +399,14 @@ def dot_product_attention(q, k, v, mask=None):
     return output
 ```
 
+Shape of Q,K,V
+
+```text
+q: (batch_size, num_heads, query_length, head_dimension)
+k: (batch_size, num_heads, key_length, head_dimension)
+v: (batch_size, num_heads, key_length, value_dimension)
+```
+
 [self_attn_predict.py](./self_attn_predict.py)
 
 A prediction model using self-attention. Trained by sliding window to predict next word. The main process including:
@@ -382,16 +418,14 @@ A prediction model using self-attention. Trained by sliding window to predict ne
 5. show attention in heat map
 6. predict next words
 
-**about position embeddings**:
-
-There're different methods of position embeddings, here we use a simple learned embeddings like token embedding. For more advanced, we can use **sin/cos** encoding method.
-
 After training with a small corpus, we provide a simple sentence "I and tom go to" and let the model to predict next two words. Also we display the heat map of original sentence to get an intuition.
 
 ![attention_map](imgs/attn_heat_map.png)
 
 > ['i', 'and', 'tom', 'go', 'to', 'the'] <br/>
 > ['i', 'and', 'tom', 'go', 'to', 'the', 'park']
+
+#### Encoder
 
 [encoder_classifier.py](./encoder_classifier.py)
 
@@ -408,6 +442,8 @@ The training data is from [IMDB](https://ai.stanford.edu/~amaas/data/sentiment/a
 ![train_loss](imgs/encoder_loss.png)
 
 ![accuracy](imgs/encoder_accuracy.png)
+
+#### Decoder
 
 [decoder_generator.py](./decoder_generator.py)
 

@@ -48,9 +48,7 @@ class Vocabulary:
 class TextDataset(Dataset):
     """
     A custom PyTorch Dataset for handling text and label data.
-
-    This class encapsulates a dataset of texts and their corresponding labels,
-    making it compatible with PyTorch's DataLoader.
+    This class encapsulates a dataset of texts and their corresponding labels.
     """
     def __init__(self, texts, labels):
         """
