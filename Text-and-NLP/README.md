@@ -1,47 +1,45 @@
-# Text processing and NLP applications
+# Text Processing and NLP Applications
 
-Text is one of the most common data format we used in real world therefore becoming one of the pivots in the machine learning.
+Text is one of the most common data formats in the real world and is central to many machine-learning applications.
 
-In this part of project we'll discover how to process text and how to encode it properly for processing at the start. Then we'll apply it to a variety of tasks with different methods, from simple probabilistic model to complicated transformer.
-We'll move from raw, unstructured text to a functional predictive model, covering the main workflows of NLP task.
+This part of the project covers how to preprocess and encode text, then apply several models to practical NLP tasks. It moves from raw, unstructured text to predictive models, progressing from simple probabilistic methods to Transformer architectures.
 
 - [Preprocess: From Corpus to Vocabulary ](#preprocess-from-corpus-to-vocabulary)
     - [Data collection and cleaning](#data-collection-and-cleaning)
     - [Tokenization](#tokenization)
     - [Build Vocabulary](#build-vocabulary)
 - [Word Representations: Embeddings](#word-representations-and-embeddings)
-    - [Embeddings](#create-an-embedding-model)
-    - [Text Classification using embeddings](#text-classification)
+    - [Create an embedding model](#create-an-embedding-model)
+    - [Text classification](#text-classification)
 - [Models and Applications](#models-and-applications)
     - [RNN](#rnn)
     - [GRU](#gru)
     - [LSTM](#lstm)
-        - [Name Entity Recognition](#named-entity-recognition-ner)
-    - [Tranformer](#attention-and-transformer)
-        - [Positional Encoding](#positional-encodings)
+        - [Named Entity Recognition](#named-entity-recognition-ner)
+    - [Transformer](#attention-and-transformer)
+        - [Positional encodings](#positional-encodings)
         - [Attention](#scaled-dot-product-attention)
         - [Encoder](#encoder)
         - [Decoder](#decoder)
 - [Algorithms](#common-algorithms)
     - [Min Edit Distance](#min-edit-distance)
-    - [HMM and viterbi](#hmm-and-viterbi)
-    - [N-grams probabilities](#n-grams-probability)
+    - [HMM and Viterbi](#hmm-and-viterbi)
+    - [N-gram probabilities](#n-gram-probabilities)
 
 
 ## Preprocess: From Corpus to Vocabulary 
 
 ### Data collection and cleaning
 
-Corpus consists of a full context with predicted words and other symbols, you need to clean them at first to build a vocabulary. What would be taken into account includes:
+A corpus is a collection of text used to build or train a model. Before tokenization, inspect the properties that affect the task:
 
-* case sensitive
-* punctuations
+* letter case
+* punctuation
 * numbers
 * special characters
 * emoji
-* ...
 
-There're various of tools for pre-processing the raw text such as `NLTK`, `emoji` libraries etc. By using these tools make it much easier and efficient for data preparation.
+Tools such as `NLTK` and `emoji` can make text preparation easier, but preprocessing decisions should be based on the task and model.
 
 ```python
 import nltk
@@ -60,7 +58,7 @@ data = [ch.lower() for ch in data]
 
 The next step is to split sentences into smaller units called **tokens**. Tokenization only determines the boundaries and content of these units; it does not yet assign them numeric IDs.
 
-There're different granularities and methods of tokenization, let's take a glance:
+Tokenizers use different granularities and methods:
 
 * Words
 * **Subwords**
@@ -129,13 +127,13 @@ Use the **training split** to build the vocabulary so that validation and test d
 
 ## Word Representations and Embeddings
 
-Embedding models evolute from classic static to modern contextual ones which can handle multiple meanings of the word according to the context. Here we'll create a simple classic embedding model to get start. The architecture somewhat like the way of `Word2Vec`, a static embedding method.
+Embedding models have evolved from classic static representations to contextual representations that can reflect a word's meaning in context. Here we create a simple static embedding model as an introduction; its training setup is loosely related to the distributional idea behind `Word2Vec`.
 
-Same as before, in real-world applications you won't create embeddings from scratch. Usually you'll use them by mature models as libraries. 
+In real-world applications, pretrained embeddings or pretrained language models are often a practical starting point.
 
 ### Create an embedding model
 
-We build a model with tow layers, one for look up embeddings, the other for mapping to indices. That is to say `nn.Embedding` layer and `nn.Linear`.
+We build a model with two layers: `nn.Embedding` looks up a vector for each token ID, and `nn.Linear` maps that vector to vocabulary logits for prediction.
 
 [embedding_model.py](./embedding_model.py)
 
@@ -161,7 +159,7 @@ class MyEmbeddingModel(nn.Module):
         return output, embedded_vector
 ```
 
-We manually prepared (input,output) prediction word pairs to train the simple model instead of large corpus dataset.
+We manually prepare `(input, output)` word pairs to train this small model instead of using a large corpus.
 
 ```python
 # just for sample
@@ -175,11 +173,11 @@ train_data = [
 ]
 ```
 
-After training loop, we fetch out the embedding weights and use `scikit-learn` tools `PCA` to make the high dimensions to low dimensions in 2D coordinate. As expected, words are well clustered in their semantics.
+After training, we extract the embedding weights and use `scikit-learn`'s `PCA` to project the high-dimensional vectors into two dimensions. This provides a visual way to inspect the learned representation.
 
 ![embedding](imgs/embeddings.png)
 
-Beyond the static embeddings, dynamic embeddings is more powerful and meaningful, but need more resources and computational. `BERT`, `GPT` are the popular ones recently with transformer architecture. You need to choose the proper model according to your cases.
+Contextual embeddings are more expressive because the representation can depend on surrounding tokens, but they require more computation. `BERT` and `GPT` are well-known Transformer-based examples; the appropriate model depends on the task and available resources.
 
 ## Models and Applications
 
@@ -223,13 +221,13 @@ Compared with LSTM, GRU has a simpler structure with fewer parameters, which oft
 
 Long Short-Term Memory (LSTM) is a type of recurrent neural network designed to capture long-range dependencies in sequential data. Unlike a basic RNN, LSTM introduces memory cells and gates to control what information to keep, forget, and update across time steps. This makes it effective for text processing tasks where word order and context matter.
 
-In the script `lstm_ner.py`, each token is first mapped to an embedding vector, then processed by an LSTM to build a context-aware representation for the whole sentence. The model uses a bidirectional LSTM, which reads the sentence from both left-to-right and right-to-left, enabling the network to use both past and future context when predicting labels.
+In the script `lstm_ner.py`, each token is first mapped to an embedding vector and then processed by a bidirectional LSTM. The LSTM reads the sentence from both left to right and right to left, allowing the model to use context from both directions when predicting a label for each token.
 
 #### Named Entity Recognition (NER)
 
 Named Entity Recognition is a sequence labeling task. The model predicts whether each token belongs to entity labels such as `B-per`, `I-per`, `B-geo`, `I-geo`, `B-org`, `I-org`, or `O`, which indicate the beginning and inside of person, location, organization, and non-entity spans. In this project, each word is assigned a tag and the model learns to classify each token in context.
 
-The dataset used in training coming from Kaggle's [Annotated Corpus for Named Entity Recognition](https://www.kaggle.com/datasets/abhinavwalia95/entity-annotated-corpus).
+The training data comes from Kaggle's [Annotated Corpus for Named Entity Recognition](https://www.kaggle.com/datasets/abhinavwalia95/entity-annotated-corpus).
 
 
 
@@ -246,29 +244,29 @@ The basic pipeline in `lstm_ner.py` is:
 
 This is a standard setup for NER: using contextualized word representations from the LSTM to predict the most likely tag for every token in the sentence.
 
-After training progress, make a test with another sample:
+After training, test the model with another sample:
 
 ```python
 # test a sample after training
-sample = "Tom and Lily flied to France on Friday morning when they were in Beijing during vocation .".split(" ")
+sample = "Tom and Lily flew to France on Friday morning when they were in Beijing during vacation .".split(" ")
 
 tks = [w2i.get(tok, w2i["<unk>"]) for tok in sample]
 
 model.eval()
 with torch.no_grad():
     output = model(torch.tensor([tks]).long())
-    indicies = torch.argmax(output, dim=-1)
-    tags = [idx2tag[i.item()] for i in indicies[0]]
+    indices = torch.argmax(output, dim=-1)
+    tags = [idx2tag[i.item()] for i in indices[0]]
     print(f"input tokens: {tks}")
-    print(f"POS tags: {tags}")
+    print(f"NER tags: {tags}")
 ```
 
 > input tokens: [3947, 13, 16290, 16290, 7, 1893, 63, 365, 3525, 278, 127, 189, 11, 1634, 194, 16290, 21] </br>
-> POS tags: ['O', 'O', 'O', 'O', 'O', 'B-geo', 'O', 'B-tim', 'I-tim', 'O', 'O', 'O', 'O', 'B-geo', 'O', 'O', 'O']
+> NER tags: ['O', 'O', 'O', 'O', 'O', 'B-geo', 'O', 'B-tim', 'I-tim', 'O', 'O', 'O', 'O', 'B-geo', 'O', 'O', 'O']
 
 ### Text Classification
 
-In this scenario, we're provided with a dataset of recipes which is retrieved from [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions) and is refined for simplicity. The dataset includes a recipe name, ingredients, steps, category, label etc. Our aim is to identify whether its category is fruit or vegetable by recipe name. The dataset is in `.csv` format and processed by pandas like below:
+In this example, we use a simplified dataset derived from [Food.com Recipes and User Interactions](https://www.kaggle.com/datasets/shuyangli94/food-com-recipes-and-user-interactions). It includes a recipe name, ingredients, steps, category, and label. The goal is to classify a recipe as a fruit or vegetable recipe based on its name. The data is stored in `.csv` format and processed with pandas:
 
 |    |     id | name                             | category   | label |
 |---:|-------:|:---------------------------------|:-----------|:------|
@@ -278,11 +276,11 @@ In this scenario, we're provided with a dataset of recipes which is retrieved fr
 |  3 |   5289 | apple a day  milk shake          | fruit      | 0     |
 |  4 |  70971 | bananas 4 ice cream  pie         | fruit      | 0     |
 
-Before training with a model, there're still lots of work to do.
+Before training a model, the data must still be prepared and batched.
 
-Sentences are normally by different length, size of words is variable, whereas we need to pack them uniformly in a batch in order to train efficiently. We have two ways for doing so.
+Sentences normally have different lengths, but efficient batch processing requires a consistent representation. Two common approaches are:
 
-1. padding the sentences to the same length and provide a corresponding `mask` or `packedSequence` for pooling calculation.
+1. Pad sentences to the same length and provide a corresponding mask. Padding is useful when the model processes a dense batch tensor.
 
     ```python
     def collate_batch_padding(batch_samples):
@@ -302,7 +300,7 @@ Sentences are normally by different length, size of words is variable, whereas w
         return padded_texts, labels
     ```
 
-2. concatenate all the words into a single flattened tensor and supply `offset indices` for each sentence.
+2. Concatenate all tokens into one flattened tensor and supply `offset` indices for each sentence. This is the approach used by `nn.EmbeddingBag`.
 
     ```python
     def collate_batch_flatten(batch_samples):
@@ -320,11 +318,11 @@ Sentences are normally by different length, size of words is variable, whereas w
         return flattened_text, offsets, labels
     ```
 
-By using `collate_fn` parameter with Dataloader, we are able to dynamically adjust length in batches and improve the performance.
+Using the `collate_fn` parameter of a `DataLoader` allows batches to be padded or flattened dynamically.
 
 [text_classifier.py](./text_classifier.py)
 
-We are using  the `flatten` way with `nn.EmbeddingBag` in a simple architecture which consists of `Embedding Layer`, `Dropout` and `FC Layer`. 
+We use the flattened approach with `nn.EmbeddingBag` in a simple architecture consisting of an embedding layer, dropout, and a fully connected layer.
 
 ```python
 class EmbeddingBagClassifier(nn.Module):
@@ -346,17 +344,15 @@ class EmbeddingBagClassifier(nn.Module):
 
 ### Attention and Transformer
 
-Transformer is a modern neural architecture widely used in models such as BERT and GPT. Its key mechanism is **attention**, which allows each token to model its relationship with all other tokens in the same sequence in parallel.
+The Transformer is a neural architecture used in models such as BERT and GPT. Its key mechanism is **attention**, which allows each token to model its relationship with other tokens in the same sequence in parallel.
 
 Unlike recurrent models, which process tokens sequentially, attention computes dependencies across the whole sequence at once. This makes it effective for long-range context modeling and parallel training.
 
-In this section, we first build a simple attention mechanism using `Q`, `K`, and `V`, then extend it to the core Transformer components: `Encoder`, `Decoder`, and `Encoder-Decoder`.
+In this section, we first describe attention using `Q`, `K`, and `V`, then introduce the core Transformer components: the encoder, decoder, and encoder-decoder arrangement.
 
 #### Positional encodings
 
-When you train a Transformer network using multi-head attention, you feed your data into the model all at once. While this reduces training time, there is no information about the order of your data. This is where positional encoding is helpful. 
-
-There're different methods of position embeddings, here we use a simple learned embeddings like token embedding. For more advanced, we can use **sin/cos** encoding method.
+Multi-head self-attention processes all tokens in parallel, so it does not know their order by itself. Positional information is therefore added to the token embeddings. This project uses fixed sine/cosine encodings in `encoder_classifier.py` and `decoder_generator.py`; learned positional embeddings are another valid approach.
 
 $$
 PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{model}}}\right)
@@ -370,7 +366,9 @@ $$
 X' = X + PE
 $$
 
-Because the encoding is deterministic, it has no trainable parameters and can also be generated for sequence lengths not seen during training.
+Here, $pos$ is the token position, $i$ indexes a pair of embedding dimensions,
+and $d_{model}$ is the embedding dimension. Even dimensions use sine and odd
+dimensions use cosine. Because the encoding is deterministic, it has no trainable parameters.
 
 
 #### Scaled dot-product attention
@@ -399,7 +397,7 @@ def dot_product_attention(q, k, v, mask=None):
     return output
 ```
 
-Shape of Q,K,V
+Shapes of `Q`, `K`, and `V`:
 
 ```text
 q: (batch_size, num_heads, query_length, head_dimension)
@@ -409,7 +407,7 @@ v: (batch_size, num_heads, key_length, value_dimension)
 
 [self_attn_predict.py](./self_attn_predict.py)
 
-A prediction model using self-attention. Trained by sliding window to predict next word. The main process including:
+A prediction model using self-attention. It is trained with a sliding window to predict the next word. The main process includes:
 
 1. tokenizer
 2. embedding + positioning
@@ -418,7 +416,7 @@ A prediction model using self-attention. Trained by sliding window to predict ne
 5. show attention in heat map
 6. predict next words
 
-After training with a small corpus, we provide a simple sentence "I and tom go to" and let the model to predict next two words. Also we display the heat map of original sentence to get an intuition.
+After training on a small corpus, we provide the sentence "I and tom go to" and ask the model to predict the next two words. We also display an attention heat map to make the learned relationships easier to inspect.
 
 ![attention_map](imgs/attn_heat_map.png)
 
@@ -429,7 +427,7 @@ After training with a small corpus, we provide a simple sentence "I and tom go t
 
 [encoder_classifier.py](./encoder_classifier.py)
 
-A sentiment analyser with `Encoder` architecture. Includes the main components of transformer:
+A sentiment analysis model with an encoder architecture. It includes the main Transformer components:
 
 1. Layer Normalization
 2. Sinusoidal Positional Encoding
@@ -437,7 +435,7 @@ A sentiment analyser with `Encoder` architecture. Includes the main components o
 4. Residual Connection
 5. FeedForward Network
 
-The training data is from [IMDB](https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz) dataset, for this practice just using a subsets of it.
+The training data comes from the [IMDB](https://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz) dataset; this practice uses only a subset.
 
 ![train_loss](imgs/encoder_loss.png)
 
@@ -447,7 +445,7 @@ The training data is from [IMDB](https://ai.stanford.edu/~amaas/data/sentiment/a
 
 [decoder_generator.py](./decoder_generator.py)
 
-Decoder is the other half part of the transformer architecture that can generate sequences autogressively with coherence. The key insight is self-attention with `causal masking`.
+The decoder is the autoregressive part of a Transformer that can generate a sequence one token at a time. Its key mechanism is masked self-attention with `causal masking`, which prevents a position from attending to future positions.
 
 In this part we'll include:
 
@@ -467,17 +465,17 @@ def create_causal_mask(size: int, is_bool=True):
     return mask
 ```
 
-We use `IMDB` dataset as corpus again with little modified tokenizer. Most of the parts as positional embedding, decoder block, multihead attention are as the same before. But there's still something need to mention:
+We use the `IMDB` dataset again with a lightly modified tokenizer. Positional encoding, decoder blocks, and multi-head attention follow the same general ideas as the encoder, with causal masking added for generation:
 
-1. we should pass the **causal mask to multi-head attention** block.
-2. we use `nn.TransformerDecoderLayer` as decode-only model although it is a encoder-decoder model essentially.
-3. we use a special training method that inputs and targets are the same while calculating the loss we `shift 1 words right`.
-4. we use `top-k`, `top-p` to make predictions
-5. we use `temprature` to reshape the distribution
-6. we use `torch.multinomial` to add distribution choice with random
-7. we use `yield` to generate one token at a time
+1. Pass the **causal mask to the multi-head attention** block.
+2. Use `nn.TransformerDecoderLayer` in a decoder-only configuration. Although the PyTorch layer supports cross-attention, this project passes the same sequence as the target and memory.
+3. During training, use the same sequence as the source while shifting the target by one position for next-token prediction.
+4. Use `top-k` and `top-p` sampling to control predictions.
+5. Use `temperature` to adjust the sharpness of the probability distribution.
+6. Use `torch.multinomial` to sample from the distribution.
+7. Use `yield` to generate one token at a time.
 
-After training the model, we given a prompt with **"The film"** as the beginning, let the model to fill the next words to form a sentence. Only 5 epochs with 1000 movie reviews, the model "seems to be able to achieve".
+After training on a small corpus, we provide **"The film"** as a prompt and let the model generate the following tokens. The example uses only five epochs and 1,000 movie reviews, so its output is illustrative rather than a measure of production-level language quality.
 
 > **prompt**: The film <br/>
 > **generated**: The Film is a french film as an excellent of a legendary father , however . crawford ( william haines ) and bonnie jordan with his bowl ursula buchfellner to their cheating leopold kessler ( dell henderson ) in germany peter weston together in her chess star  , becomes legend bobby fischer . evelyn ransom on her husband from georgia watson ) penniless ; bonnie they suddenly deciding to her autograph advantage ( werner pochath ) . william haines is herself to him but unlike urban architecture by dr , mary ellen trainor laura crawford who becomes
@@ -488,7 +486,7 @@ After training the model, we given a prompt with **"The film"** as the beginning
 
 [min_edit_distance.py](./min_edit_distance.py)
 
-Min edit distance is a dynamic programming algorithm that measures how many operations are needed to transform one string into another. In this implementation, the cost is based on three operations: insertion, deletion, and replacement, with default costs of 1, 1, and 2 respectively. A matrix is built where each cell stores the minimum cost to convert a prefix of the source string into a prefix of the target string. This makes it useful for comparing strings, correcting typos, and aligning sequences in text processing and NLP tasks.
+Minimum edit distance is a dynamic-programming algorithm that measures the cost of transforming one string into another. In this implementation, the three operations are insertion, deletion, and replacement, with default costs of 1, 1, and 2, respectively. A matrix stores the minimum cost of converting each source prefix into each target prefix. This is useful for comparing strings, correcting typos, and aligning text.
 
 ```text
    #  p  r  o  c  e  e  d
@@ -506,13 +504,13 @@ e  7  6  5  6  5  4  3  4
 
 Hidden Markov Models (HMMs) are probabilistic sequence models that assume each hidden state emits observations over time, making them well suited for POS tagging, chunking, and speech recognition. The Viterbi algorithm efficiently finds the most likely sequence of hidden states by dynamic programming, balancing transition and emission probabilities while keeping the best path for each prefix.
 
-### N-grams probability
+### N-gram probabilities
 
 [n_grams_predict.py](./n_grams_predict.py)
 
-N-grams are a simple probabilistic language model that estimates the likelihood of a word based on the previous $n-1$ words. This makes N-grams useful for next-word prediction, text generation, and language modeling, while remaining easy to implement and fast to train. They work well on local context but struggle with long-range dependencies and unseen word combinations.
+An n-gram is a simple probabilistic language model that estimates the likelihood of a word based on the previous $n-1$ words. N-grams are useful for next-word prediction and text generation, and are easy to implement and fast to train. They capture local context but struggle with long-range dependencies and unseen word combinations.
 
-The core idea of an n-gram probability model is to estimate the probability of each possible next word in the vocabulary given the previous $n-1$ words. In practice, this requires computing a co-occurrence matrix of word combinations to capture how often particular sequences appear together.
+The core idea of an n-gram model is to estimate the probability of each possible next word given the previous $n-1$ words. In practice, this example counts observed word combinations and normalizes the counts into conditional probabilities.
 
 The co-occurrence matrix:
 
