@@ -17,7 +17,7 @@ This part of the project covers how to preprocess and encode text, then apply se
     - [LSTM](#lstm)
         - [Named Entity Recognition](#named-entity-recognition-ner)
     - [Transformer](#attention-and-transformer)
-        - [Positional encodings](#positional-encodings)
+        - [Positional Encodings](#positional-encodings)
         - [Attention](#scaled-dot-product-attention)
         - [Encoder](#encoder)
         - [Decoder](#decoder)
@@ -350,7 +350,9 @@ Unlike recurrent models, which process tokens sequentially, attention computes d
 
 In this section, we first describe attention using `Q`, `K`, and `V`, then introduce the core Transformer components: the encoder, decoder, and encoder-decoder arrangement.
 
-#### Positional encodings
+#### Positional Encodings
+
+[position_encoding.py](./position_encoding.py)
 
 Multi-head self-attention processes all tokens in parallel, so it does not know their order by itself. Positional information is therefore added to the token embeddings. This project uses fixed sine/cosine encodings in `encoder_classifier.py` and `decoder_generator.py`; learned positional embeddings are another valid approach.
 
@@ -370,6 +372,7 @@ Here, $pos$ is the token position, $i$ indexes a pair of embedding dimensions,
 and $d_{model}$ is the embedding dimension. Even dimensions use sine and odd
 dimensions use cosine. Because the encoding is deterministic, it has no trainable parameters.
 
+![positional_encodings](imgs/position_encoding.png)
 
 #### Scaled dot-product attention
 
