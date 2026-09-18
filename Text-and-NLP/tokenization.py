@@ -1,4 +1,4 @@
-from transformers import BertTokenizerFast,GPT2TokenizerFast, AutoTokenizer
+from transformers import BertTokenizerFast, GPT2TokenizerFast, AutoTokenizer
 
 def get_tokenizer(tk_name):
 

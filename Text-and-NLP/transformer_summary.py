@@ -15,7 +15,7 @@ from torch.utils.data import DataLoader, Dataset, random_split
 CSV_PATH = Path(__file__).with_name("summary_context.csv")
 PAD_TOKEN = "<pad>"
 UNK_TOKEN = "<unk>"
-BOS_TOKEN = "<bos>"
+BOS_TOKEN = "<sos>"
 EOS_TOKEN = "<eos>"
 SPECIAL_TOKENS = [PAD_TOKEN, UNK_TOKEN, BOS_TOKEN, EOS_TOKEN]
 
@@ -113,18 +113,9 @@ class PositionalEncoding(nn.Module):
 
 
 class SummarizationTransformer(nn.Module):
-    def __init__(
-        self,
-        source_vocab_size,
-        target_vocab_size,
-        embedding_size=256,
-        num_heads=8,
-        encoder_layers=3,
-        decoder_layers=3,
-        feed_forward_size=512,
-        dropout=0.1,
-        max_length=512,
-    ):
+    def __init__(self, source_vocab_size, target_vocab_size, embedding_size=256,
+                num_heads=8, encoder_layers=3, decoder_layers=3, feed_forward_size=512,
+                dropout=0.1, max_length=512):
         super().__init__()
         self.embedding_size = embedding_size
         self.source_embedding = nn.Embedding(source_vocab_size, embedding_size)
