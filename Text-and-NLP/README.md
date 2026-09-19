@@ -21,6 +21,7 @@ This part of the project covers how to preprocess and encode text, then apply se
         - [Attention](#scaled-dot-product-attention)
         - [Encoder](#encoder)
         - [Decoder](#decoder)
+        - [Summarization Application](#summarization-with-transformer)
 - [Algorithms](#common-algorithms)
     - [Min Edit Distance](#min-edit-distance)
     - [HMM and Viterbi](#hmm-and-viterbi)
@@ -482,6 +483,34 @@ After training on a small corpus, we provide **"The film"** as a prompt and let 
 
 > **prompt**: The film <br/>
 > **generated**: The Film is a french film as an excellent of a legendary father , however . crawford ( william haines ) and bonnie jordan with his bowl ursula buchfellner to their cheating leopold kessler ( dell henderson ) in germany peter weston together in her chess star  , becomes legend bobby fischer . evelyn ransom on her husband from georgia watson ) penniless ; bonnie they suddenly deciding to her autograph advantage ( werner pochath ) . william haines is herself to him but unlike urban architecture by dr , mary ellen trainor laura crawford who becomes
+
+#### Summarization with Transformer
+
+[transformer_summary.py](./transformer_summary.py)
+
+This example uses a Transformer encoder-decoder architecture to train a summarization model on a curated CSV dataset containing source articles and reference summaries.
+
+Key techniques used:
+
+- Clean and shuffle the source articles and reference summaries.
+- Tokenize inputs and targets with a pretrained T5 tokenizer.
+- Use dynamic batch padding with a custom collate function.
+- Share token embeddings between the encoder and decoder.
+- Add sinusoidal positional encodings to represent token order.
+- Apply causal masking for autoregressive decoding.
+- Apply source and target padding masks during attention.
+- Use teacher forcing with the target sequence shifted by one token.
+- Train with cross-entropy loss while ignoring padding tokens.
+- Clip gradients and check logits and loss values for non-finite numbers.
+- Generate summaries one token at a time until the end-of-sequence token.
+
+T5-specific pitfall and fix:
+
+- T5 uses the padding token ID as the decoder's start-of-sequence token.
+- Treating that first decoder token as padding initially caused a `NaN` error.
+- The padding mask was adjusted to keep the initial token active, resolving the issue.
+
+
 
 ## Common Algorithms
 
