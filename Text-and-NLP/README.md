@@ -493,23 +493,15 @@ This example uses a Transformer encoder-decoder architecture to train a summariz
 Key techniques used:
 
 - Clean and shuffle the source articles and reference summaries.
-- Tokenize inputs and targets with a pretrained T5 tokenizer.
+- Train a compact `WordPiece` tokenizer on the source articles and reference summaries.
 - Use dynamic batch padding with a custom collate function.
 - Share token embeddings between the encoder and decoder.
 - Add sinusoidal positional encodings to represent token order.
 - Apply causal masking for autoregressive decoding.
 - Apply source and target padding masks during attention.
 - Use teacher forcing with the target sequence shifted by one token.
-- Train with cross-entropy loss while ignoring padding tokens.
-- Clip gradients and check logits and loss values for non-finite numbers.
-- Generate summaries one token at a time until the end-of-sequence token.
 
-T5-specific pitfall and fix:
-
-- T5 uses the padding token ID as the decoder's start-of-sequence token.
-- Treating that first decoder token as padding initially caused a `NaN` error.
-- The padding mask was adjusted to keep the initial token active, resolving the issue.
-
+This experiment showed that good summarization depends on more than the Transformer architecture. The tokenizer, vocabulary size, learning rate, and dataset quality must match the size of the training corpus. 
 
 
 ## Common Algorithms
