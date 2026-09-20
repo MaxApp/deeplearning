@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 import torch
-from transformers import AutoTokenizer
+from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 from torch import nn
 from torch.nn.utils.rnn import pad_sequence
 from torch.utils.data import DataLoader, Dataset, random_split
@@ -18,36 +18,73 @@ UNK_TOKEN = "[UNK]"
 BOS_TOKEN = "[BOS]"
 EOS_TOKEN = "[EOS]"
 SPECIAL_TOKENS = [PAD_TOKEN, UNK_TOKEN, BOS_TOKEN, EOS_TOKEN]
+TOKENIZER_PATH = Path(__file__).with_name("summary_tokenizer.json")
+TOKENIZER_VOCAB_SIZE = 12_000
 
 
-class HuggingFaceTokenizer:
-    """Pretrained tokenizer shared by the encoder and decoder."""
+class SubwordTokenizer:
+    """A compact WordPiece tokenizer trained on the local corpus."""
 
-    def __init__(self, model_name="t5-small"):
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.pad_id = self.tokenizer.pad_token_id
-        self.unk_id = self.tokenizer.unk_token_id
-        self.eos_id = self.tokenizer.eos_token_id
-        # T5 uses the padding token as the decoder start token.
-        self.bos_id = self.tokenizer.pad_token_id
+    def __init__(self, tokenizer=None):
+        self.tokenizer = tokenizer or Tokenizer(
+            models.WordPiece(unk_token=UNK_TOKEN, continuing_subword_prefix="##")
+        )
+        self.tokenizer.pre_tokenizer = pre_tokenizers.Whitespace()
+        self.tokenizer.decoder = decoders.WordPiece(prefix="##")
+
+    @classmethod
+    def train(cls, texts, vocab_size=TOKENIZER_VOCAB_SIZE):
+        tokenizer = cls()
+        trainer = trainers.WordPieceTrainer(
+            vocab_size=vocab_size,
+            min_frequency=2,
+            special_tokens=SPECIAL_TOKENS,
+            show_progress=True,
+        )
+        tokenizer.tokenizer.train_from_iterator(texts, trainer=trainer)
+        return tokenizer
+
+    @classmethod
+    def from_file(cls, path):
+        return cls(Tokenizer.from_file(str(path)))
+
+    def save(self, path):
+        self.tokenizer.save(str(path))
+
+    def _special_id(self, token):
+        token_id = self.tokenizer.token_to_id(token)
+        if token_id is None:
+            raise ValueError(f"Tokenizer is missing special token: {token}")
+        return token_id
+
+    @property
+    def pad_id(self):
+        return self._special_id(PAD_TOKEN)
+
+    @property
+    def unk_id(self):
+        return self._special_id(UNK_TOKEN)
+
+    @property
+    def bos_id(self):
+        return self._special_id(BOS_TOKEN)
+
+    @property
+    def eos_id(self):
+        return self._special_id(EOS_TOKEN)
 
     @property
     def vocab_size(self):
-        return self.tokenizer.vocab_size
+        return self.tokenizer.get_vocab_size()
 
     def encode(self, text, max_length, add_bos=False, add_eos=True):
-        available = max_length - int(add_bos)
-        encoded = self.tokenizer(
-            str(text),
-            add_special_tokens=add_eos,
-            max_length=max(available, 0),
-            truncation=True,
-            return_tensors="pt",
-        )
-        ids = encoded["input_ids"][0].tolist()
+        ids = self.tokenizer.encode(str(text)).ids
+        special_count = int(add_bos) + int(add_eos)
+        ids = ids[: max(max_length - special_count, 0)]
         if add_bos:
             ids = [self.bos_id] + ids
-
+        if add_eos:
+            ids.append(self.eos_id)
         return torch.tensor(ids, dtype=torch.long)
 
     def decode(self, ids):
@@ -137,8 +174,7 @@ class SummarizationTransformer(nn.Module):
         source_padding = source.eq(pad_id)
         decoder_input_padding = decoder_input.eq(pad_id)
 
-        # Caution !!!!!
-        # T5 uses pad_id as BOS; the first decoder token is not padding.
+        # The custom tokenizer uses a separate BOS token, so it is never padding.
         decoder_input_padding[:, 0] = False
 
         source_embedding = self.position(self.shared_embedding(source))
@@ -158,26 +194,60 @@ class SummarizationTransformer(nn.Module):
         return self.output(hidden)
 
 
-def train_epoch(model, loader, optimizer, criterion, pad_id, device):
-    model.train()
+def split_decoder_inputs(target, pad_id, bos_id, eos_id):
+    """Create decoder inputs and labels for next-token prediction."""
+    if target.ndim != 2 or target.size(1) < 2:
+        raise ValueError("Target sequences must contain at least BOS and EOS")
+    if not torch.all(target[:, 0].eq(bos_id)):
+        raise ValueError("Every target sequence must start with BOS")
+
+    decoder_input = target[:, :-1]
+    labels = target[:, 1:]
+    lengths = target.ne(pad_id).sum(dim=1)
+    last_tokens = target.gather(1, (lengths - 1).unsqueeze(1)).squeeze(1)
+    if not torch.all(last_tokens.eq(eos_id)):
+        raise ValueError("Every target sequence must end with EOS before padding")
+    if decoder_input.shape != labels.shape:
+        raise ValueError("Decoder inputs and labels must have the same shape")
+    return decoder_input, labels
+
+
+def run_epoch(model, loader, criterion, pad_id, bos_id, eos_id, device, optimizer=None):
+    training = optimizer is not None
+    model.train(training)
     total_loss = 0.0
     for source, target in loader:
         source, target = source.to(device), target.to(device)
-        optimizer.zero_grad()
+        decoder_input, labels = split_decoder_inputs(target, pad_id, bos_id, eos_id)
 
-        logits = model(source, target[:, :-1], pad_id)
+        if training:
+            optimizer.zero_grad()
+
+        logits = model(source, decoder_input, pad_id)
         if not torch.isfinite(logits).all():
             raise RuntimeError("Non-finite logits detected before calculating loss")
-        loss = criterion(logits.reshape(-1, logits.size(-1)), target[:, 1:].reshape(-1))
+        loss = criterion(logits.reshape(-1, logits.size(-1)), labels.reshape(-1))
         if not torch.isfinite(loss):
             raise RuntimeError("Non-finite loss detected")
 
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        optimizer.step()
+        if training:
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+            optimizer.step()
         total_loss += loss.item()
 
     return total_loss / max(len(loader), 1)
+
+
+def train_epoch(model, loader, optimizer, criterion, pad_id, bos_id, eos_id, device):
+    return run_epoch(
+        model, loader, criterion, pad_id, bos_id, eos_id, device, optimizer
+    )
+
+
+@torch.no_grad()
+def validate_epoch(model, loader, criterion, pad_id, bos_id, eos_id, device):
+    return run_epoch(model, loader, criterion, pad_id, bos_id, eos_id, device)
 
 
 @torch.no_grad()
@@ -218,8 +288,10 @@ if __name__ == "__main__":
     # load csv corpus
     data = load_summary_data(CSV_PATH)
 
-    # using `t5-small` tokenizer for processing
-    tokenizer = HuggingFaceTokenizer("t5-small")
+    # Train one tokenizer on both source articles and target summaries.
+    tokenizer_texts = pd.concat([data["ctext"], data["text"]]).tolist()
+    tokenizer = SubwordTokenizer.train(tokenizer_texts, TOKENIZER_VOCAB_SIZE)
+    tokenizer.save(TOKENIZER_PATH)
 
     dataset = SummaryDataset(data, tokenizer, max_source_length=256, max_target_length=64)
 
@@ -232,6 +304,7 @@ if __name__ == "__main__":
 
     collate = make_collate_fn(tokenizer.pad_id)
     train_loader = DataLoader(train_set, batch_size=32, shuffle=True, collate_fn=collate)
+    valid_loader = DataLoader(valid_set, batch_size=32, shuffle=False, collate_fn=collate)
 
     model = SummarizationTransformer(
         vocab_size=tokenizer.vocab_size,
@@ -245,22 +318,42 @@ if __name__ == "__main__":
     ).to(device)
 
     # training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-3)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.01)
+    epochs = 30
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=epochs, eta_min=1e-6
+    )
     criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_id)
 
     print(f"device={device}, examples={len(dataset)}")
-    print(f"shared vocabulary size={tokenizer.vocab_size}")
+    print(f"subword vocabulary size={tokenizer.vocab_size}")
 
-    for epoch in range(10):
-        loss = train_epoch(
+    for epoch in range(epochs):
+        train_loss = train_epoch(
             model,
             train_loader,
             optimizer,
             criterion,
             tokenizer.pad_id,
+            tokenizer.bos_id,
+            tokenizer.eos_id,
             device,
         )
-        print(f"epoch {epoch + 1:02d} | loss {loss:.4f}")
+        valid_loss = validate_epoch(
+            model,
+            valid_loader,
+            criterion,
+            tokenizer.pad_id,
+            tokenizer.bos_id,
+            tokenizer.eos_id,
+            device,
+        )
+        scheduler.step()
+        current_lr = optimizer.param_groups[0]["lr"]
+        print(
+            f"epoch {epoch + 1:02d} | train loss {train_loss:.4f} "
+            f"| valid loss {valid_loss:.4f} | lr {current_lr:.2e}"
+        )
 
     # evaluate with a single sample
     example = data.iloc[0]["ctext"]
