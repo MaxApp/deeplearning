@@ -19,7 +19,7 @@ BOS_TOKEN = "[BOS]"
 EOS_TOKEN = "[EOS]"
 SPECIAL_TOKENS = [PAD_TOKEN, UNK_TOKEN, BOS_TOKEN, EOS_TOKEN]
 TOKENIZER_PATH = Path(__file__).with_name("summary_tokenizer.json")
-TOKENIZER_VOCAB_SIZE = 12_000
+TOKENIZER_VOCAB_SIZE = 6_000
 
 
 class SubwordTokenizer:
@@ -251,7 +251,7 @@ def validate_epoch(model, loader, criterion, pad_id, bos_id, eos_id, device):
 
 
 @torch.no_grad()
-def summarize(model, paragraph, tokenizer, max_source_length, max_target_length, device):
+def summarize(model, paragraph, tokenizer, max_source_length, max_target_length, device, min_target_tokens=8):
     model.eval()
     source = tokenizer.encode(paragraph, max_source_length, add_bos=False, add_eos=True)
     source = source.unsqueeze(0).to(device)
@@ -260,8 +260,14 @@ def summarize(model, paragraph, tokenizer, max_source_length, max_target_length,
 
     for _ in range(max_target_length - 1):
         logits = model(source, generated, tokenizer.pad_id)
-        # select the last token predicted
-        next_token = logits[:, -1].argmax(dim=-1, keepdim=True)
+        next_logits = logits[:, -1].clone()
+        # PAD and BOS are never valid generated summary tokens.
+        next_logits[:, tokenizer.pad_id] = -torch.inf
+        next_logits[:, tokenizer.bos_id] = -torch.inf
+        generated_tokens = generated.size(1) - 1
+        if generated_tokens < min_target_tokens:
+            next_logits[:, tokenizer.eos_id] = -torch.inf
+        next_token = next_logits.argmax(dim=-1, keepdim=True)
         generated = torch.cat([generated, next_token], dim=1)
         if next_token.item() == tokenizer.eos_id:
             break
@@ -318,12 +324,19 @@ if __name__ == "__main__":
     ).to(device)
 
     # training
-    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-4, weight_decay=0.01)
-    epochs = 30
+    optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4, weight_decay=0.01)
+    epochs = 40
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=epochs, eta_min=1e-6
     )
-    criterion = nn.CrossEntropyLoss(ignore_index=tokenizer.pad_id)
+    # EOS is rare compared with ordinary word pieces; weighting it helps the
+    # decoder learn when a summary is complete instead of running on forever.
+    class_weights = torch.ones(tokenizer.vocab_size, device=device)
+    class_weights[tokenizer.eos_id] = 4.0
+    criterion = nn.CrossEntropyLoss(
+        ignore_index=tokenizer.pad_id,
+        weight=class_weights,
+    )
 
     print(f"device={device}, examples={len(dataset)}")
     print(f"subword vocabulary size={tokenizer.vocab_size}")

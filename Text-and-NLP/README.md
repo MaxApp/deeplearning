@@ -488,7 +488,7 @@ After training on a small corpus, we provide **"The film"** as a prompt and let 
 
 [transformer_summary.py](./transformer_summary.py)
 
-This example uses a Transformer encoder-decoder architecture to train a summarization model on a curated CSV dataset containing source articles and reference summaries.
+This example uses a Transformer encoder-decoder architecture to train a summarization model on a curated CSV dataset from [Kaggle.com](https://www.kaggle.com/datasets/sunnysai12345/news-summary) containing source articles and reference summaries.
 
 Key techniques used:
 
