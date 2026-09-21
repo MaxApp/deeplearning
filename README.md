@@ -105,6 +105,10 @@ I have explored several common model families and classic architectures, includi
     * Attention Model
     * Encoder
     * Decoder
+    * Common Models
+        * BERT
+        * T5
+        * Prefix LM
 
 ### Training, Evaluating and Tuning
 
