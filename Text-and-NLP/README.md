@@ -128,7 +128,18 @@ Use the **training split** to build the vocabulary so that validation and test d
 
 ## Word Representations and Embeddings
 
-Embedding models have evolved from classic static representations to contextual representations that can reflect a word's meaning in context. Here we create a simple static embedding model as an introduction; its training setup is loosely related to the distributional idea behind `Word2Vec`.
+Embedding methods have evolved from static, context-independent representations to dynamic, context-aware representations. Static embeddings assign each token a fixed vector while dynamic embeddings generate different vectors depending on context. Here we introduce a simple static embedding model as a starting point, and its training setup is inspired by the distributional idea behind `Word2Vec`.
+
+* Static Embeddings
+    * `Word2Vec`
+        * Skip-gram
+        * CBOW
+    * `GloVe`
+    * `FastText`
+* Dynamic Embeddings
+    * `ELMo`
+    * `BERT`
+    * `GPT`
 
 In real-world applications, pretrained embeddings or pretrained language models are often a practical starting point.
 
