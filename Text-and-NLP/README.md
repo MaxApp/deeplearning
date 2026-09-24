@@ -22,6 +22,7 @@ This part of the project covers how to preprocess and encode text, then apply se
         - [Encoder](#encoder)
         - [Decoder](#decoder)
         - [Summarization Application](#summarization-with-transformer)
+        - [Question Answering Model](#question-answering-model-with-transformer)
 - [Algorithms](#common-algorithms)
     - [Min Edit Distance](#min-edit-distance)
     - [HMM and Viterbi](#hmm-and-viterbi)
@@ -514,6 +515,18 @@ Key techniques used:
 
 This experiment showed that good summarization depends on more than the Transformer architecture. The tokenizer, vocabulary size, learning rate, and dataset quality must match the size of the training corpus. 
 
+#### Question Answering Model with Transformer
+
+Question answering (Q&A) is a broad task family rather than a single model type. Depending on the problem setting, a system may be designed to:
+
+- **Extractive**: locate the exact answer span from a given passage, such as a sentence or paragraph. Typical models are built around encoder-only Transformers like BERT and are well suited for reading comprehension tasks.
+- **Generative**: generate the answer directly from the question and context, often using encoder-decoder or decoder-only Transformers such as T5 or GPT.
+- **Retrieval Augmented Generation (RAG)**: first retrieve relevant passages from a document store or knowledge base, then feed them to a generation model to produce a grounded answer.
+- **SQL-based**: convert a natural-language question into a SQL query and execute it on a database to return structured results.
+- **Knowledge Graph-based**: answer questions by reasoning over structured entities, relations, or tables instead of relying only on plain text.
+- **Multimodal**: combine text with images, tables, or other modalities to answer more complex questions.
+
+In practice, the choice depends on whether the task needs exact-span extraction, open-ended generation, factual grounding, or structured querying. Transformer-based models are widely used across all these types because they can encode long context, model semantic relations, and support both classification-style and generation-style answer pipelines.
 
 ## Common Algorithms
 
