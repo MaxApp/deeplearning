@@ -519,8 +519,8 @@ This experiment showed that good summarization depends on more than the Transfor
 
 Question answering (Q&A) is a broad task family rather than a single model type. Depending on the problem setting, a system may be designed to:
 
-- **Extractive**: locate the exact answer span from a given passage, such as a sentence or paragraph. Typical models are built around encoder-only Transformers like BERT and are well suited for reading comprehension tasks.
-- **Generative**: generate the answer directly from the question and context, often using encoder-decoder or decoder-only Transformers such as T5 or GPT.
+- **Extractive**: locate the exact answer span from a given passage, such as a sentence or paragraph. Typical models are built around encoder-only Transformers like `BERT` and are well suited for reading comprehension tasks.
+- **Generative**: generate the answer directly from the question and context, often using encoder-decoder or decoder-only Transformers such as `T5` or `GPT`.
 - **Retrieval Augmented Generation (RAG)**: first retrieve relevant passages from a document store or knowledge base, then feed them to a generation model to produce a grounded answer.
 - **SQL-based**: convert a natural-language question into a SQL query and execute it on a database to return structured results.
 - **Knowledge Graph-based**: answer questions by reasoning over structured entities, relations, or tables instead of relying only on plain text.
