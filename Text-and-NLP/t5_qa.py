@@ -11,7 +11,6 @@ retaining the important T5 workflow:
 For production workloads, replace `MiniT5` with `T5ForConditionalGeneration` from Transformers.
 """
 
-import math
 import random
 from dataclasses import dataclass
 from typing import Sequence
@@ -21,66 +20,61 @@ import pandas as pd
 import torch
 from transformers import AutoTokenizer, PreTrainedTokenizerBase
 from torch import Tensor, nn
+from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 
 
-# def sentinel_id(tokenizer: PreTrainedTokenizerBase, index: int) -> int:
-# 	"""Return the ID for a T5 sentinel token such as `<extra_id_0>`."""
-# 	if index < 0:
-# 		raise IndexError("sentinel index must be non-negative")
-# 	return tokenizer.convert_tokens_to_ids(f"<extra_id_{index}>")
+def sentinel_id(tokenizer: PreTrainedTokenizerBase, index: int) -> int:
+	"""Return the ID for a T5 sentinel token such as `<extra_id_0>`."""
+	if index < 0:
+		raise IndexError("sentinel index must be non-negative")
+	return tokenizer.convert_tokens_to_ids(f"<extra_id_{index}>")
 
 
-# def corrupt_spans(
-# 	token_ids: Sequence[int],
-# 	tokenizer: PreTrainedTokenizerBase,
-# 	noise_density: float = 0.15,
-# 	mean_span_length: float = 3.0,
-# 	rng: random.Random | None = None,
-# ) -> tuple[list[int], list[int]]:
-# 	"""Create T5's input and target for span corruption.
+def corrupt_spans(
+	token_ids: Sequence[int],
+	tokenizer: PreTrainedTokenizerBase,
+	noise_density: float = 0.15,
+	mean_span_length: float = 3.0,
+	rng: random.Random | None = None,
+) -> tuple[list[int], list[int]]:
+	"""Create T5's sentinel-based input and target for span corruption."""
+	if not token_ids:
+		return [tokenizer.eos_token_id], [tokenizer.eos_token_id]
+	if not 0 < noise_density < 1 or mean_span_length <= 0:
+		raise ValueError("noise_density must be between 0 and 1 and span length must be positive")
 
-# 	Every masked span is replaced by one sentinel in the input. The target
-# 	contains the same sentinel followed by the removed tokens, ending in EOS.
-# 	"""
-# 	if not token_ids:
-# 		return [tokenizer.eos_token_id], [tokenizer.eos_token_id]
-# 	if not 0 < noise_density < 1:
-# 		raise ValueError("noise_density must be between 0 and 1")
+	random_source = rng or random.Random()
+	length = len(token_ids)
+	num_noise = max(1, min(length - 1 if length > 1 else 1, round(length * noise_density)))
+	num_spans = max(1, round(num_noise / mean_span_length))
+	starts = sorted(random_source.sample(range(length), min(num_spans, length)))
+	spans: list[tuple[int, int]] = []
+	remaining = num_noise
+	for index, start in enumerate(starts):
+		end_limit = starts[index + 1] if index + 1 < len(starts) else length
+		span_length = max(1, round(random_source.expovariate(1 / mean_span_length)))
+		end = min(end_limit, start + span_length, start + remaining)
+		if end > start:
+			spans.append((start, end))
+			remaining -= end - start
+		if remaining <= 0:
+			break
 
-# 	random_source = rng or random.Random()
-# 	length = len(token_ids)
-# 	num_noise = max(1, min(length - 1 if length > 1 else 1, round(length * noise_density)))
-# 	num_spans = max(1, round(num_noise / mean_span_length))
-# 	starts = sorted(random_source.sample(range(length), min(num_spans, length)))
-# 	spans: list[tuple[int, int]] = []
-# 	remaining = num_noise
-# 	for index, start in enumerate(starts):
-# 		end_limit = starts[index + 1] if index + 1 < len(starts) else length
-# 		span_length = max(1, round(random_source.expovariate(1 / mean_span_length)))
-# 		end = min(end_limit, start + span_length, start + remaining)
-# 		if end > start:
-# 			spans.append((start, end))
-# 			remaining -= end - start
-# 		if remaining <= 0:
-# 			break
-
-# 	if not spans:
-# 		spans = [(0, min(1, length))]
-
-# 	masked_input: list[int] = []
-# 	target: list[int] = []
-# 	cursor = 0
-# 	for sentinel_index, (start, end) in enumerate(spans):
-# 		masked_input.extend(token_ids[cursor:start])
-# 		sentinel = sentinel_id(tokenizer, sentinel_index)
-# 		masked_input.append(sentinel)
-# 		target.append(sentinel)
-# 		target.extend(token_ids[start:end])
-# 		cursor = end
-# 	masked_input.extend(token_ids[cursor:])
-# 	target.append(tokenizer.eos_token_id)
-# 	return masked_input, target
+	if not spans:
+		spans = [(0, 1)]
+	masked_input: list[int] = []
+	target: list[int] = []
+	cursor = 0
+	for sentinel_index, (start, end) in enumerate(spans):
+		masked_input.extend(token_ids[cursor:start])
+		sentinel = sentinel_id(tokenizer, sentinel_index)
+		masked_input.append(sentinel)
+		target.extend((sentinel, *token_ids[start:end]))
+		cursor = end
+	masked_input.extend(token_ids[cursor:])
+	target.append(tokenizer.eos_token_id)
+	return masked_input, target
 
 
 def shift_right(labels: Tensor, decoder_start_token_id: int, pad_token_id: int) -> Tensor:
@@ -118,55 +112,147 @@ class ModelConfig:
 	num_layers: int = 2
 	d_ff: int = 256
 	dropout: float = 0.1
-	max_length: int = 96
+	feed_forward_proj: str = "gated-gelu"
+
+
+class T5RMSNorm(nn.Module):
+	def __init__(self, dimension: int, eps: float = 1e-6):
+		super().__init__()
+		self.weight = nn.Parameter(torch.ones(dimension))
+		self.eps = eps
+
+	def forward(self, hidden: Tensor) -> Tensor:
+		variance = hidden.float().pow(2).mean(dim=-1, keepdim=True)
+		return (hidden * torch.rsqrt(variance + self.eps)).type_as(hidden) * self.weight
+
+
+class T5Attention(nn.Module):
+	def __init__(self, config: ModelConfig):
+		super().__init__()
+		if config.d_model % config.n_heads:
+			raise ValueError("d_model must be divisible by n_heads")
+		self.attention = nn.MultiheadAttention(
+			config.d_model, config.n_heads, config.dropout, batch_first=True, bias=False
+		)
+
+	def forward(
+		self,
+		hidden: Tensor,
+		key_value: Tensor | None = None,
+		key_padding_mask: Tensor | None = None,
+		is_causal: bool = False,
+	) -> Tensor:
+		key_value = hidden if key_value is None else key_value
+		attn_mask = None
+		if is_causal:
+			length = hidden.size(1)
+			attn_mask = torch.triu(
+				torch.ones(length, length, dtype=torch.bool, device=hidden.device), diagonal=1
+			)
+		return self.attention(
+			hidden, key_value, key_value, attn_mask=attn_mask,
+			key_padding_mask=key_padding_mask, need_weights=False
+		)[0]
+
+
+class T5FeedForward(nn.Module):
+	def __init__(self, config: ModelConfig):
+		super().__init__()
+		self.wi_0 = nn.Linear(config.d_model, config.d_ff, bias=False)
+		self.wi_1 = nn.Linear(config.d_model, config.d_ff, bias=False)
+		self.wo = nn.Linear(config.d_ff, config.d_model, bias=False)
+		self.dropout = nn.Dropout(config.dropout)
+		self.gated = config.feed_forward_proj == "gated-gelu"
+
+	def forward(self, hidden: Tensor) -> Tensor:
+		if self.gated:
+			hidden = F.gelu(self.wi_0(hidden)) * self.wi_1(hidden)
+		else:
+			hidden = F.relu(self.wi_0(hidden))
+		return self.dropout(self.wo(hidden))
+
+
+class T5Block(nn.Module):
+	def __init__(self, config: ModelConfig, is_decoder: bool):
+		super().__init__()
+		self.is_decoder = is_decoder
+		self.self_layer_norm = T5RMSNorm(config.d_model)
+		self.self_attention = T5Attention(config)
+		if is_decoder:
+			self.cross_layer_norm = T5RMSNorm(config.d_model)
+			self.cross_attention = T5Attention(config)
+		self.ff_layer_norm = T5RMSNorm(config.d_model)
+		self.feed_forward = T5FeedForward(config)
+
+	def forward(
+		self,
+		hidden: Tensor,
+		self_padding_mask: Tensor,
+		is_causal: bool,
+		encoder_hidden: Tensor | None = None,
+		cross_padding_mask: Tensor | None = None,
+	) -> Tensor:
+		hidden = hidden + self.self_attention(
+			self.self_layer_norm(hidden), key_padding_mask=self_padding_mask, is_causal=is_causal
+		)
+		if self.is_decoder and encoder_hidden is not None:
+			hidden = hidden + self.cross_attention(
+				self.cross_layer_norm(hidden), key_value=encoder_hidden,
+				key_padding_mask=cross_padding_mask
+			)
+		hidden = hidden + self.feed_forward(self.ff_layer_norm(hidden))
+		return hidden
+
+
+class T5Stack(nn.Module):
+	def __init__(self, config: ModelConfig, is_decoder: bool):
+		super().__init__()
+		self.is_decoder = is_decoder
+		self.blocks = nn.ModuleList(T5Block(config, is_decoder) for _ in range(config.num_layers))
+		self.final_layer_norm = T5RMSNorm(config.d_model)
+		self.dropout = nn.Dropout(config.dropout)
+
+	def forward(
+		self,
+		inputs: Tensor,
+		padding_mask: Tensor,
+		encoder_hidden: Tensor | None = None,
+		cross_padding_mask: Tensor | None = None,
+	) -> Tensor:
+		hidden = self.dropout(inputs)
+		for block in self.blocks:
+			hidden = block(
+				hidden, padding_mask, self.is_decoder, encoder_hidden, cross_padding_mask
+			)
+		return self.final_layer_norm(hidden)
 
 
 class MiniT5(nn.Module):
-	"""A compact T5-style encoder-decoder Transformer for experiments."""
+	"""A compact implementation of T5's shared-embedding architecture."""
 
 	def __init__(self, vocab_size: int, pad_token_id: int, config: ModelConfig):
 		super().__init__()
 		self.config = config
 		self.pad_token_id = pad_token_id
 		self.token_embedding = nn.Embedding(vocab_size, config.d_model, padding_idx=pad_token_id)
-		self.position_embeddings = nn.Embedding(config.max_length, config.d_model)
-		encoder_layer = nn.TransformerEncoderLayer(
-			config.d_model, config.n_heads, config.d_ff, config.dropout, batch_first=True, norm_first=True
-		)
-		decoder_layer = nn.TransformerDecoderLayer(
-			config.d_model, config.n_heads, config.d_ff, config.dropout, batch_first=True, norm_first=True
-		)
-		self.encoder = nn.TransformerEncoder(encoder_layer, config.num_layers)
-		self.decoder = nn.TransformerDecoder(decoder_layer, config.num_layers)
-		self.final_layer_norm = nn.LayerNorm(config.d_model)
+		self.encoder = T5Stack(config, is_decoder=False)
+		self.decoder = T5Stack(config, is_decoder=True)
 		self.final_layer = nn.Linear(config.d_model, vocab_size, bias=False)
 		self.final_layer.weight = self.token_embedding.weight
-		self.dropout = nn.Dropout(config.dropout)
-
-	def _embed(self, input_ids: Tensor) -> Tensor:
-		# add positional embeddings
-		positions = torch.arange(input_ids.size(1), device=input_ids.device).unsqueeze(0)
-		return self.dropout(self.token_embedding(input_ids) * math.sqrt(self.config.d_model) + self.position_embeddings(positions))
 
 	def encode(self, input_ids: Tensor) -> Tensor:
 		padding_mask = input_ids.eq(self.pad_token_id)
-		positional_embedding = self._embed(input_ids)
-		return self.encoder(positional_embedding, src_key_padding_mask=padding_mask)
+		return self.encoder(self.token_embedding(input_ids), padding_mask)
 
 	def forward(self, input_ids: Tensor, decoder_input_ids: Tensor) -> Tensor:
-		# encoder
-		input_embeddings = self.encode(input_ids)
-		# decoder
-		decoder_padding_mask = decoder_input_ids.eq(self.pad_token_id)
-		causal_mask = nn.Transformer.generate_square_subsequent_mask(
-			decoder_input_ids.size(1), device=decoder_input_ids.device
-		)
+		encoder_hidden = self.encode(input_ids)
+		decoder_padding = decoder_input_ids.eq(self.pad_token_id)
+		decoder_padding[:, 0] = False
 		hidden = self.decoder(
-			self._embed(decoder_input_ids), input_embeddings, tgt_mask=causal_mask,
-			tgt_key_padding_mask=decoder_padding_mask, memory_key_padding_mask=input_ids.eq(self.pad_token_id)
+			self.token_embedding(decoder_input_ids), decoder_padding, encoder_hidden,
+			input_ids.eq(self.pad_token_id)
 		)
-		# final fc
-		return self.final_layer(self.final_layer_norm(hidden))
+		return self.final_layer(hidden)
 
 	@torch.no_grad()
 	def generate(self, input_ids: Tensor, tokenizer: PreTrainedTokenizerBase, max_new_tokens: int = 32) -> Tensor:
