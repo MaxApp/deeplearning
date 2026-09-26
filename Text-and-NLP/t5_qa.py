@@ -1,26 +1,25 @@
 """Fine-tune a small pretrained T5 model for question answering."""
 
-import random
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
 import torch
 from datasets import load_dataset
 from transformers import AutoTokenizer, DataCollatorForSeq2Seq, T5ForConditionalGeneration
 from torch.utils.data import DataLoader, IterableDataset
 
 SQUAD_FILE = "Squad_v2.0.json"
+SEED = 42
+
 
 class TextToTextDataset(IterableDataset[dict[str, str]]):
 	"""Stream SQuAD v2 examples from its downloaded JSON file."""
 
-	def __init__(self, json_path: str, shuffle_buffer_size: int = 1_000, seed: int = 42):
+	def __init__(self, json_path: str | Path, shuffle_buffer_size: int = 1_000, seed: int = 42):
 		super().__init__()
 		self.json_path = Path(json_path)
 		if not self.json_path.is_file():
 			raise FileNotFoundError(f"SQuAD JSON file not found: {self.json_path}")
-		
+
 		self.dataset = load_dataset(
 			"json",
 			data_files=str(self.json_path),
@@ -62,21 +61,6 @@ class TextToTextDataset(IterableDataset[dict[str, str]]):
 
 	def set_epoch(self, epoch: int) -> None:
 		self.dataset.set_epoch(epoch)
-
-
-def build_sample_qa() -> pd.DataFrame:
-	"""Return a tiny dataset suitable for a smoke test or classroom demo."""
-	return pd.DataFrame(
-		{
-			"input_text": [
-				"question: what color is the sky? context: the sky is blue.",
-				"question: what animal barks? context: a dog barks loudly.",
-				"question: where do fish live? context: fish live in water.",
-				"question: what do bees make? context: bees make honey.",
-			],
-			"target_text": ["blue", "dog", "water", "honey"],
-		}
-	)
 
 
 def make_collate_fn(tokenizer: AutoTokenizer, model: T5ForConditionalGeneration):
@@ -126,11 +110,7 @@ def train_qa(model: T5ForConditionalGeneration,
 
 
 if __name__ == "__main__":
-
-	seed = 42
-	random.seed(seed)
-	np.random.seed(seed)
-	torch.manual_seed(seed)
+	torch.manual_seed(SEED)
 
 	# t5-small is a pretrained 60M-parameter T5 checkpoint.
 	tokenizer_name = "google-t5/t5-small"
@@ -138,17 +118,9 @@ if __name__ == "__main__":
 	model = T5ForConditionalGeneration.from_pretrained(tokenizer_name)
 	optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 
-	dataset_path = Path(__file__).with_name("train-v2.0.json")
-	dataset = TextToTextDataset(dataset_path, shuffle_buffer_size=1_000, seed=seed)
+	dataset = TextToTextDataset(SQUAD_FILE, shuffle_buffer_size=1_000, seed=SEED)
 	train_loader = DataLoader(
 		dataset, batch_size=4,
 		collate_fn=make_collate_fn(tokenizer, model),
 	)
 	train_qa(model, train_loader, optimizer, epochs=5)
-
-	model.eval()
-	question = "question: what color is the sky? context: the sky is blue."
-	inputs = tokenizer(question, return_tensors="pt").to(model.device)
-	answer_ids = model.generate(**inputs, max_new_tokens=16)
-	print(f"question: {question}")
-	print(f"answer: {tokenizer.decode(answer_ids[0], skip_special_tokens=True)}")
