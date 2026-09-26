@@ -1,27 +1,67 @@
 """Fine-tune a small pretrained T5 model for question answering."""
 
 import random
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
+from datasets import load_dataset
 from transformers import AutoTokenizer, DataCollatorForSeq2Seq, T5ForConditionalGeneration
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, IterableDataset
 
+SQUAD_FILE = "Squad_v2.0.json"
 
-class TextToTextDataset(Dataset[dict[str, str]]):
-	def __init__(self, frame: pd.DataFrame):
-		required = {"input_text", "target_text"}
-		if not required.issubset(frame.columns):
-			raise ValueError(f"dataset must contain columns: {sorted(required)}")
-		self.examples = list(frame[["input_text", "target_text"]].itertuples(index=False, name=None))
+class TextToTextDataset(IterableDataset[dict[str, str]]):
+	"""Stream SQuAD v2 examples from its downloaded JSON file."""
 
-	def __len__(self) -> int:
-		return len(self.examples)
+	def __init__(self, json_path: str, shuffle_buffer_size: int = 1_000, seed: int = 42):
+		super().__init__()
+		self.json_path = Path(json_path)
+		if not self.json_path.is_file():
+			raise FileNotFoundError(f"SQuAD JSON file not found: {self.json_path}")
+		
+		self.dataset = load_dataset(
+			"json",
+			data_files=str(self.json_path),
+			field="data",
+			split="train",
+			streaming=True,
+		)
+		self.dataset = self.dataset.map(
+			self._flatten_batch,
+			batched=True,
+			batch_size=1,
+			remove_columns=self.dataset.column_names,
+		)
+		if shuffle_buffer_size > 0:
+			self.dataset = self.dataset.shuffle(
+				buffer_size=shuffle_buffer_size,
+				seed=seed,
+			)
 
-	def __getitem__(self, index: int) -> dict[str, str]:
-		input_text, target_text = self.examples[index]
-		return {"input_text": input_text, "target_text": target_text}
+	@staticmethod
+	def _flatten_batch(batch: dict) -> dict[str, list[str]]:
+		input_texts = []
+		target_texts = []
+		for paragraphs in batch["paragraphs"]:
+			for paragraph in paragraphs:
+				context = paragraph["context"]
+				for qa in paragraph["qas"]:
+					answers = qa.get("answers", [])
+					input_texts.append(f"question: {qa['question']} context: {context}")
+					target_texts.append(
+						"unanswerable"
+						if qa.get("is_impossible", False) or not answers
+						else answers[0]["text"]
+					)
+		return {"input_text": input_texts, "target_text": target_texts}
+
+	def __iter__(self):
+		yield from self.dataset
+
+	def set_epoch(self, epoch: int) -> None:
+		self.dataset.set_epoch(epoch)
 
 
 def build_sample_qa() -> pd.DataFrame:
@@ -55,18 +95,21 @@ def make_collate_fn(tokenizer: AutoTokenizer, model: T5ForConditionalGeneration)
 	return collate
 
 
-def train_qa(
-	model: T5ForConditionalGeneration,
-	train_dataloader: DataLoader,
-	optimizer: torch.optim.Optimizer,
-	epochs: int = 20,
-):
+def train_qa(model: T5ForConditionalGeneration,
+			train_dataloader: DataLoader,
+			optimizer: torch.optim.Optimizer,
+			epochs: int = 20):
+
 	"""Fine-tune pretrained T5 with teacher forcing and its built-in loss."""
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	model.to(device)
 	model.train()
 	for epoch in range(epochs):
+		set_epoch = getattr(train_dataloader.dataset, "set_epoch", None)
+		if set_epoch is not None:
+			set_epoch(epoch)
 		total_loss = 0.0
+		batch_count = 0
 		for batch in train_dataloader:
 			batch = {name: value.to(device) for name, value in batch.items()}
 			loss = model(**batch).loss
@@ -75,9 +118,10 @@ def train_qa(
 			torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 			optimizer.step()
 			total_loss += loss.item()
+			batch_count += 1
 
 		if (epoch + 1) % 5 == 0:
-			loss = total_loss / max(1, len(train_dataloader))
+			loss = total_loss / max(1, batch_count)
 			print(f"epoch {epoch + 1:>3}/{epochs} - loss: {loss:.4f}")
 
 
@@ -94,10 +138,10 @@ if __name__ == "__main__":
 	model = T5ForConditionalGeneration.from_pretrained(tokenizer_name)
 	optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 
-	frame = build_sample_qa()
-	dataset = TextToTextDataset(frame)
+	dataset_path = Path(__file__).with_name("train-v2.0.json")
+	dataset = TextToTextDataset(dataset_path, shuffle_buffer_size=1_000, seed=seed)
 	train_loader = DataLoader(
-		dataset, batch_size=4, shuffle=True,
+		dataset, batch_size=4,
 		collate_fn=make_collate_fn(tokenizer, model),
 	)
 	train_qa(model, train_loader, optimizer, epochs=5)
