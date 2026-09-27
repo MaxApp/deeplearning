@@ -12,7 +12,7 @@ SEED = 42
 
 
 class TextToTextDataset(IterableDataset[dict[str, str]]):
-	"""Stream SQuAD v2 examples from its downloaded JSON file."""
+	"""Stream SQuAD v2 examples from JSON file."""
 
 	def __init__(self, json_path: str | Path, shuffle_buffer_size: int = 1_000, seed: int = 42):
 		super().__init__()
