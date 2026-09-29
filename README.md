@@ -3,7 +3,7 @@
 ## Table of Contents
 
 - [Welcome and Foreword](#welcome-and-foreword)
-- [Overview of ML workflow](#overview-of-ml-workflow)
+- [Machine Learning Workflow](#machine-learning-workflow)
 - [Knowledge Maps](#knowledge-maps)
   - [Mathematics](#mathematics)
   - [Programming Languages](#programming-languages)
@@ -44,7 +44,7 @@ flowchart LR
     RL --> VL[Value Learning]
 ```
 
-## Overview of ML workflow
+## Machine Learning Workflow
 
 From the initial idea to a production-ready system, a machine learning project typically follows a clear workflow. It usually includes:
 
@@ -134,6 +134,18 @@ Once a model is trained, additional work is often required before it is ready fo
 Converting a model to an inference engine is a common step. This may involve exporting it to `ONNX` or another format to support cross-platform deployment and improve runtime performance.
 
 Before deployment, optimization techniques such as `pruning` and `quantization` can significantly reduce model size and improve efficiency. In addition, tools such as `MLflow` can help with experimentation, tracking, and model monitoring throughout the training lifecycle.
+
+## Overview of Projects
+
+### Fundamentals of Machine Learning
+
+### Text and NLP Models
+
+### Vision Models
+
+### Deployment
+
+
 
 ## Conclusion
 
