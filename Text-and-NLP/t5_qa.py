@@ -79,10 +79,7 @@ def make_collate_fn(tokenizer: AutoTokenizer, model: T5ForConditionalGeneration)
 	return collate
 
 
-def train_qa(model: T5ForConditionalGeneration,
-			train_dataloader: DataLoader,
-			optimizer: torch.optim.Optimizer,
-			epochs: int = 20):
+def train_qa(model: T5ForConditionalGeneration, train_dataloader: DataLoader, optimizer: torch.optim.Optimizer, epochs: int = 20):
 
 	"""Fine-tune pretrained T5 with teacher forcing and its built-in loss."""
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -119,8 +116,5 @@ if __name__ == "__main__":
 	optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 
 	dataset = TextToTextDataset(SQUAD_FILE, shuffle_buffer_size=1_000, seed=SEED)
-	train_loader = DataLoader(
-		dataset, batch_size=4,
-		collate_fn=make_collate_fn(tokenizer, model),
-	)
+	train_loader = DataLoader(dataset, batch_size=4, collate_fn=make_collate_fn(tokenizer, model))
 	train_qa(model, train_loader, optimizer, epochs=5)
