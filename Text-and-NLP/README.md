@@ -242,10 +242,6 @@ Named Entity Recognition is a sequence labeling task. The model predicts whether
 
 The training data comes from Kaggle's [Annotated Corpus for Named Entity Recognition](https://www.kaggle.com/datasets/abhinavwalia95/entity-annotated-corpus).
 
-
-
-
-
 The basic pipeline in `lstm_ner.py` is:
 
 - build a vocabulary from the dataset
