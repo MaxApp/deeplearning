@@ -25,7 +25,7 @@ class TextToTextDataset(IterableDataset[dict[str, str]]):
 			data_files=str(self.json_path),
 			field="data",
 			split="train",
-			streaming=True,
+			# streaming=True,
 		)
 		self.dataset = self.dataset.map(
 			self._flatten_batch,
@@ -41,6 +41,11 @@ class TextToTextDataset(IterableDataset[dict[str, str]]):
 
 	@staticmethod
 	def _flatten_batch(batch: dict) -> dict[str, list[str]]:
+		"""
+		Dataset format
+		input_texts: ["question: xxx  content: xxx"]
+		target_texts: ["answer0"]
+		"""
 		input_texts = []
 		target_texts = []
 		for paragraphs in batch["paragraphs"]:
@@ -49,7 +54,7 @@ class TextToTextDataset(IterableDataset[dict[str, str]]):
 				for qa in paragraph["qas"]:
 					answers = qa.get("answers", [])
 					input_texts.append(f"question: {qa['question']} context: {context}")
-					target_texts.append(
+					target_texts.append("answer: "
 						"unanswerable"
 						if qa.get("is_impossible", False) or not answers
 						else answers[0]["text"]
