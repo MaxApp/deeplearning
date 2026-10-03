@@ -524,6 +524,10 @@ Question answering (Q&A) is a broad task family rather than a single model type.
 
 In practice, the choice depends on whether the task needs exact-span extraction, open-ended generation, factual grounding, or structured querying. Transformer-based models are widely used across all these types because they can encode long context, model semantic relations, and support both classification-style and generation-style answer pipelines.
 
+In this section, we leverage dataset from [SQuAD 2.0](https://rajpurkar.github.io/SQuAD-explorer/) which is designed for Q&A training. Based on pretrained T5, we trained a *Extractive Model* fulfill Question and Answering.
+
+[t5_qna.py](./t5_qa.py)
+
 ## Common Algorithms
 
 ### Min Edit Distance

@@ -42,9 +42,9 @@ class TextToTextDataset(IterableDataset[dict[str, str]]):
 	@staticmethod
 	def _flatten_batch(batch: dict) -> dict[str, list[str]]:
 		"""
-		Dataset format
-		input_texts: ["question: xxx  content: xxx"]
-		target_texts: ["answer0"]
+		return dataset format
+			input_texts: ["question: xxx  content: xxx"]
+			target_texts: ["answer: answer0"]
 		"""
 		input_texts = []
 		target_texts = []
