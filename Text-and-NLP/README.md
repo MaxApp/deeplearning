@@ -524,9 +524,9 @@ Question answering (Q&A) is a broad task family rather than a single model type.
 
 In practice, the choice depends on whether the task needs exact-span extraction, open-ended generation, factual grounding, or structured querying. Transformer-based models are widely used across all these types because they can encode long context, model semantic relations, and support both classification-style and generation-style answer pipelines.
 
-In this section, we leverage dataset from [SQuAD 2.0](https://rajpurkar.github.io/SQuAD-explorer/) which is designed for Q&A training. Based on pretrained T5, we trained a *Extractive Model* fulfill Question and Answering.
+In this section, we use the [SQuAD 2.0](https://rajpurkar.github.io/SQuAD-explorer/) dataset to fine-tune a pretrained T5 model for **generative question answering**. The model generates answer text from a question and its context; it does not predict extractive start and end positions.
 
-[t5_qna.py](./t5_qa.py)
+[t5_qa.py](./t5_qa.py)
 
 ## Common Algorithms
 
@@ -589,6 +589,5 @@ The probabilities matrix:
 (<s>, <s>)   0.181818  0.090909  0.181818  0.090909  0.090909  0.090909  0.090909  0.090909  0.090909
 (i, like)    0.100000  0.100000  0.100000  0.100000  0.100000  0.100000  0.200000  0.100000  0.100000
 ```
-
 
 
