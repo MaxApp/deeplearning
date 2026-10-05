@@ -528,7 +528,7 @@ In this section, we use the [SQuAD 2.0](https://rajpurkar.github.io/SQuAD-explor
 
 [t5_qna_fine_tuning.py](./t5_qa.py)
 
-After only serveral epochs of fine-tuning, we provide a sample question and context. The model performed very well with the right answer.
+Only after serveral epochs of fine-tuning, we provide a sample question and context the model never seen before. It could performed very well with the right answer.
 
 ```python
 question_texts = "Where is the world cup 2022 hosted?"
@@ -542,9 +542,9 @@ prediction = make_prediction(
     context_texts,
 )
 
-print(prediction)
+print(f"Answer: {prediction}")
 ```
-> 'Qatar'
+> 'Answer: Qatar'
 
 ## Common Algorithms
 
