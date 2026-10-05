@@ -154,7 +154,7 @@ def train_qa(
 	for epoch in range(epochs):
 		total_train_loss = 0.0
 		train_batch_count = 0
-		
+
 		model.train()
 		for batch in train_dataloader:
 			batch = {name: value.to(device) for name, value in batch.items()}
@@ -188,6 +188,77 @@ def train_qa(
 			f"validation_loss: {validation_loss:.4f}"
 		)
 
+def make_prediction(
+	model: T5ForConditionalGeneration,
+	tokenizer: AutoTokenizer,
+	question: str,
+	context: str,
+) -> str:
+	
+	"""Generate an answer from a question and context"""
+	if not question.strip():
+		raise ValueError("question must not be empty.")
+	if not context.strip():
+		raise ValueError("context must not be empty.")
+
+	device = next(model.parameters()).device
+	max_source_length = 512
+	max_question_length = 128
+
+	question_ids = tokenizer(
+		f"question: {question} context:",
+		add_special_tokens=False,
+		truncation=True,
+		max_length=max_question_length,
+	)["input_ids"]
+
+	context_ids = tokenizer(context, add_special_tokens=False)["input_ids"]
+	context_budget = max_source_length - len(question_ids) - 1 # leave 1 space for <eos>
+	if context_budget <= 0:
+		raise ValueError("Question length is too long")
+
+	# stride means 'overlap' between context, 128 by conventional
+	stride = max(1, context_budget - 128)
+	context_windows = []
+	for start in range(0, len(context_ids), stride):
+		window = context_ids[start:start + context_budget]
+		context_windows.append(window)
+		if start + context_budget >= len(context_ids):
+			break
+
+	input_features = [
+		{
+			"input_ids": question_ids + window + [tokenizer.eos_token_id],  # add <eos> at the end
+			"attention_mask": [1] * (len(question_ids) + len(window) + 1),
+		}
+		for window in context_windows
+	]
+	model_inputs = tokenizer.pad(input_features, padding=True, return_tensors="pt")
+	model_inputs = {name: value.to(device) for name, value in model_inputs.items()}
+
+	model.eval()
+	with torch.no_grad():
+		generated = model.generate(
+			**model_inputs,
+			num_beams=4,
+			max_new_tokens=64,
+			return_dict_in_generate=True,
+			output_scores=True,
+		)
+
+	predictions = tokenizer.batch_decode(generated.sequences, skip_special_tokens=True)
+	scores = generated.sequences_scores
+	if scores is None:
+		raise RuntimeError("Generation did not return sequence scores.")
+
+	answer_candidates = [
+		(prediction.strip(), score.item())
+		for prediction, score in zip(predictions, scores)
+		if prediction.strip().casefold() != "unanswerable"
+	]
+	if answer_candidates:
+		return max(answer_candidates, key=lambda candidate: candidate[1])[0]
+	return "unanswerable"
 
 if __name__ == "__main__":
 	torch.manual_seed(SEED)
@@ -203,10 +274,12 @@ if __name__ == "__main__":
 		split="train",
 	)
 
-	# split datasets into 'train' and 'test'
+	# Split by article before flattening to keep related contexts in one split.
 	source_splits = source_dataset.train_test_split(test_size=0.1, seed=SEED)
 	train_dataset = TextToTextDataset(source_splits["train"])
 	validation_dataset = TextToTextDataset(source_splits["test"])
+	if len(train_dataset) == 0 or len(validation_dataset) == 0:
+		raise ValueError("Need non-empty training and validation datasets.")
 	optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 
 	shuffle_generator = torch.Generator().manual_seed(SEED)
@@ -225,3 +298,17 @@ if __name__ == "__main__":
 		collate_fn=collate_fn,
 	)
 	train_qa(model, train_loader, validation_loader, optimizer, epochs=5)
+
+	# Smoke-test generation with a real answerable example from the held-out split.
+	question_texts = "Where is the world cup 2022 hosted?"
+	context_texts = "The 2022 World Cup in Qatar is the 22nd World Cup. It is the first time in history that the World Cup has been held in Qatar and a country in the Middle East,and it is also the second in Asia."
+	"In addition,the Qatar World Cup is the first time that the World Cup has been held in winter in the Northern Hemisphere and by a country that has never made it to the World Cup finals."
+	prediction = make_prediction(
+		model,
+		tokenizer,
+		question_texts,
+		context_texts,
+	)
+	# print(f"Prediction test question: {sample['question_texts']}")
+	print(f"Expected answer: Qatar")
+	print(f"Predicted answer: {prediction}")
