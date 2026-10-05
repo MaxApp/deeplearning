@@ -524,9 +524,27 @@ Question answering (Q&A) is a broad task family rather than a single model type.
 
 In practice, the choice depends on whether the task needs exact-span extraction, open-ended generation, factual grounding, or structured querying. Transformer-based models are widely used across all these types because they can encode long context, model semantic relations, and support both classification-style and generation-style answer pipelines.
 
-In this section, we use the [SQuAD 2.0](https://rajpurkar.github.io/SQuAD-explorer/) dataset to fine-tune a pretrained T5 model for **generative question answering**. The model generates answer text from a question and its context; it does not predict extractive start and end positions.
+In this section, we use the [SQuAD 2.0](https://rajpurkar.github.io/SQuAD-explorer/) dataset to fine-tune a pretrained T5 encoder-decoder model for **generative question answering**. The model is trained to produce answer text conditioned on the question and context, rather than predicting an extractive start/end span. In the training collate function, long contexts are cropped around the answer so the relevant answer remains in the context window. In contrast at inference time long contexts are split into overlapping sliding windows, each paired with the same question and the best scoring answer is selected.
 
-[t5_qa.py](./t5_qa.py)
+[t5_qna_fine_tuning.py](./t5_qa.py)
+
+After only serveral epochs of fine-tuning, we provide a sample question and context. The model performed very well with the right answer.
+
+```python
+question_texts = "Where is the world cup 2022 hosted?"
+context_texts = "The 2022 World Cup in Qatar is the 22nd World Cup. It is the first time in history that the World Cup has been held in Qatar and a country in the Middle East,and it is also the second in Asia."\
+"In addition,the Qatar World Cup is the first time that the World Cup has been held in winter in the Northern Hemisphere and by a country that has never made it to the World Cup finals."
+
+prediction = make_prediction(
+    model,
+    tokenizer,
+    question_texts,
+    context_texts,
+)
+
+print(prediction)
+```
+> 'Qatar'
 
 ## Common Algorithms
 
