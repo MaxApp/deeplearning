@@ -147,6 +147,10 @@ The Text-and-NLP projects explore an end-to-end path from raw text to language a
 
 ### Vision Models
 
+The VisionLab projects form a compact but practical computer vision study path, centered on PyTorch and convolutional neural networks. They focus on understanding how CNNs interpret images, why certain regions matter for recognition, and how modern generative models create new visual content from noise. The experiments cover feature maps, saliency analysis, Grad-CAM-style class activation mapping, and diffusion-based image generation, showing both the interpretability and creativity of modern vision systems.
+
+These works help build intuition for core computer vision ideas: visualizing intermediate activations, highlighting influential pixels, explaining model decisions, and exploring latent denoising for image synthesis. As a result, the projects present a balanced view of discriminative vision and generative vision in one learning workflow.
+
 ### Deployment
 
 
