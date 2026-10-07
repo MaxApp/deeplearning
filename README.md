@@ -153,7 +153,9 @@ These works help build intuition for core computer vision ideas: visualizing int
 
 ### Deployment
 
+The Deployment projects focus on the final stage of the ML lifecycle: turning a trained model into something reusable, portable, and efficient in real-world use. These examples cover checkpoint saving and training resume, model serialization, experiment tracking with Lightning and MLflow, exporting to ONNX for cross-platform inference, and optimization through pruning and quantization. The goal is to move from a notebook-trained model to a deployment-ready workflow with better reliability and performance.
 
+[Explore the Deployment projects](./Deployment/README.md) for checkpointing, ONNX export, and model optimization examples.
 
 ## Conclusion
 
