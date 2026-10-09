@@ -15,11 +15,13 @@
 
 ## Welcome and Foreword
 
-Welcome! This repository documents my hands-on learning in machine learning and deep learning through study notes, practical experiments, and working code. As a software engineer, I’m interested in connecting the ideas behind a model to how it is implemented, trained, evaluated, and prepared for use.
+Hi, Welcome to the page! 😀
 
-The knowledge maps and projects bring together the areas I have focused on: machine learning foundations and probabilistic models; neural networks and computer vision; natural language processing (NLP); and transfer learning and fine-tuning. They also cover the practical workflow around these topics, including optimization, evaluation, and deployment. Examples range from classical methods such as Naive Bayes and Hidden Markov Models to CNNs, recurrent networks, and Transformers.
+This repository documents my hands-on learning in machine learning and deep learning through study notes, practical experiments, and working codes. As a software engineer with years of programming, I’m interested in connecting the ideas behind a model to how it is implemented, trained, evaluated and prepared for use.
 
-I use this repository to organize concepts, make connections between methods, and build understanding through implementation. It reflects an ongoing learning journey, with an emphasis on clear explanations and practical exploration rather than claiming expertise in every area.
+The knowledge maps and projects covered on: machine learning foundations and probabilistic models, neural networks and computer vision, natural language processing (NLP) and transformers, transfer learning and fine-tuning. They also cover the practical workflow around these topics, including optimization, evaluation, and deployment. Code examples range from classical methods such as Naive Bayes and Hidden Markov Models to CNNs, recurrent networks, and Transformers.
+
+I use this repository to organize concepts, make connections between methods and build understanding through implementation. It reflects an ongoing learning journey, with an emphasis on clear explanations and practical exploration rather than claiming expertise in every area.
 
 ```mermaid
 flowchart LR
