@@ -14,34 +14,41 @@
 - [Conclusion](#conclusion)
 
 ## Welcome and Foreword
-Hi everyone, welcome to my page! 😀
 
-This repository is a collection of my learning notes, experiments, and practical labs in machine learning and deep learning. It is organized by topic and domain, with code examples and notes that reflect my hands-on learning journey.
+Welcome! This repository documents my hands-on learning in machine learning and deep learning through study notes, practical experiments, and working code. As a software engineer, I’m interested in connecting the ideas behind a model to how it is implemented, trained, evaluated, and prepared for use.
 
-Machine learning and AI are transforming nearly every aspect of modern life. New models, methods, and releases appear at an accelerating pace, and that rapid evolution is both exciting and motivating. As a software engineer with years of programming experience, I have found machine learning and deep learning both intellectually challenging and practically rewarding.
+The knowledge maps and projects bring together the areas I have focused on: machine learning foundations and probabilistic models; neural networks and computer vision; natural language processing (NLP); and transfer learning and fine-tuning. They also cover the practical workflow around these topics, including optimization, evaluation, and deployment. Examples range from classical methods such as Naive Bayes and Hidden Markov Models to CNNs, recurrent networks, and Transformers.
 
-What started as curiosity gradually grew into a deeper interest in understanding the theory, building models, and applying them to real-world problems. Along the way, I learned that ML is not limited to deep learning alone. It spans a broad landscape of methods, including vision, text, audio, probabilistic models, decision trees, Naive Bayes, support vector machines, clustering, and reinforcement learning. I have also highlighted the core concepts and techniques that I found most useful in practical work.
+I use this repository to organize concepts, make connections between methods, and build understanding through implementation. It reflects an ongoing learning journey, with an emphasis on clear explanations and practical exploration rather than claiming expertise in every area.
 
 ```mermaid
 flowchart LR
     ML[Machine Learning]
+    ML --> F[Foundations]
+    F --> M[Math and Probability]
+    F --> CML[Classical Machine Learning]
+    CML --> PM[Probabilistic Models]
+    PM --> NB[Naive Bayes]
+    PM --> HMM[Hidden Markov Models]
+    CML --> DT[Decision Trees]
+    CML --> SVM[Support Vector Machines]
+    CML --> KNN[K-Nearest Neighbors]
+    CML --> ENS[Ensemble Methods]
+
     ML --> DL[Deep Learning]
-    ML --> CL[Classical ML]
-    ML --> RL[Reinforcement Learning]
-
     DL --> NN[Neural Networks]
-    NN --> CNN[CNN]
-    NN --> RNN[RNN]
-    NN --> TF[Transformer]
+    NN --> RNN[Recurrent Networks]
+    RNN --> SEQ[Sequence Models]
+    NN --> CV[Computer Vision]
+    CV --> CNN[CNN Architectures]
+    CV --> VI[Interpretability and Image Generation]
+    NN --> NLP[Natural Language Processing]
+    NLP --> TF[Transformers]
 
-    CL --> PM[Probabilistic Models]
-    CL --> DT[Decision Trees]
-    CL --> SVM[SVM]
-    CL --> KNN[KNN]
-    CL --> ENS[Ensemble Methods]
-
-    RL --> PL[Policy Learning]
-    RL --> VL[Value Learning]
+    DL --> ADAPT[Transfer Learning and Fine-Tuning]
+    ML --> LIFE[Model Lifecycle]
+    LIFE --> TE[Training and Evaluation]
+    LIFE --> OD[Optimization and Deployment]
 ```
 
 ## Machine Learning Workflow
@@ -164,4 +171,3 @@ This page is intended to provide a broad overview of my learning journey in mach
 All of the notes and annotations here reflect my personal learning process and are not intended as formal teaching material. If you notice any mistakes or have suggestions for improvement, I would be very glad to hear from you.
 
 Thanks for reading!
-
