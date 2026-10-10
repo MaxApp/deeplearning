@@ -19,7 +19,7 @@ Hi, Welcome to the page! 😀
 
 This repository documents my hands-on learning in machine learning and deep learning through study notes, practical experiments, and working codes. As a software engineer with years of programming, I’m interested in connecting the ideas behind a model to how it is implemented, trained, evaluated and prepared for use.
 
-The knowledge maps and projects covered on: machine learning foundations and probabilistic models, neural networks and computer vision, natural language processing (NLP) and transformers, transfer learning and fine-tuning. They also cover the practical workflow around these topics, including optimization, evaluation, and deployment. Code examples range from classical methods such as Naive Bayes and Hidden Markov Models to CNNs, recurrent networks, and Transformers.
+The knowledge maps and projects cover machine learning foundations; classical statistical, probabilistic, tree-based, and unsupervised methods; reinforcement learning; and deep learning for computer vision and natural language processing (NLP). They also cover transfer learning and fine-tuning, along with the practical workflow of optimization, evaluation, and deployment. The route map below connects these areas to representative methods and architectures.
 
 I use this repository to organize concepts, make connections between methods and build understanding through implementation. It reflects an ongoing learning journey, with an emphasis on clear explanations and practical exploration rather than claiming expertise in every area.
 
@@ -28,30 +28,62 @@ flowchart LR
     ML[Machine Learning]
     ML --> F[Foundations]
     F --> M[Math and Probability]
-    F --> CML[Classical Machine Learning]
+    F --> OPT[Optimization and Generalization]
+
+    ML --> PAR[Learning Paradigms]
+    PAR --> SUP[Supervised]
+    PAR --> US[Unsupervised]
+    PAR --> SSL[Self-Supervised]
+    SSL --> OBJECTIVES[Contrastive and masked-prediction objectives]
+    PAR --> RL[Reinforcement Learning]
+
+    ML --> CML[Classical Model Families]
+    CML --> LIN[Linear and Logistic Models]
+    CML --> SVM[Support Vector Machines]
     CML --> PM[Probabilistic Models]
     PM --> NB[Naive Bayes]
-    PM --> HMM[Hidden Markov Models]
-    CML --> DT[Decision Trees]
-    CML --> SVM[Support Vector Machines]
-    CML --> KNN[K-Nearest Neighbors]
-    CML --> ENS[Ensemble Methods]
+    PM --> HMM[Hidden Markov Models: sequences]
+    CML --> TREE[Tree-Based Models]
+    TREE --> DT[Decision Trees]
+    TREE --> RF[Bagging: Random Forest]
+    TREE --> BOOST[Boosting: XGBoost and LightGBM]
+    CML --> INST[Instance-Based Learning]
+    INST --> KNN[K-Nearest Neighbors]
+
+    US --> CLUST[Clustering]
+    CLUST --> KM[K-means]
+    CLUST --> DB[DBSCAN]
+    US --> DIM[Dimensionality Reduction]
+    DIM --> PCA[PCA]
+    DIM --> EMBED[t-SNE and UMAP: visualization]
+    US --> ANOM[Anomaly Detection: often unsupervised]
+    ANOM --> ISO[Isolation Forest]
+
+    RL --> VALUE[Value-Based Methods]
+    VALUE --> QL[Q-Learning]
+    VALUE --> DQN[DQN: Deep Q-Learning]
+    RL --> POLICY[Policy / Actor-Critic: PPO]
 
     ML --> DL[Deep Learning]
-    DL --> NN[Neural Networks]
-    NN --> RNN[Recurrent Networks]
-    RNN --> SEQ[Sequence Models]
-    NN --> CV[Computer Vision]
-    CV --> CNN[CNN Architectures]
-    CV --> VI[Interpretability and Image Generation]
-    NN --> NLP[Natural Language Processing]
-    NLP --> TF[Transformers]
+    DL --> ARCH[Common Architectures]
+    ARCH --> MLP[MLP]
+    ARCH --> CNN[CNN]
+    ARCH --> RNN[Recurrent Networks: LSTM and GRU]
+    ARCH --> TF[Transformers]
+    TF --> LLM[Large Language Models]
+    DL --> GEN[Generative Models: VAE, GAN, Diffusion]
+    DL --> APP[Applications]
+    APP --> CV[Computer Vision]
+    APP --> NLP[Natural Language Processing]
 
-    DL --> ADAPT[Transfer Learning and Fine-Tuning]
+    ML --> ADAPT[Transfer Learning and Fine-Tuning]
     ML --> LIFE[Model Lifecycle]
-    LIFE --> TE[Training and Evaluation]
-    LIFE --> OD[Optimization and Deployment]
+    LIFE --> DATA[Data and Feature Engineering]
+    LIFE --> TE[Training, Validation and Metrics]
+    LIFE --> OD[Optimization, Deployment and Monitoring]
 ```
+
+Learning paradigms and model families are separate, overlapping views: for example, neural networks can be used in supervised, self-supervised, or reinforcement learning.
 
 ## Machine Learning Workflow
 
