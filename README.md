@@ -21,18 +21,25 @@ This repository documents my hands-on learning in machine learning and deep lear
 
 Even after many years of programming, I still found deep learning to be a very different experience from classical software development. It feels more like learning how intelligence emerges from data and computation, it is full of creativity. Like learning any new subject, it begins with simple ideas before developing into more complex systems.
 
-It is a broad roadmap for machine learning, covering a wide range of topics, methods and application areas. However the knowledge maps and projects shown here only a subset of the field and a selected portion of the roadmap. They span the foundations of machine learning, including classical statistical, probabilistic, tree-based and unsupervised methods, reinforcement learning and deep learning for computer vision (CV) and natural language processing (NLP). They also cover transfer learning and fine-tuning, along with the practical workflow of optimization, evaluation, and deployment. The route map below connects these areas to representative methods and architectures.
+It is a broad roadmap for machine learning, covering a wide range of topics, methods and application areas. However the knowledge maps and projects shown here only a subset of the field and a selected portion of the roadmap that I've learned. They span the foundations of machine learning, including classical statistical, probabilistic, tree-based and unsupervised methods, reinforcement learning and deep learning for computer vision (CV) and natural language processing (NLP). They also cover transfer learning and fine-tuning, along with the practical workflow of optimization, evaluation, and deployment. The route map below connects these areas to representative methods and architectures.
 
 ```mermaid
 flowchart LR
     ML[Machine Learning]
     ML --> F[Foundations]
-    F --> M[Math and Probability]
-    F --> OPT[Optimization and Generalization]
+    M --> LA[Linear Algebra]
+    M --> CAL[Calculus and Optimization]
+    M --> PROB[Probability and Statistics]
+    F --> M[Mathematics]
+    F --> LT[Learning Theory]
+    F --> FE[Data Processing \nand Feature Engineering]
+    F --> P[Programming Tools \nand Optimization]
 
     ML --> PAR[Learning Paradigms]
-    PAR --> SUP[Supervised]
-    PAR --> US[Unsupervised]
+    PAR --> SUP[Supervised Learning]
+    SUP --> REG[Regression]
+    SUP --> CLS[Classification]
+    PAR --> US[Unsupervised Learning]
     PAR --> SSL[Self-Supervised]
     SSL --> OBJECTIVES[Contrastive and masked-prediction objectives]
     PAR --> RL[Reinforcement Learning]
@@ -42,7 +49,7 @@ flowchart LR
     CML --> SVM[Support Vector Machines]
     CML --> PM[Probabilistic Models]
     PM --> NB[Naive Bayes]
-    PM --> HMM[Hidden Markov Models: sequences]
+    PM --> HMM[Hidden Markov Models]
     CML --> TREE[Tree-Based Models]
     TREE --> DT[Decision Trees]
     TREE --> RF[Bagging: Random Forest]
@@ -52,12 +59,10 @@ flowchart LR
 
     US --> CLUST[Clustering]
     CLUST --> KM[K-means]
-    CLUST --> DB[DBSCAN]
     US --> DIM[Dimensionality Reduction]
     DIM --> PCA[PCA]
-    DIM --> EMBED[t-SNE and UMAP: visualization]
-    US --> ANOM[Anomaly Detection: often unsupervised]
-    ANOM --> ISO[Isolation Forest]
+    DIM --> EMBED[t-SNE]
+    US --> ANOM[Anomaly Detection]
 
     RL --> VALUE[Value-Based Methods]
     VALUE --> QL[Q-Learning]
@@ -68,13 +73,13 @@ flowchart LR
     DL --> ARCH[Common Architectures]
     ARCH --> MLP[MLP]
     ARCH --> CNN[CNN]
-    ARCH --> RNN[Recurrent Networks: LSTM and GRU]
+    ARCH --> RNN[RNN: LSTM and GRU]
     ARCH --> TF[Transformers]
-    TF --> LLM[Large Language Models]
     DL --> GEN[Generative Models: VAE, GAN, Diffusion]
     DL --> APP[Applications]
-    APP --> CV[Computer Vision]
-    APP --> NLP[Natural Language Processing]
+    APP --> CV[CV]
+    APP --> NLP[NLP]
+    APP --> AD[Audio]
 
     ML --> ADAPT[Transfer Learning and Fine-Tuning]
     ML --> LIFE[Model Lifecycle]
@@ -102,12 +107,15 @@ Different types of data may require different preprocessing, training, and evalu
 
 ### Mathematics
 
-A solid foundation in *probability*, *calculus*, and *linear algebra* is essential for understanding how models learn and why they behave the way they do. These concepts support a deeper understanding of training dynamics, optimization, and model behavior in real applications.
+A solid foundation in *linear algebra*, *calculus*, *probability*, and *statistics* is essential for understanding how models learn and why they behave the way they do. These concepts support a deeper understanding of training dynamics, optimization, inference, and model behavior in real applications.
 
-Key concepts frequently used in ML include:
-* derivative
-* vector
-* matrix
+Key topics frequently used in ML include:
+* Linear algebra: vectors, matrices, tensor operations, eigenvalues, eigenvectors, SVD, and matrix factorization
+* Calculus: derivatives, gradients, Jacobians, Hessians, chain rule, and optimization dynamics
+* Probability and statistics: expectation, variance, distributions, Bayesian reasoning, maximum likelihood, and uncertainty estimation
+* Information theory: entropy, cross-entropy, KL divergence, and mutual information
+* Graph theory: graphs, adjacency matrices, Laplacian operators, and network-based learning
+* Numerical methods: approximation, iterative solvers, stability, and optimization algorithms
 * linear algebra
 * probability distribution
 * ...
