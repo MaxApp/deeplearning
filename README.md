@@ -17,11 +17,11 @@
 
 Hi, Welcome to the page! 😀
 
-This repository documents my hands-on learning in machine learning and deep learning through study notes, practical experiments, and working codes. As a software engineer with years of programming, I’m interested in connecting the ideas behind a model to how it is implemented, trained, evaluated and prepared for use.
+This repository documents my hands-on learning in machine learning and deep learning through study notes, practical experiments and working codes. As a software engineer with years of programming experience, I’m interested in connecting the ideas behind a model to how it is implemented, trained, evaluated and prepared for use. 
 
-The knowledge maps and projects cover machine learning foundations; classical statistical, probabilistic, tree-based, and unsupervised methods; reinforcement learning; and deep learning for computer vision and natural language processing (NLP). They also cover transfer learning and fine-tuning, along with the practical workflow of optimization, evaluation, and deployment. The route map below connects these areas to representative methods and architectures.
+Even after many years of programming, I still found deep learning to be a very different experience from classical software development. It feels more like learning how intelligence emerges from data and computation, it is full of creativity. Like learning any new subject, it begins with simple ideas before developing into more complex systems.
 
-I use this repository to organize concepts, make connections between methods and build understanding through implementation. It reflects an ongoing learning journey, with an emphasis on clear explanations and practical exploration rather than claiming expertise in every area.
+It is a broad roadmap for machine learning, covering a wide range of topics, methods and application areas. However the knowledge maps and projects shown here only a subset of the field and a selected portion of the roadmap. They span the foundations of machine learning, including classical statistical, probabilistic, tree-based and unsupervised methods, reinforcement learning and deep learning for computer vision (CV) and natural language processing (NLP). They also cover transfer learning and fine-tuning, along with the practical workflow of optimization, evaluation, and deployment. The route map below connects these areas to representative methods and architectures.
 
 ```mermaid
 flowchart LR
@@ -83,7 +83,7 @@ flowchart LR
     LIFE --> OD[Optimization, Deployment and Monitoring]
 ```
 
-Learning paradigms and model families are separate, overlapping views: for example, neural networks can be used in supervised, self-supervised, or reinforcement learning.
+I use this repository to organize concepts, make connections between methods and build understanding through implementation. It reflects an ongoing learning journey with an emphasis on clear explanations and practical exploration rather than claiming expertise in every area.
 
 ## Machine Learning Workflow
 
