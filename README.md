@@ -6,11 +6,16 @@
 - [Machine Learning Workflow](#machine-learning-workflow)
 - [Knowledge Maps](#knowledge-maps)
   - [Mathematics](#mathematics)
-  - [Programming Languages](#programming-languages)
+  - [Programming Environment](#programming-environment)
   - [Frameworks and Tools](#frameworks-and-tools)
   - [Model Architectures and Components](#model-architectures-and-components)
-- [Training, Evaluating and Tuning](#training-evaluating-and-tuning)
-- [Optimization and Deployment](#optimization-and-deployment)
+  - [Training, Evaluating and Tuning](#training-evaluating-and-tuning)
+  - [Optimization and Deployment](#optimization-and-deployment)
+- [Overview of Projects](#overview-of-projects)
+  - [Fundamentals of Machine Learning](#fundamentals-of-machine-learning)
+  - [Text and NLP Models](#text-and-nlp-models)
+  - [Vision Models](#vision-models)
+  - [Deployment](#deployment)
 - [Conclusion](#conclusion)
 
 ## Welcome and Foreword
@@ -104,7 +109,7 @@ I use this repository to organize concepts, make connections between methods and
 
 ## Machine Learning Workflow
 
-From the initial idea to a production-ready system, a machine learning project typically follows a clear workflow. It usually includes:
+From the idea to a production-ready system, a machine learning project typically follows a clear workflow. It usually includes:
 
 * Data Collection
 * Data Cleaning and Preparation
@@ -122,24 +127,24 @@ Different types of data may require different preprocessing, training, and evalu
 A solid foundation in *linear algebra*, *calculus*, *probability*, and *statistics* is essential for understanding how models learn and why they behave the way they do. These concepts support a deeper understanding of training dynamics, optimization, inference, and model behavior in real applications.
 
 Key topics frequently used in ML include:
-* Linear algebra: vectors, matrices, tensor operations, eigenvalues, eigenvectors, SVD, and matrix factorization
-* Calculus: derivatives, gradients, Jacobians, Hessians, chain rule, and optimization dynamics
-* Probability and statistics: expectation, variance, distributions, Bayesian reasoning, maximum likelihood, and uncertainty estimation
-* Information theory: entropy, cross-entropy, KL divergence, and mutual information
-* Graph theory: graphs, adjacency matrices, Laplacian operators, and network-based learning
-* Numerical methods: approximation, iterative solvers, stability, and optimization algorithms
-* linear algebra
-* probability distribution
+* Linear algebra: vectors, matrices, tensor operations, matrix factorization
+* Calculus: derivatives, gradients, chain rule
+* Probability and statistics: conditional probability, Bayes' theorem, expectation, variance, distributions and maximum likelihood
+* Information theory: entropy, cross-entropy, KL divergence and information gain
 * ...
 
 In practical applications, some common concepts include:
 * Naive Bayes
-* Laplacian Smoothing
+* Laplace Smoothing
 * Log Likelihood
+* Euclidean Distance
 * Cosine Similarity
+* Markov Chain
+* Transition Probability
+* Dot Product
 * ...
 
-### Programming Languages
+### Programming Environment
 
 `Python` is the primary language used throughout this learning journey. It offers a rich ecosystem of tools and libraries that make experimentation, model training, and data analysis efficient and accessible. In addition to Python, I have also worked with *Java*, *C*, *Ruby*, *PHP*, *JavaScript*, and other languages, but Python remains the most practical choice for machine learning work.
 
@@ -147,7 +152,7 @@ In practical applications, some common concepts include:
 
 `PyTorch` is the main deep learning framework used in this project, while `TensorFlow` is another widely adopted option in the field. Both are commonly used for building and training machine learning models.
 
-Beyond the frameworks themselves, tools such as `NumPy`, `Pandas`, `scikit-learn`, and `Matplotlib` are essential for data processing, model evaluation, and visualization. These libraries help transform raw data into meaningful insights and make model comparison more intuitive.
+Beyond the frameworks themselves, tools such as `NumPy`, `Pandas`, `scikit-learn`, `keras` and `Matplotlib` are essential for data processing, model evaluation, and visualization. These libraries help transform raw data into meaningful insights and make model comparison more intuitive.
 
 ### Model Architectures and Components
 
@@ -181,12 +186,15 @@ I have explored several common model families and classic architectures, includi
     * Decoder
     * Common Models
         * BERT
+        * GPT
         * T5
         * Prefix LM
 
 ### Training, Evaluating and Tuning
 
-Models can be built using different architectures, including methods that are not based on neural networks. In general, neural network models are commonly trained using `Gradient Descent`, along with a chosen `Loss Function`, `Optimizer`, and `Scheduler`. During training, it is also important to evaluate the model using appropriate metrics such as `Loss`, `Accuracy`, `Precision`, and `Recall`, while keeping an eye on efficiency and memory usage.
+Models can be built using different architectures, including methods that are not based on neural networks. In general, neural network models are commonly trained using `Gradient Descent` along with a chosen `Loss Function`, `Optimizer` and `Scheduler`. During training, it is also important to evaluate the model using appropriate metrics such as `Loss`, `Accuracy`, `Precision` and `Recall` while keeping an eye on efficiency and memory usage.
+
+For hyperparameter tuning, `Optuna` can automate trials over a defined search space, using validation performance as the objective and pruning unpromising trials.
 
 ### Optimization and Deployment
 
