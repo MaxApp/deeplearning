@@ -21,7 +21,7 @@ This repository documents my hands-on learning in machine learning and deep lear
 
 Even after many years of programming, I still found deep learning to be a very different experience from classical software development. It feels more like learning how intelligence emerges from data and computation, it is full of creativity. Like learning any new subject, it begins with simple ideas before developing into more complex systems.
 
-It is a broad roadmap for machine learning, covering a wide range of topics, methods and application areas. However the knowledge maps and projects shown here only a subset of the field and a selected portion of the roadmap that I've learned. They span the foundations of machine learning, including classical statistical, probabilistic, tree-based and unsupervised methods, reinforcement learning and deep learning for computer vision (CV) and natural language processing (NLP). They also cover transfer learning and fine-tuning, along with the practical workflow of optimization, evaluation, and deployment. The route map below connects these areas to representative methods and architectures.
+It is a broad roadmap for machine learning, covering a wide range of topics, methods and application areas. However the knowledge maps and projects shown here is only a subset of the field and a selected portion that I've mastered. They span the foundations of machine learning, including classical statistical, probabilistic, tree-based and unsupervised methods, reinforcement learning and deep learning for computer vision (CV) and natural language processing (NLP). They also cover transfer learning and fine-tuning, along with the practical workflow of optimization, evaluation, and deployment. The route map below connects these areas to representative methods and architectures.
 
 ```mermaid
 flowchart LR
@@ -32,16 +32,29 @@ flowchart LR
     M --> PROB[Probability and Statistics]
     F --> M[Mathematics]
     F --> LT[Learning Theory]
-    F --> FE[Data Processing \nand Feature Engineering]
-    F --> P[Programming Tools \nand Optimization]
+    F --> FE[Data Pre-Processing \nand Feature Engineering]
+    F --> P[Programming Tools \nand Frameworks]
+    LT --> CF[Cost Function]
+    LT --> GD[Gradient Descent]
+    LT --> AC[Activation]
+    LT --> NM[Normalization]
+    LT --> RG[Regularization]
+    RG --> L1[L1]
+    RG --> L2[L2]
+    RG --> WD[Weight Decay]
+    RG --> DO[Dropout]
+    RG --> NO[Noise]
+    RG --> ES[Early Stopping]
 
     ML --> PAR[Learning Paradigms]
-    PAR --> SUP[Supervised Learning]
+    PAR --> SUP[Supervised]
     SUP --> REG[Regression]
     SUP --> CLS[Classification]
-    PAR --> US[Unsupervised Learning]
+    PAR --> US[Unsupervised]
     PAR --> SSL[Self-Supervised]
-    SSL --> OBJECTIVES[Contrastive and masked-prediction objectives]
+    SSL --> MLM[Masked LM]
+    SSL --> CLM[Causal LM]
+    SSL --> CST[Contrastive]
     PAR --> RL[Reinforcement Learning]
 
     ML --> CML[Classical Model Families]
@@ -62,6 +75,7 @@ flowchart LR
     US --> DIM[Dimensionality Reduction]
     DIM --> PCA[PCA]
     DIM --> EMBED[t-SNE]
+    DIM --> VAE[VAE]
     US --> ANOM[Anomaly Detection]
 
     RL --> VALUE[Value-Based Methods]
