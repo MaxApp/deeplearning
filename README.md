@@ -59,7 +59,8 @@ flowchart LR
     PAR --> SSL[Self-Supervised]
     SSL --> MLM[Masked LM]
     SSL --> CLM[Causal LM]
-    SSL --> CST[Contrastive]
+    SSL -.-> CST[Contrastive]
+    style CST stroke-dasharray: 2,4
     PAR --> RL[Reinforcement Learning]
 
     ML --> CML[Classical Models]
@@ -82,11 +83,13 @@ flowchart LR
     DIM --> PCA[PCA]
     DIM --> EMBED[t-SNE]
     DIM -.-> VAE[VAE Model]
+    style VAE stroke-dasharray: 2,4
     US --> ANOM[Anomaly Detection]
 
     RL --> VALUE[Value-Based Methods]
-    RL --> POLICY[Policy-Based Methods]
-    RL --> AC[Actor-Critic: combines policy and value]
+    RL -.-> POLICY[Policy-Based Methods]
+    RL -.-> AC[Actor-Critic: \ncombines policy and value]
+    style AC stroke-dasharray: 2,4
     VALUE --> QL[Q-Learning]
     VALUE --> DQN[DQN: Deep Q-Learning]
 
