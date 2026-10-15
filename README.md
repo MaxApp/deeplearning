@@ -101,11 +101,15 @@ flowchart LR
     ARCH --> TF[Transformers]
     DL --> GEN[Generative Models: VAE, GAN, Diffusion]
 
-    ML --> ADAPT[Transfer Learning and Fine-Tuning]
+    ML --> TFAFT[Transfer Learning and Fine-Tuning]
     ML --> LIFE[Model Lifecycle]
     LIFE --> DATA[Data and Feature Engineering]
     LIFE --> TE[Training, Validation and Metrics]
     LIFE --> OD[Optimization, Deployment and Monitoring]
+    TE --> LC[Learning Curve\nand Loss]
+    TE --> ACR[Accuracy]
+    TE --> PRC[Precision]
+    TE --> REC[Recall]
 ```
 
 I use this repository to organize concepts, make connections between methods and build understanding through implementation. It reflects an ongoing learning journey with an emphasis on clear explanations and practical exploration rather than claiming expertise in every area.
