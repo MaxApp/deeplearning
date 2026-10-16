@@ -110,6 +110,8 @@ flowchart LR
     TE --> ACR[Accuracy]
     TE --> PRC[Precision]
     TE --> REC[Recall]
+    PRC --> F1S[F1 Score]
+    REC --> F1S[F1 Score]
 ```
 
 I use this repository to organize concepts, make connections between methods and build understanding through implementation. It reflects an ongoing learning journey with an emphasis on clear explanations and practical exploration rather than claiming expertise in every area.
