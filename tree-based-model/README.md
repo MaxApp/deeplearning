@@ -9,7 +9,7 @@ There're two key decisions have to make during the algorithm:
 
 In this project, we will explore tree-based models, understand how they work and build examples to see how they are trained and used.
 
-## Entropy and Impurity
+## Entropy, Impurity and Information Gain
 
 To choose which feature to split, we need the metric `entropy`. Entropy measures how pure or mixed a set of samples is: when a node contains many different labels, its entropy is high and the data is impure; when most samples belong to the same class, entropy is low and the node is relatively pure. In a decision tree, we want to split the data in a way that reduces this uncertainty as much as possible, which is why the feature with the largest information gain is usually chosen.
 
@@ -22,5 +22,25 @@ where $p_1$ and $p_0$ are the proportions of positive and negative samples. Afte
 $$IG = H(p_{root}) - \left(w_{left} H(p_{left}) + w_{right} H(p_{right})\right)$$
 
 Here, $H(p_{root})$ is the entropy of the parent node, $H(p_{left})$ and $H(p_{right})$ are the entropies of the left and right child nodes, and $w_{left}$, $w_{right}$ are the proportions of samples in each child split. This tells us how much uncertainty is reduced by the split.
+
+### Code Example
+
+We build a decision tree on a sample animals dataset to predict whether it's a cat or not. The dataset is as follows:
+
+| Ear Shape |  Face Shape |  Whiskers |   Cat  |
+|:---------:|:-----------:|:---------:|:------:|
+|  Pointy   |   Round     |  Present  |    1   |
+|  Floppy   |  Not Round  |  Present  |    1   |
+|  Floppy   |  Round      |  Absent   |    0   |
+|  Pointy   |  Not Round  |  Present  |    0   |
+|  Pointy   |   Round     |  Present  |    1   |
+|  Pointy   |   Round     |  Absent   |    1   |
+|  Floppy   |  Not Round  |  Absent   |    0   |
+|  Pointy   |   Round     |  Absent   |    1   |
+|  Floppy   |   Round     |  Absent   |    0   |
+|  Floppy   |   Round     |  Absent   |    0   |
+
+Starting from the whole data as the root node, we caculate the entropy and information gain with each feature, then decide split on which feature. The process continues recursively until meet the criteria. Implementation codes refer to [decision_tree.py](./decision_tree.py)
+
 
 
