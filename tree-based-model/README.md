@@ -42,5 +42,14 @@ We build a decision tree on a sample animals dataset to predict whether it's a c
 
 Starting from the whole data as the root node, we caculate the entropy and information gain with each feature, then decide split on which feature. The process continues recursively until meet the criteria. Implementation codes refer to [decision_tree.py](./decision_tree.py)
 
+## Tree Ensembles
+
+A single decision tree can overfit its training data and be sensitive to small changes in that data. Tree ensembles combine predictions from multiple trees, which can improve stability and generalization.
+
+### Bagging
+
+Bagging trains each tree on little different samples drawn from the training data. The trees predictions are then combined by majority vote for classification or averaging for regression. A random forest adds features randomly as subset of features when choosing each split.
+
+### Boosting
 
 
