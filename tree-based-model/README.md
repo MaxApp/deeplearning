@@ -48,8 +48,10 @@ A single decision tree can overfit its training data and be sensitive to small c
 
 ### Bagging
 
-Bagging trains each tree on little different samples drawn from the training data. The trees predictions are then combined by majority vote for classification or averaging for regression. A random forest adds features randomly as subset of features when choosing each split.
+Bagging trains each tree on little different samples with replacement from the training data. The trees ensembles predictions are then combined by majority vote for classification or averaging for regression. A random forest **adds features randomly as subset of features** when choosing each split.
 
 ### Boosting
+
+Boosting builds trees sequentially, with each new tree focusing on errors made by the previous ensemble. Their predictions are combined to produce a stronger model. **XGBoost** adds regularization and efficient training techniques to gradient-boosted trees, while **LightGBM** uses histogram-based splitting and leaf-wise growth to train efficiently on large datasets. Both can deliver strong results on tabular data, but may overfit without suitable tuning.
 
 
