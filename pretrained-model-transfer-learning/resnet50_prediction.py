@@ -7,7 +7,7 @@ import sys
 import matplotlib.pyplot as plt
 
 if "__main__" == __name__:
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).resolve().parent
     # load class names with json file
     class_names_dict = utils.load_classnames_json(str(current_dir / "./imagenet_class_index.json"))
 

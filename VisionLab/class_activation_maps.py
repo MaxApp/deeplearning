@@ -118,8 +118,8 @@ def visualize_gradcam(img_display, heatmap):
 
 
 if __name__ == "__main__":
-    current_dir = Path(__file__).parent
-    pretrained_param_file_path = "E:\\PDF\\pytorch\\resnet50-0676ba61.pth" # "./resnet50-0676ba61.pth"  # change to your own path
+    current_dir = Path(__file__).resolve().parent
+    pretrained_param_file_path = current_dir / "resnet50-0676ba61.pth"  # change to your own path
     resnet50 = tv_models.resnet50(weights=None)
     try:
         state_dict = torch.load(pretrained_param_file_path, map_location="cpu")

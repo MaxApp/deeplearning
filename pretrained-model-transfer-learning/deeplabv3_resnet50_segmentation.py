@@ -10,7 +10,7 @@ import sys
 import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).resolve().parent
 
     # detect and show model classes support
     seg_model_weights = tv_models.segmentation.DeepLabV3_ResNet50_Weights.DEFAULT

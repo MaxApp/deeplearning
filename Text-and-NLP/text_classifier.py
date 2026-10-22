@@ -205,7 +205,7 @@ class ManualPoolingClassifier(nn.Module):
 if "__main__" == __name__:
 
     # load refined data from csv file, preprocessing for vocab and tokenization
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).resolve().parent
     df = pd.read_csv(str(current_dir / "./resources/recipes_fruit_veg_small.csv"))
     texts, labels = retrieve_name_and_label(df)
     processed_train_texts = [preprocess_text(text) for text in texts]

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 
 if "__main__" == __name__:
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).resolve().parent
     image_path = str(current_dir / 'imgs/street_cars_01.png')
 
     # instantiate model with pre-trained weights

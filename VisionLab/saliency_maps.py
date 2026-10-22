@@ -85,7 +85,7 @@ def visualize_saliency(img_pil, saliency_map):
 
 
 if "__main__" == __name__:
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).resolve().parent
     pretrained_param_file_path = "./resnet50-0676ba61.pth"  # change to your own path
     resnet50 = tv_models.resnet50(weights=None)
     try:

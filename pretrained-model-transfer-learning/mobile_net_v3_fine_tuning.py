@@ -126,7 +126,7 @@ if __name__ == "__main__":
 
     if choose == '1':  # Directly make predictions without any change
         # load ImageNet class name indecies
-        current_dir = Path(__file__).parent
+        current_dir = Path(__file__).resolve().parent
         class_names_dict = utils.load_classnames_json(str(current_dir / "./imagenet_class_index.json"))
 
         # load model and data

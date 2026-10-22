@@ -10,7 +10,7 @@ import utils
 
 if __name__ == "__main__":
 
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).resolve().parent
     # read the image
     image = Image.open(current_dir / "imgs/bird.jpg")
     # convert to tensor

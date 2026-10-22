@@ -109,7 +109,7 @@ class SiameseNetwork(nn.Module):
 
 def verify_signature(model, anchor_path, verify_path, val_transform, threshold=0.7):
 
-    # saved_file = Path(__file__).parent / saved_filename
+    # saved_file = Path(__file__).resolve().parent / saved_filename
     # model.load_state_dict(torch.load(saved_file))
     
     try:
@@ -162,7 +162,7 @@ def verify_signature(model, anchor_path, verify_path, val_transform, threshold=0
 if __name__ == "__main__":
     
     saved_filename = "sig_siamese.pth"
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).resolve().parent
     signature_base_dir = ""  # <<---- change this line to your own data path
     
     mean = [0.861, 0.861, 0.861]
@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
 
     # ==== Evaluation =====
-    # saved_file = Path(__file__).parent / saved_filename
+    # saved_file = Path(__file__).resolve().parent / saved_filename
     # model.load_state_dict(torch.load(saved_file))
     # anchor_img_path = os.path.join(signature_base_dir, "DigitalReal", "digital_real_114_3.jpg")
     # verified_img_path = os.path.join(signature_base_dir, "DigitalFake", "digital_fake_27_3.jpg")
