@@ -11,6 +11,10 @@ Clustering is an unsupervised learning technique that groups data points based o
 
 Repeat these steps until the assignments or centroids stop changing. Clustering can reveal patterns such as customer groups or similar documents.
 
+The results of [k-means sample](./k_means.py) shows below:
+
+![k-means](./imgs/k-means.png)
+
 
 ## Anomaly Detection
 
