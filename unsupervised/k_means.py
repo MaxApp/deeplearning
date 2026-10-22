@@ -3,13 +3,13 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 
-def k_means(points, k, max_iterations=100, n_init=20, random_state=None):
+def k_means(points, k, max_iterations=100, n_init=20):
     
     if k < 1 or k > len(points):
         raise ValueError("k must be between 1 and the number of points")
 
     # new edition of random generator
-    rng = np.random.default_rng(random_state)
+    rng = np.random.default_rng(10)
     best_total_distance = np.inf
     best_indicies = None
     best_centroids = None
@@ -27,9 +27,11 @@ def k_means(points, k, max_iterations=100, n_init=20, random_state=None):
 
             if np.allclose(centroids, updated_centroids):
                 centroids = updated_centroids
+                # if new centroids is so close, then stop iterate
                 break
             centroids = updated_centroids
 
+        # update the final indicies
         indicies = find_best_centroids(points, centroids)
         total_distance = np.sum((points - centroids[indicies]) ** 2)
         if total_distance < best_total_distance:
@@ -61,10 +63,13 @@ def find_best_centroids(points, centroids):
     return indicies
 
 def calculate_new_centroids(points, indicies, old_centroids, k):
+    """update centroids"""
+
     updated_centroids = old_centroids.copy()
     for i in range(k):
         belonged_points = points[indicies == i]
         if len(belonged_points) > 0:
+            # update centroids only at least 1 points belongs to it
             updated_centroids[i] = np.mean(belonged_points, axis=0)
     return updated_centroids
 
@@ -73,19 +78,16 @@ if __name__ == "__main__":
 
     current_directory = Path(__file__).resolve().parent
     sample_points = np.load(current_directory / "k_means_dataset.npy")
-
-    sample_rng = np.random.default_rng(12)
     k = 3
-    cluster_labels, centroids = k_means(
-        sample_points, k, n_init=20, random_state=7
-    )
+    cluster_indicies, centroids = k_means(sample_points, k, n_init=20)
 
+    # show clustering results
     for cluster_index in range(k):
-        cluster_points = sample_points[cluster_labels == cluster_index]
+        cluster_points = sample_points[cluster_indicies == cluster_index]
         plt.scatter(
-            cluster_points[:, 0],
-            cluster_points[:, 1],
-            label=f"Cluster {cluster_index + 1}",
+            cluster_points[:, 0], # all x
+            cluster_points[:, 1], # all y
+            label=f"Cluster {cluster_index + 1}"
         )
 
     plt.scatter(
