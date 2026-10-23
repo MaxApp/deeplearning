@@ -30,11 +30,6 @@ $$
 
 Feature scaling and a suitable validation strategy are important when comparing methods and choosing a threshold.
 
-
-
 Other methods make different assumptions about what makes an observation unusual.
-
-
-
 
 ## Dimension Reduction
