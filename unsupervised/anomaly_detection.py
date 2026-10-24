@@ -20,12 +20,9 @@ def estimate_gaussian(X):
 
 def calculate_gaussian(X, mu, var):
     """
-    Computes the probability 
-    density function of the examples X under the multivariate gaussian 
-    distribution with parameters mu and var. If var is a matrix, it is
-    treated as the covariance matrix. If var is a vector, it is treated
-    as the var values of the variances in each dimension (a diagonal
-    covariance matrix
+    Computes the probability density.
+    If var is a matrix, it is treated as the covariance matrix.
+    If var is a vector, it is treated as the var values of the variances in each dimension
     """
     
     k = len(mu)
@@ -42,7 +39,7 @@ def calculate_gaussian(X, mu, var):
 
 def select_threshold(y_val, p_val): 
     """
-    Finds the best threshold by validation set.
+    Finds the best threshold by validation set
     
     Args:
         y_val (ndarray): labels
@@ -54,8 +51,8 @@ def select_threshold(y_val, p_val):
     """ 
 
     best_epsilon = 0
-    best_F1 = 0
-    F1 = 0
+    best_f1 = 0
+    f1_score = 0
     
     step_size = (max(p_val) - min(p_val)) / 1000
     
@@ -67,14 +64,30 @@ def select_threshold(y_val, p_val):
         fp = sum((predictions == 1) & (y_val == 0))
         prec = tp / (tp + fp) if tp + fp > 0 else 0
         rec = tp / (tp + fn) if tp + fn > 0 else 0
-        F1 = 2 * prec * rec / (prec + rec) if prec + rec > 0 else 0
+        f1_score = 2 * prec * rec / (prec + rec) if prec + rec > 0 else 0
         
-        if F1 > best_F1:
-            best_F1 = F1
+        if f1_score > best_f1:
+            best_f1 = f1_score
             best_epsilon = epsilon
         
-    return best_epsilon, best_F1
+    return best_epsilon, best_f1
 
+
+def predict_show(points, mu, variance, threshold):
+    p = calculate_gaussian(points, mu, variance)
+    anomalous_mask = p < threshold
+
+    # show anomalous data
+    plt.scatter(points[:, 0], points[:, 1], marker='x', c='b') 
+    
+    # Set the title
+    plt.title("The dataset")
+    # Set axis range
+    plt.axis((0., 30., 0., 30.))
+    plt.plot(points[anomalous_mask, 0], points[anomalous_mask, 1], c='r', marker='o', linestyle="",
+             markersize=15, markerfacecolor='none')
+
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -86,9 +99,9 @@ if __name__ == "__main__":
     X_val = np.load(current_directory / "resources/X_val_anomaly_detection.npy")
     y_val = np.load(current_directory / "resources/y_val_anomaly_detection.npy")
 
-    print("The first 5 elements of X_train are:\n", X_train[:5])
-    print("The first 5 elements of X_val are:\n", X_val[:5])
-    print("The first 5 elements of y_val are:\n", y_val[:5])
+    # print("The first 5 elements of X_train:\n", X_train[:5])
+    # print("The first 5 elements of X_val:\n", X_val[:5])
+    # print("The first 5 elements of y_val:\n", y_val[:5])
 
     mu, var = estimate_gaussian(X_train)
 
@@ -96,23 +109,8 @@ if __name__ == "__main__":
     print("Variance of each feature:", var)
 
     p_val = calculate_gaussian(X_val, mu, var)
-    epsilon, F1 = select_threshold(y_val, p_val)
+    epsilon, f1 = select_threshold(y_val, p_val)
 
-    print('Best epsilon found using cross-validation: %e' % epsilon)
-    print('Best F1 on Cross Validation Set: %f' % F1)
+    print(f"Threshold: {epsilon}    F1-score:{f1}")
 
-    p = calculate_gaussian(X_train, mu, var)
-    outliers = p < epsilon
-
-
-    # show anomalous data
-    plt.scatter(X_train[:, 0], X_train[:, 1], marker='x', c='b') 
-    
-    # Set the title
-    plt.title("The dataset")
-    # Set axis range
-    plt.axis((0., 30., 0., 30.))
-    plt.plot(X_train[outliers, 0], X_train[outliers, 1], 'ro',
-             markersize= 10, markerfacecolor='none', markeredgewidth=2)
-
-    plt.show()
+    predict_show(X_train, mu, var, epsilon)

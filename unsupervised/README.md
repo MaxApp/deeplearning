@@ -30,6 +30,8 @@ $$
 
 Feature scaling and a suitable validation strategy are important when comparing methods and choosing a threshold. We need to select a threshold based on a cross validation set with labeled data by `F1-score`.
 
+![anomalous points](./imgs/anomalous.png)
+
 Other methods make different assumptions about what makes an observation unusual.
 
 ## Dimension Reduction
