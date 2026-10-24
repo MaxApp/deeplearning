@@ -28,7 +28,7 @@ $$
 \sigma_j^2 = \frac{1}{m}\sum_{i=1}^{m}\left(x_j^{(i)}-\mu_j\right)^2
 $$
 
-Feature scaling and a suitable validation strategy are important when comparing methods and choosing a threshold.
+Feature scaling and a suitable validation strategy are important when comparing methods and choosing a threshold. We need to select a threshold based on a cross validation set with labeled data by `F1-score`.
 
 Other methods make different assumptions about what makes an observation unusual.
 
