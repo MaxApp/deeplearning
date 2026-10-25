@@ -35,3 +35,14 @@ Feature scaling and a suitable validation strategy are important when comparing 
 Other methods make different assumptions about what makes an observation unusual.
 
 ## Dimension Reduction
+
+
+## Recommender System
+
+### Collaborative filtering
+
+Collaborative filtering recommends items based on patterns in user-item interactions, such as ratings or clicks. It can suggest items liked by users with similar preferences, or items similar to those a user has liked. It does not require item descriptions, but sparse interaction data can make recommendations less reliable.
+
+### Content-based filtering
+
+Content-based filtering recommends items with features similar to those a user has liked before. It builds a profile of the user's preferences from item attributes, such as genres, keywords, or product categories, and matches that profile to other items. It can make recommendations without data from other users, but depends on having useful item features.
