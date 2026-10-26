@@ -49,6 +49,78 @@ def cost_func(X, W, b, Y, R, regular_lambda):
     cost += (regular_lambda / 2) * (np.sum(X**2) + np.sum(W**2))
     return cost
 
+class CollaborativeFiltering(nn.Module):
+
+    def __init__(self, X, W, b):
+        super().__init__()
+        num_movies, num_features = X.shape
+        num_users = W.shape[0]
+        if W.shape[1] != num_features or b.size != num_users:
+            raise ValueError("X, W, and b have incompatible shapes.")
+
+        # initialize embeddings and bias
+        self.movie_embeddings = nn.Embedding(num_movies, num_features)
+        self.user_embeddings = nn.Embedding(num_users, num_features)
+        self.user_bias = nn.Embedding(num_users, 1)
+
+        # assign values to each
+        with torch.no_grad():
+            self.movie_embeddings.weight.copy_(torch.as_tensor(X, dtype=torch.float32))
+            self.user_embeddings.weight.copy_(torch.as_tensor(W, dtype=torch.float32))
+            self.user_bias.weight.copy_(torch.as_tensor(b, dtype=torch.float32).reshape(num_users, 1))
+
+    def forward(self):
+        movie_ids = torch.arange(
+            self.movie_embeddings.num_embeddings,
+            device=self.movie_embeddings.weight.device
+        )
+        user_ids = torch.arange(
+            self.user_embeddings.num_embeddings,
+            device=self.user_embeddings.weight.device
+        )
+        movie_vectors = self.movie_embeddings(movie_ids)
+        user_vectors = self.user_embeddings(user_ids)
+        user_bias = self.user_bias(user_ids).T
+        return movie_vectors @ user_vectors.T + user_bias
+
+
+def train_collaborative_filtering(X, W, b, Y, R, regular_lambda=1.0, learning_rate=1e-2, epochs=100):
+    """Optimize the initialized movie/user embeddings and user biases"""
+    if regular_lambda < 0:
+        raise ValueError("regular_lambda must be non-negative.")
+    if learning_rate <= 0 or epochs <= 0:
+        raise ValueError("learning_rate and epochs must be positive.")
+    if Y.shape != R.shape or Y.shape != (X.shape[0], W.shape[0]):
+        raise ValueError("Y and R must match the movie and user dimensions.")
+    if not np.any(R):
+        raise ValueError("Cannot train without any observed ratings.")
+
+    model = CollaborativeFiltering(X, W, b)
+    ratings = torch.as_tensor(Y, dtype=torch.float32)
+    observed = torch.as_tensor(R, dtype=torch.float32)
+    num_observed = observed.sum()
+    # do not use `AdamW` because we manually add `regular_lambda` in loss calculation
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    losses = []
+
+    for epoch in range(epochs):
+        optimizer.zero_grad()
+        predictions = model()
+        error = (predictions - ratings) * observed
+        loss = (0.5 / num_observed) * torch.sum(error**2)
+        # Scale regularization too, preserving its strength relative to the summed objective.
+        loss = loss + (regular_lambda / (2 * num_observed)) * (
+            torch.sum(model.movie_embeddings.weight**2)
+            + torch.sum(model.user_embeddings.weight**2)
+        )
+        loss.backward()
+        optimizer.step()
+        losses.append(loss.item())
+        print(f"Epoch {epoch+1}/{epochs}   Average Loss:{loss.item():.3f}")
+
+    return model, losses
+
+
 def test_case_1(cost_func, X, W, b, Y, R):
     num_users_r = 4
     num_movies_r = 5 
@@ -116,6 +188,56 @@ if __name__ == "__main__":
     Y = np.c_[my_ratings, Y]
     R = np.c_[(my_ratings != 0).astype(int), R]
 
-    # Normalize the Dataset
-    Ynorm, Ymean = normalizeRatings(Y, R)
+    # The added user's embedding and bias start at zero and are learned with
+    # the existing movie/user parameters.
+    W = np.vstack((W, np.zeros((1, num_features), dtype=W.dtype)))
+    b = np.hstack((b, np.zeros((1, 1), dtype=b.dtype)))
 
+    Ynorm, Ymean = normalizeRatings(Y, R)
+    model, losses = train_collaborative_filtering(X,W,b,Ynorm,R,regular_lambda=1.0,learning_rate=1e-2,epochs=100)
+
+    # print(f"Initial cost: {losses[0]:.2f}")
+    # print(f"Final cost: {losses[-1]:.2f}")
+
+    with torch.no_grad():
+        normalized_predictions = model().cpu().numpy()
+
+    # add back mean score
+    new_user_id = 0
+    predictions = normalized_predictions[:, new_user_id] + Ymean[:, 0]
+
+    rated_movies = np.flatnonzero(my_ratings > 0)
+    rating_comparison = pd.DataFrame(
+        {
+            "Movie": [movie_list[movie_id] for movie_id in rated_movies],
+            "Rated": my_ratings[rated_movies],
+            "Predicted": predictions[rated_movies],
+        }
+    )
+    rating_comparison["Difference"] = (
+        rating_comparison["Predicted"] - rating_comparison["Rated"]
+    )
+
+    print("\nRatings compared with the predictions:")
+    print(
+        rating_comparison.to_string(
+            index=False,
+            formatters={
+                "Rated": "{:.2f}".format,
+                "Predicted": "{:.2f}".format,
+                "Difference": "{:+.2f}".format,
+            }
+        )
+    )
+
+    # only recommend unrated movies
+    unrated_movies = np.flatnonzero(my_ratings == 0)
+    recommended_movies = unrated_movies[
+        np.argsort(predictions[unrated_movies])[-10:][::-1]
+    ]
+
+    print("\nTop recommendations:")
+    for movie_id in recommended_movies:
+        print(f"{predictions[movie_id]:.2f} - {movie_list[movie_id]}")
+
+        
