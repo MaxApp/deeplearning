@@ -77,7 +77,7 @@ def calculate_new_centroids(points, indicies, old_centroids, k):
 if __name__ == "__main__":
 
     current_directory = Path(__file__).resolve().parent
-    sample_points = np.load(current_directory / "k_means_dataset.npy")
+    sample_points = np.load(current_directory / "resources/k_means_dataset.npy")
     k = 3
     cluster_indicies, centroids = k_means(sample_points, k, n_init=20)
 
