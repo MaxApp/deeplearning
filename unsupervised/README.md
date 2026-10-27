@@ -81,4 +81,29 @@ Top recommendations:
 
 ### Content-based filtering
 
-Content-based filtering recommends items with features similar to those a user has liked before. It builds a profile of the user's preferences from item attributes, such as genres, keywords, or product categories, and matches that profile to other items. It can make recommendations without data from other users, but depends on having useful item features.
+Content-based filtering recommends items with features similar to those a user has liked before. It builds a profile of the user's preferences from item attributes, such as genres, keywords or product categories, and matches that profile to other items. It can make recommendations without data from other users, but depends on having useful item features.
+
+A neural content-based recommender can represent this comparison with two networks, often called the **user tower** and the **item tower**. The towers convert their inputs into vectors in the same embedding space:
+
+- **User network:** Takes user information features and learn a user-preference vector \($v_u$\).
+- **Item network:** Takes item information features and learn an item vector \($v_i$\).
+- **Prediction:** The model compares the two vectors. A common output is their dot product, optionally with learned user and item biases:
+
+$$
+\hat{y}_{ui} = v_u^\mathsf{T}v_i + b_u + b_i
+$$
+
+During training the two towers are optimized together. At recommendation time the user vector can be compared with candidate item vectors and the highest-scoring items ranked first.
+
+```mermaid
+flowchart LR
+    U["User preferences"] --> UT["User network"]
+    UT --> UV["User embedding"]
+    I["Item features"] --> IT["Item network"]
+    IT --> IV["Item embedding"]
+    UV --> DOT["Dot product<br/>vᵤᵀvᵢ"]
+    IV --> DOT
+    DOT --> SCORE["Predicted score"]
+    SCORE --> RANK["Rank candidate items"]
+```
+
