@@ -36,6 +36,21 @@ Other methods make different assumptions about what makes an observation unusual
 
 ## Dimension Reduction
 
+Dimension reduction represents data with fewer features while preserving as much useful information as possible. It can simplify visualization, reduce storage and computation, and remove redundant features. Some methods select existing features; others, such as PCA, create new features from combinations of the originals.
+
+### PCA
+
+**Principal Component Analysis (PCA)** is an unsupervised method that projects data onto new, uncorrelated axes called principal components. The first component captures the greatest possible variance, each following component captures the greatest remaining variance.
+
+To apply PCA, you have the steps:
+1. Center the features with normalization and scaling.
+2. Compute the principal components, then keep the first \(k\) components to transform the data into \(k\) dimensions. Choose \(k\) to balance compactness with the amount of variance retained. 
+
+In [pca_sample.py](./pca_sample.py) we use a small sample dataset to show how PCA works.
+
+![pca_sample_img](./imgs/pca_sample.png)
+
+PCA is useful for compression and visualization, but the transformed components may be harder to interpret than the original features.
 
 ## Recommender System
 
@@ -106,4 +121,3 @@ flowchart LR
     DOT --> SCORE["Predicted score"]
     SCORE --> RANK["Rank candidate items"]
 ```
-
