@@ -15,6 +15,7 @@
   - [Fundamentals of Machine Learning](#fundamentals-of-machine-learning)
   - [Text and NLP Models](#text-and-nlp-models)
   - [Vision Models](#vision-models)
+  - [Tree-based Models](#tree-based-models)
   - [Deployment](#deployment)
 - [Conclusion](#conclusion)
 
@@ -254,6 +255,10 @@ The Text-and-NLP projects explore an end-to-end path from raw text to language a
 The VisionLab projects centered on PyTorch and convolutional neural networks. They focus on how CNNs interpret images, explain how certain regions matter for recognition and how modern generative models create new visual content from noise as `diffusion model`. The experiments cover feature maps, saliency analysis, Grad-CAM-style class activation mapping, and diffusion-based image generation, showing both the interpretability and creativity of modern vision systems.
 
 These works help build intuition for core computer vision ideas: visualizing intermediate activations, highlighting influential pixels, explaining model decisions, and exploring denoising for image synthesis.
+
+### Tree-based Models
+
+Neural networks are one family of machine learning models, other approaches such as decision trees can also learn from data and are often useful for structured features. In [tree-based models](./tree-based-model/README.md), a binary classifier predicts whether an animal is a cat by recursively splitting examples on features. It uses entropy and information gain to choose splits, with stopping criteria such as maximum depth and minimum information gain to control tree growth.
 
 ### Deployment
 
