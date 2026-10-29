@@ -100,6 +100,7 @@ flowchart LR
 
     RL --> VALUE[Value-Based Methods]
     RL -.-> POLICY[Policy-Based Methods]
+    style POLICY stroke-dasharray: 2,4
     RL -.-> AC[Actor-Critic: \ncombines policy and value]
     style AC stroke-dasharray: 2,4
     VALUE --> QL[Q-Learning]
