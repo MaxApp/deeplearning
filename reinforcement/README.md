@@ -2,12 +2,16 @@
 
 Reinforcement learning (RL) studies how an agent learns to choose actions by interacting with an environment. The agent observes a state, takes an action, receives a reward, and transitions to a new state. Its goal is to maximize the expected sum of future rewards.
 
-- [Markov Decision Process](#markov-decision-process)
+- [Markov Decision Process (MDP)](#markov-decision-process)
 - [Value and Q-functions](#value-and-q-functions)
 - [Bellman equations](#bellman-equations)
 - [Continuous state spaces](#continuous-state-spaces)
 - [Epsilon-greedy action selection](#epsilon-greedy-action-selection)
 - [Deep Q-networks](#deep-q-networks)
+
+**Gymnasium**
+
+In practice, we separate the learning strategy from the environment, which makes training more general. A common framework is [Gymnasium](https://gymnasium.farama.org/) which provides a general API for environments to interact with agents.
 
 ## Markov Decision Process
 
@@ -45,9 +49,7 @@ $$
 
 A state space is continuous when a state is described by real-valued measurements, such as a robot's position and velocity. There may be infinitely many possible states, so storing a separate value for every state-action pair in a table is not practical.
 
-Instead, value-based methods use a parameterized function to estimate values, for example $Q(s, a; \theta)$, where $\theta$ denotes the model parameters. The function can generalize from observed states to similar, previously unseen states. Discretizing continuous measurements into bins is another option, but it can lose precision and becomes costly as the number of dimensions grows.
-
-A continuous state space does not necessarily mean the actions are continuous. Tabular Q-learning and DQN can use continuous states with a finite set of actions when a function approximator represents $Q(s, a)$. Standard DQN selects among discrete actions; continuous action spaces generally require a different approach, such as an actor-critic method.
+A continuous state space does not necessarily mean the actions are continuous. Tabular Q-learning and DQN can use continuous states with a finite set of actions when a function approximator represents $Q(s, a)$. Standard DQN selects among discrete actions and reflect them to continuous spaces.
 
 ## Epsilon-greedy action selection
 
