@@ -261,6 +261,21 @@ These works help build intuition for core computer vision ideas: visualizing int
 
 Neural networks are one family of machine learning models, other approaches such as decision trees can also learn from data and are often useful for structured features. In [tree-based models](./tree-based-model/README.md), a binary classifier predicts whether an animal is a cat by recursively splitting examples on features. It uses entropy and information gain to choose splits, with stopping criteria such as maximum depth and minimum information gain to control tree growth.
 
+### Unsupervised Models
+
+The projects explore ways to find structure in data without relying on labeled examples, along with recommendation methods based on user-item data:
+
+**K-means clustering:** Assigns points to nearby centroids and iteratively updates those centroids to form groups. The example runs multiple initializations and visualizes the clusters.
+
+**Gaussian anomaly detection:** Fits a Gaussian model to normal data, scores observations by probability density, and selects an anomaly threshold using validation data and F1 score.
+
+**Principal Component Analysis (PCA):** Reduces data to fewer principal components, then visualizes a reconstruction to illustrate the information retained.
+
+**Collaborative filtering:** Learns user and item embeddings from observed movie ratings to predict preferences and rank recommendations.
+
+See the [unsupervised learning notes](./unsupervised/README.md) for explanations and visual examples.
+
+
 ### Deployment
 
 The Deployment projects focus on the final stage of the ML lifecycle: turning a trained model into something reusable, portable, and efficient in real-world use. These examples cover checkpoint saving and training resume, model serialization, experiment tracking with Lightning and MLflow, exporting to ONNX for cross-platform inference, and optimization through pruning and quantization. The goal is to move from a notebook-trained model to a deployment-ready workflow with better reliability and performance.
