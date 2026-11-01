@@ -4,7 +4,7 @@ import numpy as np
 
 
 MAP_NAME = "4x4"
-EPISODES = 3000
+EPISODES = 1000
 EVALUATION_EPISODES = 100
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.99
@@ -16,6 +16,7 @@ SEED = 42
 
 def train_agent():
     env = gym.make("FrozenLake-v1", map_name=MAP_NAME, is_slippery=False)
+    # initial Q state-action values
     q_table = np.zeros((env.observation_space.n, env.action_space.n))
     rng = np.random.default_rng(SEED)
     env.action_space.seed(SEED)
@@ -29,6 +30,7 @@ def train_agent():
             terminated = truncated = False
 
             while not (terminated or truncated):
+                # ε-greedy
                 if rng.random() < epsilon:
                     action = env.action_space.sample()
                 else:
@@ -36,17 +38,16 @@ def train_agent():
 
                 next_state, reward, terminated, truncated, _ = env.step(action)
 
-                # Update the state-action value immediately from this transition.
+                # update the state-action value immediately from this transition
                 future_value = 0 if terminated else np.max(q_table[next_state])
                 target = reward + DISCOUNT_FACTOR * future_value
-                q_table[state, action] += LEARNING_RATE * (
-                    target - q_table[state, action]
-                )
+                q_table[state, action] += LEARNING_RATE * (target - q_table[state, action])
 
                 state = next_state
                 total_reward += reward
 
             episode_rewards.append(total_reward)
+            # update epsilon gradually with decay
             epsilon = max(EPSILON_MIN, epsilon * EPSILON_DECAY)
 
         map_description = env.unwrapped.desc.copy()

@@ -65,6 +65,8 @@ $$
 
 Random exploration may occasionally select a greedy action as well. A common training schedule starts with a relatively high $\varepsilon$ and gradually reduces it to a small floor allowing broad exploration early. The schedule and floor are environment dependent. Exploration is often reduced or disabled during evaluation.
 
+
+
 ## Deep Q-networks
 
 A Deep Q-Network (DQN) uses a neural network to approximate action values, $Q(s, a; \theta)$, making Q-learning practical when the state space is too large for a table. For each state, the network typically outputs one value per discrete action, and the agent selects actions using an exploration policy such as $\varepsilon$-greedy.
