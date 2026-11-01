@@ -13,6 +13,14 @@ Reinforcement learning (RL) studies how an agent learns to choose actions by int
 
 In practice, we separate the learning strategy from the environment, which makes training more general. A common framework is [Gymnasium](https://gymnasium.farama.org/) which provides a general API for environments to interact with agents.
 
+**FrozenLake 4x4 example**
+
+The [`frozenlake_4x4.py`](./frozenlake_4x4.py) script trains a tabular Q-learning agent on Gymnasium's 4x4 FrozenLake map. The agent explores with an epsilon-greedy policy while epsilon decays over 1,000 episodes. The environment is configured without slippery transitions, so each action moves in its intended direction. After training, the script evaluates the greedy policy over 100 episodes and plots the learned action for each tile.
+
+The arrows show the learned action in each safe tile: `S` is the start, `H` marks holes, and `G` is the goal.
+
+![Learned policy from the FrozenLake 4x4 training example](./imgs/frozenlake_4x4.png)
+
 ## Markov Decision Process
 
 An RL problem is commonly modeled as a Markov Decision Process (MDP), defined by:
@@ -64,8 +72,6 @@ a_t =
 $$
 
 Random exploration may occasionally select a greedy action as well. A common training schedule starts with a relatively high $\varepsilon$ and gradually reduces it to a small floor allowing broad exploration early. The schedule and floor are environment dependent. Exploration is often reduced or disabled during evaluation.
-
-
 
 ## Deep Q-networks
 

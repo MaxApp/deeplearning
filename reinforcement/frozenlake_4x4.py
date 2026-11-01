@@ -80,7 +80,7 @@ def evaluate_agent(q_table):
 def plot_policy(q_table, map_description):
     arrows = ["←", "↓", "→", "↑"]
     rows, cols = map_description.shape
-    fig, ax = plt.subplots(figsize=(5, 5))
+    fig, ax = plt.subplots(figsize=(3, 3))
 
     ax.set_xlim(0, cols)
     ax.set_ylim(rows, 0)
@@ -104,7 +104,7 @@ def plot_policy(q_table, map_description):
 
         ax.text(col + 0.5, row + 0.5, label, ha="center", va="center", fontsize=22)
 
-    ax.set_title("FrozenLake 4x4: learned greedy policy")
+    ax.set_title("FrozenLake 4x4 policy")
     plt.show()
 
 
