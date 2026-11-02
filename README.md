@@ -1,6 +1,6 @@
 # Practicals and Experiments of Machine Learning and Deep Learning
 
-## Table of Contents
+### Table of Contents
 
 - [Welcome and Foreword](#welcome-and-foreword)
 - [Machine Learning Workflow](#machine-learning-workflow)
@@ -16,8 +16,10 @@
   - [Text and NLP Models](#text-and-nlp-models)
   - [Vision Models](#vision-models)
   - [Tree-based Models](#tree-based-models)
+  - [Unsupervised Models](#unsupervised-models)
+  - [Reinforcement Learning](#reinforcement-learning)
   - [Deployment](#deployment)
-- [Conclusion](#conclusion)
+- [Acknowledgement](#acknowledgment)
 
 ## Welcome and Foreword
 
@@ -275,6 +277,11 @@ The projects explore ways to find structure in data without relying on labeled e
 
 See the [unsupervised learning notes](./unsupervised/README.md) for explanations and visual examples.
 
+### Reinforcement Learning
+
+Reinforcement learning (RL) is a way for an agent to learn by interacting with an environment. It observes states, takes actions and receives rewards. Through trial and error, it learns a policy that aims to maximize long-term reward.
+
+The [FrozenLake 4x4 sample](./reinforcement/frozenlake_4x4.py) trains a tabular Q-learning agent with epsilon-greedy exploration, then evaluates its greedy policy and visualizes the learned actions on the map. See the [reinforcement learning](./reinforcement/README.md) for the details and RL concepts.
 
 ### Deployment
 
@@ -282,7 +289,7 @@ The Deployment projects focus on the final stage of the ML lifecycle: turning a 
 
 [Explore the Deployment projects](./Deployment/README.md) for checkpointing, ONNX export, and model optimization examples.
 
-## Conclusion
+## Acknowledgment
 
 This page is intended to provide a broad overview of my learning journey in machine learning and deep learning. It is still being updated as I continue to explore new topics and deepen my understanding.
 
