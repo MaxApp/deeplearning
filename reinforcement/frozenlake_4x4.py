@@ -38,9 +38,10 @@ def train_agent():
 
                 next_state, reward, terminated, truncated, _ = env.step(action)
 
-                # update the state-action value immediately from this transition
+                # update the state-action value immediately
                 future_value = 0 if terminated else np.max(q_table[next_state])
                 target = reward + DISCOUNT_FACTOR * future_value
+                # soft-update by learning rate
                 q_table[state, action] += LEARNING_RATE * (target - q_table[state, action])
 
                 state = next_state
@@ -52,6 +53,7 @@ def train_agent():
 
         map_description = env.unwrapped.desc.copy()
     finally:
+        # always remember to close the environment
         env.close()
 
     return q_table, episode_rewards, map_description
@@ -67,11 +69,13 @@ def evaluate_agent(q_table):
             terminated = truncated = False
 
             while not (terminated or truncated):
+                # don't use ε-greedy during evaluation
                 action = int(np.argmax(q_table[state]))
                 state, reward, terminated, truncated, _ = env.step(action)
 
             successes += reward
     finally:
+        # always remember to close the environment
         env.close()
 
     return successes
