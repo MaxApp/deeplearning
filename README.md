@@ -213,6 +213,20 @@ I have explored several common model families and classic architectures, includi
         * GPT
         * T5
         * Prefix LM
+* Tree-Based Models
+    * Decision Trees
+    * Random Forests
+    * Gradient-Boosted Trees (XGBoost, LightGBM)
+* Unsupervised Learning
+    * Clustering (K-means)
+    * Dimensionality Reduction (PCA)
+    * Anomaly Detection (Gaussian Models)
+* Recommender Systems
+    * Collaborative Filtering
+    * Content-Based Filtering
+* Reinforcement Learning
+    * Q-learning
+    * Deep Q-Networks (DQN)
 
 ### Training, Evaluating and Tuning
 
