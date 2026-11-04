@@ -9,7 +9,8 @@
   - [Programming Environment](#programming-environment)
   - [Frameworks and Tools](#frameworks-and-tools)
   - [Model Architectures and Components](#model-architectures-and-components)
-  - [Training, Evaluating and Tuning](#training-evaluating-and-tuning)
+  - [Training and Evaluating](#training-and-evaluating)
+  - [Fine-Tuning Techniques](#fine-tuning-techniques)
   - [Optimization and Deployment](#optimization-and-deployment)
   - [Distributed Training on GPU](#distributed-training-on-gpu)
 - [Overview of Projects](#overview-of-projects)
@@ -229,11 +230,19 @@ I have explored several common model families and classic architectures, includi
     * Q-learning
     * Deep Q-Networks (DQN)
 
-### Training, Evaluating and Tuning
+### Training and Evaluating
 
-Models can be built using different architectures, including methods that are not based on neural networks. In general, neural network models are commonly trained using `Gradient Descent` along with a chosen `Loss Function`, `Optimizer` and `Scheduler`. During training, it is also important to evaluate the model using appropriate metrics such as `Loss`, `Accuracy`, `Precision` and `Recall` while keeping an eye on efficiency and memory usage.
+Models can be built using different architectures, including methods that are not based on neural networks. In general, neural network models are commonly trained using `Gradient Descent` along with a chosen `Loss Function`, `Optimizer` and `Scheduler`. 
 
-For hyperparameter tuning, `Optuna` can automate trials over a defined search space, using validation performance as the objective and pruning unpromising trials.
+During training, it is also important to evaluate the model using appropriate metrics such as `Loss`, `Accuracy`, `Precision` and `Recall` while keeping an eye on efficiency and memory usage.
+
+### Fine-Tuning Techniques
+
+Fine-tuning adapts a pretrained model to a target task or domain, often requiring less data and compute than training from scratch. A simple baseline is to freeze most of the pretrained model and train a task-specific head. When more adaptation is needed, unfreeze some or all layers and continue training with a smaller learning rate. Validation metrics help decide which layers to update and when to stop, reducing the risk of overfitting or losing useful pretrained representations.
+
+Fine-tuning also includes choosing training settings such as learning rate, batch size, weight decay and the number of epochs. `Optuna` can automate trials over a defined search space, use validation performance as the objective and prune unpromising trials.
+
+For large models, parameter-efficient fine-tuning (PEFT) methods update only a small number of parameters while keeping the pretrained weights frozen. `LoRA` (Low-Rank Adaptation) represents a weight update as the product of two smaller, trainable matrices. For a weight matrix `W`, it uses `W' = W + ΔW = W + BA`, where `A` and `B` have a small intermediate rank `r`. Instead of training every element of `W`, training focuses on `A` and `B`, reducing trainable parameter counts and often memory use while adapting the model to a task.
 
 ### Optimization and Deployment
 
