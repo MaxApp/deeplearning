@@ -11,6 +11,7 @@
   - [Model Architectures and Components](#model-architectures-and-components)
   - [Training, Evaluating and Tuning](#training-evaluating-and-tuning)
   - [Optimization and Deployment](#optimization-and-deployment)
+  - [Distributed Training on GPU](#distributed-training-on-gpu)
 - [Overview of Projects](#overview-of-projects)
   - [Fundamentals of Machine Learning](#fundamentals-of-machine-learning)
   - [Text and NLP Models](#text-and-nlp-models)
@@ -241,6 +242,72 @@ Once a model is trained, additional work is often required before it is ready fo
 Converting a model to an inference engine is a common step. This may involve exporting it to `ONNX` or another format to support cross-platform deployment and improve runtime performance.
 
 Before deployment, optimization techniques such as `pruning` and `quantization` can significantly reduce model size and improve efficiency. In addition, tools such as `MLflow` can help with experimentation, tracking, and model monitoring throughout the training lifecycle.
+
+### Distributed Training on GPU
+
+Distributed training lets a model train across multiple GPUs, either on one machine or across multiple machines. In PyTorch, a common choice for data-parallel training is `DistributedDataParallel` (DDP). Each GPU has its own process and model replica, processes a different part of each batch and synchronizes gradients during backpropagation. Compared with a regular single-device training loop, the main additions are process-group setup, a DDP-wrapped model and a distributed sampler. DDP does not split the input data automatically.
+
+For a single machine with multiple GPUs, launch one process per GPU with `torchrun`:
+
+```bash
+torchrun --standalone --nproc_per_node=2 train.py
+```
+
+In the script, initialize `torch.distributed` using the environment variables provided by `torchrun`, then bind each process to its own GPU and wrap the model with DDP:
+
+```python
+import os
+
+import torch
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+
+def main():
+    local_rank = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(local_rank)
+    dist.init_process_group(backend="nccl", init_method="env://")
+
+    try:
+        device = torch.device("cuda", local_rank)
+        model = MyModel().to(device)
+        model = DDP(model, device_ids=[local_rank])
+
+        # Create the distributed data loader and run the training loop here.
+    finally:
+        dist.destroy_process_group()
+
+if __name__ == "__main__":
+    main()
+```
+
+Use `DistributedSampler` so each process receives a different subset of the dataset. Call `set_epoch` each epoch so the sampler can reshuffle consistently across processes:
+
+```python
+from torch.utils.data import DataLoader, DistributedSampler
+
+dataset = MyDataset()
+sampler = DistributedSampler(dataset)
+loader = DataLoader(dataset, batch_size=64, sampler=sampler)
+
+for epoch in range(num_epochs):
+    sampler.set_epoch(epoch)
+    for inputs, targets in loader:
+        inputs, targets = inputs.to(device), targets.to(device)
+        optimizer.zero_grad()
+        loss = criterion(model(inputs), targets)
+        loss.backward()
+        optimizer.step()
+```
+
+All processes participate in training, but write a shared checkpoint only from the main process (rank 0) to avoid concurrent writes. Save the underlying model's state dict; when loading it into an unwrapped model, use the same state-dict keys:
+
+```python
+if dist.get_rank() == 0:
+    torch.save(model.module.state_dict(), "model.pth")
+```
+
+The dataset, model, loss, optimizer, and ordinary forward/backward steps remain familiar from single-GPU PyTorch code. The key differences are launching and initializing one process per device, using DDP for gradient synchronization, partitioning data with a distributed sampler, and restricting shared output such as checkpoint saving to rank 0.
+
 
 ## Overview of Projects
 
