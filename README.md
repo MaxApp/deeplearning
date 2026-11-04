@@ -234,7 +234,9 @@ I have explored several common model families and classic architectures, includi
 
 Models can be built using different architectures, including methods that are not based on neural networks. In general, neural network models are commonly trained using `Gradient Descent` along with a chosen `Loss Function`, `Optimizer` and `Scheduler`. 
 
-During training, it is also important to evaluate the model using appropriate metrics such as `Loss`, `Accuracy`, `Precision` and `Recall` while keeping an eye on efficiency and memory usage.
+Before training, split the dataset into training, development(CV) and test sets. Use the training set to fit model parameters and the development set to compare models, tune settings and make training decisions. Keep the test set separate until the end for an unbiased estimate of final performance. Do not use it to guide model selection.
+
+During training, evaluate with metrics appropriate to the task, such as `Loss`, `Accuracy`, `Precision`, `Recall` and `F1-score`, while keeping an eye on efficiency and memory usage. `F1-score`, the harmonic mean of precision and recall, can be useful when both false positives and false negatives matter, especially with imbalanced dataset.
 
 ### Fine-Tuning Techniques
 
