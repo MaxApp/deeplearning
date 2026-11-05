@@ -80,3 +80,10 @@ Key features:
 Visualization example:
 
 ![train1](imgs/simple_curve_dynamic_01.png)
+
+### dropout_exp.py
+
+This example builds a two-layer network with a manual dropout layer. During training, it creates a Bernoulli dropout filter for
+the hidden activations, keeps each activation with probability `0.8`, and
+divides kept values by `0.8` (inverted dropout) so their expected magnitude is
+preserved. Dropout is disabled during evaluation.
