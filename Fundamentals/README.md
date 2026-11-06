@@ -1,10 +1,10 @@
 # Fundamentals and Theories
 
-Introduce the fundamentals and basic theories in machine learning with implementations. These're the pivots of next step for the real tasks to train a model. With a solid foundation in conception you could go further during the journey.
+Introduce the fundamentals and basic concepts in machine learning with implementations. These're the pivots of next step for the real tasks to train a model. With a solid foundation in conception we could go further during the journey.
 
 ## Overview of Machine Learning
 
-Here's the common categories of machine learning according to kinds of tasks.
+Most common categories of machine learning we used includes:
 
 * Supervised
     * regression model
@@ -17,7 +17,7 @@ Here's the common categories of machine learning according to kinds of tasks.
 
 ## Concepts
 
-The basic concepts you should master before hands on.
+The basic concepts we should be familiar with before hands on.
 
 * linear regression
 * logistic regression
@@ -25,7 +25,7 @@ The basic concepts you should master before hands on.
 * gradient descent
 * learning rate
 * vectorization
-* feature scaling with normalization
+* normalization
 * regularization
 * neural networks architectures
 * forward and backward propagation
