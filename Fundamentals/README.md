@@ -87,3 +87,31 @@ This example builds a two-layer network with a manual dropout layer. During trai
 the hidden activations, keeps each activation with probability `0.8`, and
 divides kept values by `0.8` (inverted dropout) so their expected magnitude is
 preserved. Dropout is disabled during evaluation.
+
+## Notes
+
+### Momentum, RMSprop and Adam
+
+Let $g$ be the current gradient and $\eta$ the learning rate. The formulas
+below use elementwise operations; $\epsilon$ is a small constant.
+
+- **Momentum** updates a running direction:
+  $v_t = \mu v_{t-1} + g_t$; $\theta_{t+1} = \theta_t - \eta v_t$.
+  Its main effect is to smooth and build up the update direction across steps.
+  It uses the same learning rate for every parameter.
+- **RMSprop** tracks squared-gradient size:
+  $s_t = \rho s_{t-1} + (1-\rho)g_t^2$;
+  $\theta_{t+1} = \theta_t - \eta g_t / (\sqrt{s_t} + \epsilon)$.
+  Its main effect is to adapt the step size per parameter: larger recent
+  gradients mean smaller steps.
+- **Adam** tracks both gradient direction and squared-gradient size:
+  $m_t = \beta_1m_{t-1} + (1-\beta_1)g_t$;
+  $v_t = \beta_2v_{t-1} + (1-\beta_2)g_t^2$;
+  $\theta_{t+1} = \theta_t - \eta \hat{m}_t / (\sqrt{\hat{v}_t} + \epsilon)$.
+  Its main effect is to combine Momentum's smoothed direction with RMSprop's
+  per-parameter step sizes. The hatted values are bias-corrected averages,
+  compensating for their initial bias toward zero.
+
+**Main difference:** Momentum changes the update direction using past
+gradients; RMSprop changes each parameter's step size using recent gradient
+magnitudes; Adam does both.
