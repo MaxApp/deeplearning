@@ -115,3 +115,25 @@ below use elementwise operations; $\epsilon$ is a small constant.
 **Main difference:** Momentum changes the update direction using past
 gradients; RMSprop changes each parameter's step size using recent gradient
 magnitudes; Adam does both.
+
+### Input normalization, Batch normalization and Layer normalization
+
+These methods keep values on a useful scale, which can make training more
+stable, but they normalize different data:
+
+- **Input normalization** is applied to the input features before they enter the
+  model. For example, scale pixel values to `[0, 1]` or standardize each feature
+  using training-set statistics. Apply the same transformation at inference.
+- **Batch normalization** normalizes each feature (or channel) using statistics
+  from the current mini-batch during training. It keeps running statistics for
+  inference and has learnable scale and shift parameters. Its batch-dependent
+  statistics can be less suitable for very small or variable batch sizes.
+- **Layer normalization** normalizes the features within each individual
+  example, rather than across the batch. It does not depend on batch size and is
+  commonly used in Transformer models. It also has learnable scale and shift
+  parameters.
+
+**In short:** input normalization transforms raw data; batch normalization
+normalizes across examples in a batch; layer normalization normalizes within
+each example.
+
