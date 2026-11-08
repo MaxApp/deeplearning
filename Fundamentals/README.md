@@ -81,6 +81,13 @@ Visualization example:
 
 ![train1](imgs/simple_curve_dynamic_01.png)
 
+### residual_network.py
+
+This script fits the linear relationship `y = 2x + 1` with a PyTorch network
+that includes a residual block. The block adds its input to the output of two
+linear layers, demonstrating how a skip connection works when the feature
+dimensions match.
+
 ### dropout_exp.py
 
 This example builds a two-layer network with a manual dropout layer. During training, it creates a Bernoulli dropout filter for
@@ -136,4 +143,3 @@ stable, but they normalize different data:
 **In short:** input normalization transforms raw data; batch normalization
 normalizes across examples in a batch; layer normalization normalizes within
 each example.
-
