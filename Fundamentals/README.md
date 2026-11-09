@@ -1,6 +1,6 @@
 # Fundamentals and Theories
 
-Introduce the fundamentals and basic concepts in machine learning with implementations. These're the pivots of next step for the real tasks to train a model. With a solid foundation in conception we could go further during the journey.
+The fundamentals and basic concepts in machine learning with experiments and implementations. These are the pivots of next step for the real tasks to train a model. With a solid foundation in conception we could go further during the journey.
 
 ## Overview of Machine Learning
 
