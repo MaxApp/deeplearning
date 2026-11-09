@@ -89,7 +89,7 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
 
   * data augmentations
   * dropout enhancement
-  * weight decay reguluarization
+  * weight decay regularization
   * add `BatchNorm2d` normalization
   * refactor common codes to module blocks
 

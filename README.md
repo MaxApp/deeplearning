@@ -150,16 +150,14 @@ Different types of data may require different preprocessing, training, and evalu
 
 ### Mathematics
 
-A solid foundation in *linear algebra*, *calculus*, *probability*, and *statistics* is essential for understanding how models learn and why they behave the way they do. These concepts support a deeper understanding of training dynamics, optimization, inference, and model behavior in real applications.
+A solid foundation in *linear algebra*, *calculus*, *probability* and *statistics* is essential for understanding how models learn and why they behave the way they do. These concepts support a deeper understanding of training progress, optimization, inference and model behavior in real applications.
 
-Key topics frequently used in ML include:
+There're some key topics and common concepts frequently used in ML:
 * Linear algebra: vectors, matrices, tensor operations, matrix factorization
 * Calculus: derivatives, gradients, chain rule
 * Probability and statistics: conditional probability, Bayes' theorem, expectation, variance, distributions and maximum likelihood
 * Information theory: entropy, cross-entropy, KL divergence and information gain
-* ...
-
-In practical applications, some common concepts include:
+* Exponential Weighted Average‌
 * Naive Bayes
 * Laplace Smoothing
 * Log Likelihood
@@ -167,12 +165,11 @@ In practical applications, some common concepts include:
 * Cosine Similarity
 * Markov Chain
 * Transition Probability
-* Dot Product
 * ...
 
 ### Programming Environment
 
-`Python` is the primary language used throughout this learning journey. It offers a rich ecosystem of tools and libraries that make experimentation, model training, and data analysis efficient and accessible. In addition to Python, I have also worked with *Java*, *C*, *Ruby*, *PHP*, *JavaScript*, and other languages, but Python remains the most practical choice for machine learning work.
+***Python*** is the primary language used throughout this learning journey. It offers a rich ecosystem of tools and libraries that make experimentation, model training, and data analysis efficient and accessible. In addition to Python, I have also worked with ***Java*, *C*, *Ruby*, *PHP*, *JavaScript*** and other languages, but Python remains the most practical choice for machine learning work.
 
 ### Frameworks and Tools
 
@@ -182,7 +179,7 @@ Beyond the frameworks themselves, tools such as `NumPy`, `Pandas`, `scikit-learn
 
 ### Model Architectures and Components
 
-I have explored several common model families and classic architectures, including:
+I have explored several common model families and classic architectures including:
 
 * CNN
     * LeNet-5
@@ -191,7 +188,6 @@ I have explored several common model families and classic architectures, includi
     * ResNet
     * Inception Net
     * MobileNet
-    * EfficientNet
 * RNN
     * GRU
     * LSTM
