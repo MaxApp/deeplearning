@@ -2,9 +2,11 @@
 
 This section contains hands-on PyTorch experiments in computer vision, exploring how neural networks process images and tackle tasks such as classification, segmentation and generation. Some parts of topics is seperated in respective directory, you could follow the link if intrested.
 
-**Data preparation** is an important first step, see the [Oxford Flowers102 data preparation](../Flowers102/README.md) for an example of building a custom dataset and applying preprocessing.
+**Data Preparation** is an important first step, see the [Oxford Flowers102 data preparation](../Flowers102/README.md) for an example of building a custom dataset and applying preprocessing.
 
-For **image classification** hands-on exercises, start with [MNIST-train](../MNIST-train/README.md) and [EMNIST-train](../EMNIST-train/README.md), which cover handwritten-digit and letter classification. For a more advanced example with optimized training and model improvements, see [CIFAR-100-train](../CIFAR-100-train/README.md).
+For **Image Classification** hands-on exercises, start with [MNIST-train](../MNIST-train/README.md) and [EMNIST-train](../EMNIST-train/README.md), which cover handwritten-digit and letter classification. For a more advanced example with optimized training and model improvements, see [CIFAR-100-train](../CIFAR-100-train/README.md).
+
+**Object Detection** has evolved from repeatedly scanning an image to predicting objects in a single network pass. Early **sliding-window** methods classified image crops at many positions and scales, making them computationally expensive. **Convolutional sliding-window** methods improved efficiency by reusing convolutional features across overlapping regions. **Intersection over Union (IoU)** measures the overlap between predicted and ground-truth boxes, while **non-max suppression (NMS)** uses overlap to filter duplicate detections. Classic detectors use **anchor boxes** predefined shapes and sizes that the model adjusts to fit objects. **YOLO** advanced one-stage detection by predicting boxes and classes in a single pass. **YOLOv8** and some later versions are anchor-free while others use anchors.
 
 The section below introduce a more advanced image process insights, includes:
 
@@ -115,8 +117,5 @@ pipe = DiffusionPipeline.from_pretrained(
 * **Pixel space DDPM**  vs. **Latent space Diffusion**
   - **latent space** is compressed features from original image which makes them much more efficient and scalable, but less intuitive to visualize.
   - we can use an autoencoder to compress images to latent space and decode back to pixels.
-
-
-
 
 
