@@ -1,6 +1,11 @@
 # Vision Specialized Laboratory
 
-This is the experimental sections about torch vision. We'll hands on some simple labcodes to get an intuition about convolutional network.
+This section contains hands-on PyTorch experiments in computer vision, exploring how neural networks process images and tackle tasks such as classification, segmentation and generation. 
+
+**Data preparation** is an important first step, see the [Oxford Flowers102 data preparation exercise](../Flowers102/README.md) for an example of building a custom dataset and applying preprocessing.
+
+For image classification code labs, you can refer to [CIFAR-100-train](../CIFAR-100-train/README.md).
+
 
 * [feature maps](#feature-maps)
 * [saliency maps](#saliency-maps)
@@ -109,8 +114,6 @@ pipe = DiffusionPipeline.from_pretrained(
 * **Pixel space DDPM**  vs. **Latent space Diffusion**
   - **latent space** is compressed features from original image which makes them much more efficient and scalable, but less intuitive to visualize.
   - we can use an autoencoder to compress images to latent space and decode back to pixels.
-
-
 
 
 
