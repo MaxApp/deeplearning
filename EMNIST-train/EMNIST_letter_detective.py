@@ -5,51 +5,6 @@ from torchvision import datasets
 from torch.utils.data import DataLoader
 import torch.nn as nn
 from torch import optim
-import torchvision.transforms.functional as F
-
-DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print(f"Using Device: {DEVICE}")
-
-current_dir = os.path.dirname(__file__)
-data_path = os.path.join(current_dir, "EMNIST_data")
-
-# Check if the data folder exists to avoid re-downloading
-if os.path.exists(data_path) and os.path.isdir(data_path):
-    download = False
-    print("EMNIST Data folder found locally. Loading from local.\n")
-else:
-    download = True
-    print("EMNIST Data folder not found locally. Downloading data.\n")
-
-# Load the EMNIST Letters training set
-train_dataset = datasets.EMNIST(
-    root=data_path, 
-    split='letters',  # use the 'letters' subset (26 lowercase classes)
-    train=True, 
-    download=download  
-)
-
-# Load the EMNIST Letters test set
-test_dataset = datasets.EMNIST(
-    root=data_path,
-    split='letters',  # use the 'letters' subset (26 lowercase classes)
-    train=False, 
-    download=download 
-)
-
-# Precomputed mean and std for EMNIST Letters dataset
-mean = (0.1736,)
-std = (0.3317,)
-
-# Create a transform that converts images to tensors and normalizes them
-transform = transforms.Compose([
-    transforms.ToTensor(),  
-    transforms.Normalize(mean=mean, std=std) 
-])
-
-# Assign the transform to both the training and test datasets
-train_dataset.transform = transform
-test_dataset.transform = transform
 
 def create_emnist_dataloaders(train_dataset, test_dataset, batch_size=64):
     """
@@ -128,7 +83,7 @@ def train_epoch(model, loss_function, optimizer, train_loader, device, verbose=T
     total_predictions = 0
 
     # Iterate over the batches of data from the training DataLoader
-    for batch_idx, (inputs, targets) in enumerate(train_loader):
+    for inputs, targets in train_loader:
         # Move the inputs and targets to the specified device
         inputs, targets = inputs.to(device), targets.to(device)
 
@@ -154,7 +109,7 @@ def train_epoch(model, loss_function, optimizer, train_loader, device, verbose=T
         # Accumulate the loss value to running_loss
         loss_value = loss.item()
         # Add current loss value to the total running loss.
-        running_loss = running_loss + loss_value
+        running_loss += loss_value * len(targets)
 
         # Accuracy
         # Get the predicted indices (by taking the argmax along dimension 1 of the outputs).
@@ -174,8 +129,8 @@ def train_epoch(model, loss_function, optimizer, train_loader, device, verbose=T
         total_predictions += batch_size
     
     # Calculate the average loss for the epoch. 
-    # Divide the running loss by the number (len of train loader) of batches.
-    average_loss = running_loss / len(train_loader)
+    # Weight batch losses by sample count so a smaller final batch is handled correctly.
+    average_loss = running_loss / total_predictions
 
     # Calculate the accuracy percentage for the epoch. Multiply correct predictions by 100.
     accuracy_percentage = 100 * ( num_correct_predictions / total_predictions )
@@ -196,6 +151,7 @@ def evaluate(model, test_loader, device, verbose=True):
     """
     
     # Set the model to evaluate mode
+    model.to(device)
     model.eval()
     # Initialize the number of correct predictions to 0
     num_correct_predictions = 0
@@ -240,16 +196,47 @@ def evaluate(model, test_loader, device, verbose=True):
     return accuracy_percentage
 
 
-# Train
-num_epochs = 10
-train_loader, test_loader = create_emnist_dataloaders(train_dataset, test_dataset, batch_size=64)
-model, loss_func, optimizer = initialize_emnist_model(num_classes=26)
+def main():
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using Device: {device}")
 
-for epoch in range(num_epochs):
-    print(f"\nEpoch: {epoch+1}")
+    data_path = os.path.join(os.path.dirname(__file__), "EMNIST_data")
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.1736,), std=(0.3317,)),
+    ])
 
-    # Train the model for one epoch using the train_epoch function.
-    trained_model, _ = train_epoch(model, loss_func, optimizer, train_loader, DEVICE, verbose=True)
+    # Let torchvision check and download any missing dataset files.
+    train_dataset = datasets.EMNIST(
+        root=data_path,
+        split="letters",
+        train=True,
+        download=True,
+        transform=transform,
+    )
+    test_dataset = datasets.EMNIST(
+        root=data_path,
+        split="letters",
+        train=False,
+        download=True,
+        transform=transform,
+    )
 
-    # Evaluate the trained model on the test dataset using the evaluate function.
-    accuracy = evaluate(model, test_loader, DEVICE)
+    train_loader, test_loader = create_emnist_dataloaders(
+        train_dataset, test_dataset, batch_size=64
+    )
+    model, loss_func, optimizer = initialize_emnist_model(num_classes=26)
+    num_epochs = 10
+
+    for epoch in range(num_epochs):
+        print(f"\nEpoch: {epoch + 1}")
+        model, _ = train_epoch(
+            model, loss_func, optimizer, train_loader, device, verbose=True
+        )
+
+    # Evaluate on the test set only after training is complete.
+    evaluate(model, test_loader, device)
+
+
+if __name__ == "__main__":
+    main()

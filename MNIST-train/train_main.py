@@ -6,7 +6,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
 
-class MyMNSITClassifier(nn.Module):
+class MyMNISTClassifier(nn.Module):
     def __init__(self) -> None:
         super().__init__()
         self.flatten = nn.Flatten()
@@ -22,16 +22,16 @@ class MyMNSITClassifier(nn.Module):
         return x
 
 
-def train_model(model, device, dataloader, epochs):
+def train_model(model, device, dataloader, epochs, optimizer):
     loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    model.train() # 训练模式
+    model.train()  # Enable training mode.
 
     for epoch in range(epochs):
         total = 0
         hundred_batch_loss = 0
         hundred_correct = 0
         hundred_total = 0
+        batches_in_period = 0
         print("\n\n===== Epoch:", epoch+1)
 
         for batch_idx, (data, target) in enumerate(dataloader):
@@ -48,13 +48,19 @@ def train_model(model, device, dataloader, epochs):
             hundred_total += target.size(dim=0)
             hundred_correct += predicted.eq(target).sum().item()
             hundred_batch_loss += loss.item()
+            batches_in_period += 1
 
             if (batch_idx + 1) % 100 == 0:
-                print(f"{total}/60000")
-                print(f"AvgLoss in batch period: {hundred_batch_loss/100:.3f}  Accuracy: {hundred_correct/hundred_total:.3f}")
+                print(f"{total}/{len(dataloader.dataset)}")
+                print(f"AvgLoss in batch period: {hundred_batch_loss/batches_in_period:.3f}  Accuracy: {hundred_correct/hundred_total:.3f}")
                 hundred_correct = 0
                 hundred_total = 0
                 hundred_batch_loss = 0
+                batches_in_period = 0
+
+        if batches_in_period:
+            print(f"{total}/{len(dataloader.dataset)}")
+            print(f"AvgLoss in batch period: {hundred_batch_loss/batches_in_period:.3f}  Accuracy: {hundred_correct/hundred_total:.3f}")
 
 
 def test_model(model, device, dataloader):
@@ -77,15 +83,16 @@ def test_model(model, device, dataloader):
 if __name__ == "__main__":
     # check device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = MyMNSITClassifier().to(device)
+    model = MyMNISTClassifier().to(device)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.1307,),(0.3081))
     ])
 
-    PERIODS = 3 # 训练 + 验证周期
-    EPOCHS = 2 # 每轮训练周期
+    PERIODS = 3
+    EPOCHS = 2
 
     # MNIST train data
     train_dataset = torchvision.datasets.MNIST(
@@ -96,8 +103,7 @@ if __name__ == "__main__":
                     root="./data",train=False,download=True,transform=transform)
     test_loader = DataLoader(test_dataset, batch_size=1000, shuffle=False)
 
-    for i in range(PERIODS):
-        train_model(model, device, train_loader, EPOCHS)
+    for _ in range(PERIODS):
+        train_model(model, device, train_loader, EPOCHS, optimizer)
         test_model(model, device, test_loader)
             
-
