@@ -1,8 +1,7 @@
 # EMNIST Letters Classifier
 
-This script demonstrates a basic PyTorch classification workflow using the letters split of the EMNIST dataset. It covers loading a torchvision dataset, normalizing grayscale images, building a fully connected neural network, training with mini-batches and evaluating letter classification accuracy. Like the [MNIST example](../MNIST-train/README.md), it uses a simple fully connected network rather than a convolutional neural network (CNN).
-
-
+This script demonstrates a basic PyTorch classification workflow using the letters split of the EMNIST dataset. It covers loading a torchvision dataset, normalizing grayscale images, building a fully connected neural network, training with mini-batches and evaluating letter classification accuracy. Like the [MNIST example](../MNIST-train/README.md), it uses a simple fully connected network rather than a convolutional neural network. For a CNN-based alternative, see the
+[MobileNetV3 transfer-learning](../pretrained-model-transfer-learning/README.md#mobile_net_v3_fine_tuningpy).
 
 ## Workflow
 
