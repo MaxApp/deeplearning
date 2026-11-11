@@ -1,9 +1,8 @@
 # EMNIST Letters Classifier
 
-This exercise demonstrates a basic PyTorch classification workflow with the
-Letters split of the EMNIST dataset. It covers loading a torchvision dataset,
-normalizing grayscale images, building a fully connected neural network,
-training with mini-batches and evaluating letter-classification accuracy.
+This script demonstrates a basic PyTorch classification workflow using the letters split of the EMNIST dataset. It covers loading a torchvision dataset, normalizing grayscale images, building a fully connected neural network, training with mini-batches and evaluating letter classification accuracy. Like the [MNIST example](../MNIST-train/README.md), it uses a simple fully connected network rather than a convolutional neural network (CNN).
+
+
 
 ## Workflow
 

@@ -1,9 +1,6 @@
 # MNIST Classifier
 
-This exercise demonstrates a basic PyTorch image-classification workflow with
-the MNIST handwritten-digit dataset. It defines a custom fully connected
-classifier, preprocesses grayscale images, trains with mini-batches, and
-measures accuracy on the MNIST test split.
+The script demonstrates a basic PyTorch image classification workflow with the `MNIST` handwritten digit dataset. It defines a custom fully connected classifier, preprocesses grayscale images, trains with mini-batches and measures accuracy on the MNIST test split. The model is a simple linear fully connected network rather than the more commonly used convolutional neural network (CNN), so it classifies flattened pixel values without convolutional layers.
 
 ## Workflow
 

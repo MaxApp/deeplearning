@@ -1,9 +1,6 @@
 # Oxford Flowers102 Dataset Preparation
 
-This exercise introduces custom PyTorch datasets and image preprocessing using
-the Oxford Flowers102 image-classification dataset. It demonstrates how to
-load images and labels, apply transforms, create reproducible train/validation/
-test splits, and batch samples with `DataLoader`.
+This script introduces custom PyTorch datasets and image preprocessing using the Oxford Flowers102 image classification dataset. It demonstrates how to load images and labels, apply transforms, create reproducible train/validation/test splits and batch samples with `DataLoader`.
 
 ## Dataset layout
 
@@ -19,9 +16,7 @@ Download and extract the dataset, then arrange the files like this:
         └── ...
 ```
 
-The script expects this layout: image paths are built under
-`<dataset-root>/102flowers/jpg`, while labels are loaded from
-`<dataset-root>/imagelabels.mat`.
+The script expects this layout: image paths are built under `<dataset-root>/102flowers/jpg`, while labels are loaded from `<dataset-root>/imagelabels.mat`.
 
 ## What the exercise demonstrates
 
