@@ -4,9 +4,16 @@ By the power of `torchvision` library, we can make use of most famous models eff
 We can do inference directly with pre-trained parameters or we can do transfer learning and fine-tuning with them to adapter to our cases.
 Here we inspect the modules to understand their architecture and make some practicals in object prediction, segmentation and detection with some of pre-trained models.
 
-## Scripts Content Introduction
+The themes we covered includes:
+* image prediction with resnet50
+* image segmentation with deeplab_v3
+* object detection with Faster R-CNN
+* transfer learning and fine-tuning with mobilenet_v3
 
-### resnet50_prediction.py
+
+## Scripts Introduction
+
+### [resnet50_prediction.py](./resnet50_prediction.py)
 
 We use `Resnet50` model to predict image content. Instead of using `pretrained=True` parameter to download file online instantly, we try to pre-download `resnet50-0676ba61.pth` and `imagenet_class_index.json` first and load them offline manually.
 
@@ -16,7 +23,7 @@ Also we need to denormalize the cropped images and matching the category_id with
 ![prediction_results](imgs/resnet50_prediction.png)
 
 
-### deeplabv3_resnet50_segmentation.py
+### [deeplabv3_resnet50_segmentation.py](./deeplabv3_resnet50_segmentation.py)
 
 Based on `DeepLabV3` model, we do image segmentations by `torchvision.utils.draw_segmentation_masks`.
 
@@ -35,7 +42,7 @@ Comparision shows below:
 ![masked_horses](imgs/horse1_masked.png)
 
 
-### faster_rcnn_resnet50_detection.py
+### [faster_rcnn_resnet50_detection.py](./faster_rcnn_resnet50_detection.py)
 
 Use the power of `Fast R-CNN` model to perform object detection. The popular model combines components:
 
@@ -56,7 +63,7 @@ The results would be a little different according to `threshold` values, here we
 Unlike `DeepLabV3` the input to `fasterrcnn_resnet50_fpn` model in Pytorch do not need normalized at first, only convert image to tensor and scaled to 0~1 is enough, otherwise you'll get problems with detection results.
 
 
-### mobile_net_v3_fine_tuning.py
+### [mobile_net_v3_fine_tuning.py](./mobile_net_v3_fine_tuning.py)
 
 It's common situations you should take a pretrained model and adapt it to your target, instead of training one from scratch. Transfer learning leverage the pretrained model's power. We could keep the backbone and replace some of the layers, take further small step of training, eventually end up with a satisfied one.
 
