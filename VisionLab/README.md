@@ -14,6 +14,7 @@ The section below introduce a more advanced image process insights, includes:
 * [saliency maps](#saliency-maps)
 * [class activation maps](#class-activation-maps)
 * [diffusion model](#diffusion-model)
+* [YOLO model](#yolo)
 
 ### Feature Maps
 
@@ -117,5 +118,27 @@ pipe = DiffusionPipeline.from_pretrained(
 * **Pixel space DDPM**  vs. **Latent space Diffusion**
   - **latent space** is compressed features from original image which makes them much more efficient and scalable, but less intuitive to visualize.
   - we can use an autoencoder to compress images to latent space and decode back to pixels.
+
+### YOLO
+
+**YOLO** is a family of one-stage object detectors. Rather than proposing regions and classifying them in separate stages, YOLO detector predicts object locations and classes directly from an image in a single network pass. This makes detection fast enough for real-time applications, while successive versions have improved accuracy, scale handling, and efficiency.
+
+With the evolution of YOLO, it has multiple versions:
+
+* **YOLOv1:** Established single-pass detection with grid-based box and class predictions.
+* **YOLOv2 / YOLO9000:** Added anchor boxes and a passthrough layer for fine-grained features; also introduced multi-scale training.
+* **YOLOv3:** Predicted at three feature-map scales, improving detection across object sizes.
+* **YOLOv5:** Popularized an accessible PyTorch implementation and practical model-size variants. It is an Ultralytics implementation, distinct from the original authors' paper series.
+* **YOLOv8:** Popularized an anchor-free, decoupled detection head and a broader family of vision tasks.
+* **YOLOv10:** Advanced end-to-end detection with a training strategy designed to remove the need for NMS.
+* **YOLO26:** Ultralytics' 2026 model family adds native end-to-end inference, a lighter detection head, and updated training methods. Its NMS-free path is optional.
+
+some of the key ideas used in YOLO:
+
+* **Grid-based prediction:** In YOLOv1, the image was divided into an `S x S` grid. A cell was responsible for an object when the object's center fell inside it.
+* **Backbone, neck, and head:** The backbone extracts visual features, the neck combines features at different resolutions, and the head predicts boxes and classes. 
+* **Anchor boxes and anchor-free:** Anchor-based models predict adjustments to predefined box shapes. Anchor-free models predict box locations or distances without those predefined shapes.
+* **IoU and losses:** Intersection over Union (IoU) measures overlap between a predicted and target box. YOLOv1 used squared-error terms for box coordinates and confidence, not an IoU loss. Later versions adopted IoU-based losses.
+* **Non-maximum suppression (NMS):** Traditional YOLO inference ranks overlapping predictions and removes duplicates with NMS. End-to-end variants such as YOLOv10 and YOLO26 can avoid this step.
 
 
