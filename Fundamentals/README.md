@@ -1,28 +1,35 @@
 # Fundamentals and Theories
 
-The fundamentals and basic concepts in machine learning with experiments and implementations. These are the pivots of next step for the real tasks to train a model. With a solid foundation in conception we could go further during the journey.
+This section introduces fundamental machine learning concepts through experiments and implementations, providing a foundation for applying models to real-world tasks.
 
-## Overview of Machine Learning
+## Overview of Machine Learning Workflow
 
-Most common categories of machine learning we used includes:
+- **Define the problem:** Specify the task, intended use, constraints and how success will be measured.
+- **Prepare the data:** Gather and inspect data, clean errors, create useful features or labels, and split it into training, validation, and test sets.
+- **Preprocess the data:** Apply appropriate transformations, such as encoding categories or normalizing values. Fit preprocessing steps on training data and reuse them consistently for validation, testing, and inference.
+- **Choose a model and metric:** Select a suitable model and loss function, and decide which metrics best reflect the task's goals.
+- **Train the model:** Use training data to compute predictions and loss, then update model parameters with an optimizer.
+- **Evaluate and refine:** Use validation results to adjust the model, features, or training settings. Once choices are settled, use the test set for a final check on data the model has not seen.
+- **Deploy and monitor:** Make the model available for real-world inference, monitor its performance and input data, and update or retrain it when requirements or data change.
 
-* Supervised
-    * regression model
-    * classification model
-* Unsupervised
-    * clustering
-    * anomaly detection
-    * dimensionality reduction
-* Reinforcement Learning
+This process is iterative: evaluation may reveal a need to revisit the data, preprocessing, model or training settings before deployment.
+
+### Common machine learning paradigms
+
+- **Supervised learning:** Learn from labeled examples, commonly for regression or classification.
+- **Unsupervised learning:** Find patterns in unlabeled data, for example through clustering, dimensionality reduction, or anomaly detection.
+- **Reinforcement learning:** Learn actions through interaction with an environment, using rewards to guide behavior.
+
 
 ## Concepts
 
-The basic concepts we should be familiar with before hands on.
+The basic concepts we should be familiar with includes
 
 * linear regression
 * logistic regression
 * cost function
 * gradient descent
+* optimizer
 * learning rate
 * vectorization
 * normalization
@@ -94,6 +101,16 @@ This example builds a two-layer network with a manual dropout layer. During trai
 the hidden activations, keeps each activation with probability `0.8`, and
 divides kept values by `0.8` (inverted dropout) so their expected magnitude is
 preserved. Dropout is disabled during evaluation.
+
+### Additional experiments
+
+- [basic_manual_gradient.py](basic_manual_gradient.py) implements mini-batch gradient descent by hand for a two-feature linear model, making the gradient and parameter updates explicit. [basic_pytorch_gradient.py](basic_pytorch_gradient.py) trains the same kind of model with PyTorch autograd and SGD for comparison.
+- [multi_dimensions.py](multi_dimensions.py) demonstrates multi-output linear regression: it learns a weight matrix and bias to predict two targets from two input features.
+- [binary_category.py](binary_category.py) uses a sigmoid output and binary cross-entropy to classify two synthetic groups, and visualizes the learned decision boundary as training progresses.
+- [quadratic_draw.py](quadratic_draw.py) fits noisy samples from `y = 3x^2 + 20` with a small neural network, illustrating nonlinear regression.
+- [rand_normal_distribute.py](rand_normal_distribute.py) compares uniform and standard normal distributions with histograms to build intuition about data generation and distribution.
+- [knn_cosine_similarity.py](knn_cosine_similarity.py) demonstrates cosine similarity and selecting the most similar candidates, introducing a simple nearest-neighbor approach.
+- [optimizers_sample.py](optimizers_sample.py) provides reusable examples of SGD with momentum, RMSprop, Adam, and AdamW, along with a basic training loop.
 
 ## Notes
 

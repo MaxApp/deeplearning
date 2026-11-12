@@ -14,12 +14,13 @@
   - [Optimization and Deployment](#optimization-and-deployment)
   - [Distributed Training on GPU](#distributed-training-on-gpu)
 - [Overview of Projects](#overview-of-projects)
-  - [Fundamentals of Machine Learning](#fundamentals-of-machine-learning)
+  - [Fundamentals](#fundamentals)
   - [Text and NLP Models](#text-and-nlp-models)
   - [Vision Models](#vision-models)
   - [Tree-based Models](#tree-based-models)
   - [Unsupervised Models](#unsupervised-models)
   - [Reinforcement Learning](#reinforcement-learning)
+  - [Transfer Learning with Pretrained Models](#transfer-learning-with-pretrained-models)
   - [Deployment](#deployment)
 - [Acknowledgement](#acknowledgment)
 
@@ -318,22 +319,9 @@ The dataset, model, loss, optimizer, and ordinary forward/backward steps remain 
 
 ## Overview of Projects
 
-### Fundamentals of Machine Learning
+### Fundamentals
 
-The fundamentals section is the starting point for understanding how machine learning models actually learn from data. These experiments focus on the simplest but most important ideas in the field: optimization, regression, classification, and the visual intuition behind training dynamics. Rather than jumping directly into large neural networks, the goal here is to build a clear mental model of loss, gradients, parameter updates, and the role of data distribution.
-
-The experiments in [Fundamentals/](./Fundamentals/README.md) cover a practical learning path from basic math to visual model fitting:
-
-* Manual gradient descent: [basic_manual_gradient.py](./Fundamentals/basic_manual_gradient.py) implements the update rule by hand for a simple linear model. This is the clearest way to see how gradients are computed, how the learning rate affects convergence, and why repeated small updates eventually minimize the loss.
-* PyTorch-style gradient descent: [basic_pytorch_gradient.py](./Fundamentals/basic_pytorch_gradient.py) reproduces the same idea using automatic differentiation in PyTorch, showing how the framework handles the forward pass, backward pass, and optimizer step behind the scenes.
-* Linear regression: [multi_dimensions.py](./Fundamentals/multi_dimensions.py) trains a multi-feature model using two input variables and a multi-output regression target. It demonstrates how a linear model learns a weight matrix and bias from data, which is the foundation for more complex networks.
-* Logistic regression and binary classification: [binary_category.py](./Fundamentals/binary_category.py) uses a sigmoid output and binary cross-entropy to separate two classes. The script also draws the decision boundary dynamically in Matplotlib, making the classification boundary visually obvious as training progresses.
-* Dynamic convergence plotting: [simple_linear_dynamic.py](./Fundamentals/simple_linear_dynamic.py) and [simple_curve_dynamic.py](./Fundamentals/simple_curve_dynamic.py) animate the model fitting process in real time. Watching the predicted line or curve move toward the target data makes gradient descent and loss reduction much easier to understand than static plots alone.
-* Curve fitting in 2D with Matplotlib: [quadratic_draw.py](./Fundamentals/quadratic_draw.py) fits a parabola of the form `y = 3x^2 + 20` with a small neural network. This is a useful exercise for seeing how nonlinear functions can be approximated and how regression differs from simple linear fitting.
-* Data distribution and statistics basics: [rand_normal_distribute.py](./Fundamentals/rand_normal_distribute.py) compares uniform and normal distributions, helping to build intuition for data generation, probability shapes, and the importance of distribution-aware modeling.
-* Similarity-based learning: [knn_cosine_similarity.py](./Fundamentals/knn_cosine_similarity.py) introduces a simple nearest-neighbor style approach and cosine similarity, which is useful for understanding similarity metrics and feature comparison.
-
-Together, these experiments form the foundation of the rest of the repository. They are intentionally simple, but they are the practical building blocks behind deeper topics such as neural networks, optimization methods, and modern deep learning models. The key idea is not just to train a model, but to understand why it learns, how it can fail, and how visual feedback makes the learning process interpretable.
+The fundamentals section lays the groundwork for machine learning through hands-on experiments. It covers data preparation, loading and normalization, linear layers, regression and classification, and the training process, including loss functions, gradients, backpropagation, gradient descent and optimizers. Visualizations and evaluation metrics help illustrate how models learn and how their performance is assessed. See the [Fundamentals README](./Fundamentals/README.md) for details.
 
 ### Text and NLP Models
 
@@ -370,6 +358,8 @@ See the [unsupervised learning notes](./unsupervised/README.md) for explanations
 Reinforcement learning (RL) is a way for an agent to learn by interacting with an environment. It observes states, takes actions and receives rewards. Through trial and error, it learns a policy that aims to maximize long-term reward.
 
 The [FrozenLake 4x4 sample](./reinforcement/frozenlake_4x4.py) trains a tabular Q-learning agent with epsilon-greedy exploration, then evaluates its greedy policy and visualizes the learned actions on the map. See the [reinforcement learning](./reinforcement/README.md) for the details and RL concepts.
+
+### Transfer Learning with Pretrained Models
 
 ### Deployment
 
