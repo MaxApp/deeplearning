@@ -15,7 +15,8 @@ The section below introduce a more advanced image process insights, includes:
 * [Class activation maps](#class-activation-maps)
 * [Diffusion model](#diffusion-model)
 * [YOLO model](#yolo)
-* [U-Net](#u-net)
+* [U-Net Architecture](#u-net)
+* [Siamese network](#siamese-network)
 
 ### Feature Maps
 
@@ -148,5 +149,10 @@ U-Net is a convolutional neural network designed for image segmentation, especia
 
 ![U-Net architecture](imgs/u-net.png)
 
+### Siamese network
+
+A Siamese network processes two or more inputs with copies of the same network that share their weights, mapping each input to an embedding in a common feature space. Comparing the embeddings lets the model learn whether inputs are similar rather than assigning each one a fixed class. This makes Siamese networks useful for tasks such as signature verification and matching examples not seen during training.
+
+See the [Siamese network](../siamese-network/README.md) for a signature verification example using triplet loss.
 
 
