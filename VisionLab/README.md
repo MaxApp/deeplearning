@@ -10,11 +10,12 @@ For **Image Classification** hands-on exercises, start with [MNIST-train](../MNI
 
 The section below introduce a more advanced image process insights, includes:
 
-* [feature maps](#feature-maps)
-* [saliency maps](#saliency-maps)
-* [class activation maps](#class-activation-maps)
-* [diffusion model](#diffusion-model)
+* [Feature maps](#feature-maps)
+* [Saliency maps](#saliency-maps)
+* [Class activation maps](#class-activation-maps)
+* [Diffusion model](#diffusion-model)
 * [YOLO model](#yolo)
+* [U-Net](#u-net)
 
 ### Feature Maps
 
@@ -140,5 +141,12 @@ some of the key ideas used in YOLO:
 * **Anchor boxes and anchor-free:** Anchor-based models predict adjustments to predefined box shapes. Anchor-free models predict box locations or distances without those predefined shapes.
 * **IoU and losses:** Intersection over Union (IoU) measures overlap between a predicted and target box. YOLOv1 used squared-error terms for box coordinates and confidence, not an IoU loss. Later versions adopted IoU-based losses.
 * **Non-maximum suppression (NMS):** Traditional YOLO inference ranks overlapping predictions and removes duplicates with NMS. End-to-end variants such as YOLOv10 and YOLO26 can avoid this step.
+
+### U-Net
+
+U-Net is a convolutional neural network designed for image segmentation, especially when precise pixel-level predictions matter. Its encoder-decoder structure captures context through downsampling, while the decoder reconstructs spatial details using skip connections and upsampling via transpose convolutions, allowing the model to preserve fine boundaries and local structure. 
+
+![U-Net architecture](imgs/u-net.png)
+
 
 
