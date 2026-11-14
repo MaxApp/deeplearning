@@ -1,7 +1,9 @@
 """PyTorch U-Net blocks for pixel-wise image segmentation."""
 
+import random
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 import torch
@@ -194,6 +196,49 @@ class BrainTumorSegmentationDataset(Dataset):
         return image_tensor, mask_tensor
 
 
+def display_random_samples(
+    dataset: BrainTumorSegmentationDataset, num_samples: int = 4
+) -> None:
+    """Plot randomly selected MRI images beside their segmentation masks."""
+    if num_samples <= 0:
+        raise ValueError("num_samples must be positive.")
+
+    sample_indices = random.sample(
+        range(len(dataset)), k=min(num_samples, len(dataset))
+    )
+    figure, axes = plt.subplots(
+        len(sample_indices),
+        2,
+        figsize=(8, 4 * len(sample_indices)),
+        squeeze=False,
+        constrained_layout=True,
+    )
+    mask_plot = None
+
+    for row, index in enumerate(sample_indices):
+        image, mask = dataset[index]
+        axes[row, 0].imshow(image.squeeze(0).numpy(), cmap="gray")
+        axes[row, 0].set_title(f"Image {index}")
+        axes[row, 0].axis("off")
+
+        mask_plot = axes[row, 1].imshow(
+            mask.numpy(),
+            cmap="tab10",
+            vmin=-0.5,
+            vmax=NUM_CLASSES - 0.5,
+            interpolation="nearest",
+        )
+        axes[row, 1].set_title(f"Mask {index}")
+        axes[row, 1].axis("off")
+
+    colorbar = figure.colorbar(
+        mask_plot, ax=axes[:, 1].tolist(), ticks=range(NUM_CLASSES)
+    )
+    colorbar.ax.set_yticklabels(CLASS_NAMES)
+    plt.show()
+    plt.close(figure)
+
+
 def run_epoch(
     model: UNet,
     data_loader: DataLoader,
@@ -244,6 +289,7 @@ def train_model(
         mask_dir=dataset_dir / "mask",
         image_size=image_size,
     )
+    display_random_samples(dataset, num_samples=4)
     if len(dataset) < 2:
         raise ValueError("At least two image-mask pairs are required for training.")
 

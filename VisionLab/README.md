@@ -166,7 +166,7 @@ dataset/
         └── 3/
 ```
 
-From the repository root, run `python VisionLab\u_net.py`. The loader pairs files by relative path, resizes images and masks to 256×256 (nearest-neighbor for masks), and trains four-class segmentation with `CrossEntropyLoss`. The best validation-loss checkpoint is saved to `./checkpoints/brain_tumor_unet.pth`. To change training settings, edit the hard-coded values in `main()` in `u_net.py`.
+From the repository root, run `python VisionLab\u_net.py`. It first displays four random image-mask pairs; close the plot window to continue. The loader pairs files by relative path, resizes images and masks to 256×256 (nearest-neighbor for masks), and trains four-class segmentation with `CrossEntropyLoss`. The best validation-loss checkpoint is saved to `./checkpoints/brain_tumor_unet.pth`. To change training settings, edit the hard-coded values in `main()` in `u_net.py`.
 
 ### Siamese network
 
