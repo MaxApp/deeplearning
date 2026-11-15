@@ -12,11 +12,14 @@ import torch.nn.functional as F
 from torch import Tensor, cat
 from torch.utils.data import DataLoader, Dataset, random_split
 
+CLASS_NAMES = ("No Tumor", "Glioma", "Meningioma", "Pituitary")
+NUM_CLASSES = len(CLASS_NAMES)
+DATASET_FOLDER = "Brain Tumor Segmentation Dataset"
 
 class DoubleConv(nn.Module):
     """Apply two 3x3 convolutions, each followed by ReLU."""
 
-    def __init__(self, in_channels: int, out_channels: int) -> None:
+    def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
         self.layers = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
@@ -30,9 +33,9 @@ class DoubleConv(nn.Module):
 
 
 class DownsampleBlock(nn.Module):
-    """Extract encoder features and return pooled features plus a skip tensor."""
+    """Encode features and return pooled features and a skip connect tensor"""
 
-    def __init__(self, in_channels: int, out_channels: int) -> None:
+    def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
         self.convolutions = DoubleConv(in_channels, out_channels)
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -43,40 +46,36 @@ class DownsampleBlock(nn.Module):
 
 
 class UpsampleBlock(nn.Module):
-    """Upsample decoder features, join the matching skip, and refine them."""
+    """Decode features and concatenate the skip tensor"""
 
-    def __init__(
-        self, in_channels: int, skip_channels: int, out_channels: int
-    ) -> None:
+    def __init__(self, in_channels: int, skip_channels: int, out_channels: int):
         super().__init__()
         # transpose convolutional
-        self.up = nn.ConvTranspose2d(
-            in_channels, out_channels, kernel_size=2, stride=2
-        )
+        self.upsample = nn.ConvTranspose2d(in_channels, out_channels, kernel_size=2, stride=2)
         self.convolutions = DoubleConv(out_channels + skip_channels, out_channels)
 
     def forward(self, x: Tensor, skip: Tensor) -> Tensor:
-        x = self.up(x)
-        # reshape if unmatch in size
+        x = self.upsample(x)
+        # reshape with interpolate if unmatch in size (h x w)
         if x.shape[2:] != skip.shape[2:]:
             x = F.interpolate(
                 x, size=skip.shape[2:], mode="bilinear", align_corners=False
             )
+        # catenate skip connection
         x = cat((skip, x), dim=1)
         return self.convolutions(x)
 
 
 class UNet(nn.Module):
-    """Encoder-decoder U-Net that returns per-pixel logits."""
 
-    def __init__(self, in_channels: int = 3, out_channels: int = 1, 
-                 base_channels: int = 32, depth: int = 4) -> None:
+    def __init__(self, in_channels: int = 3, out_channels: int = 1, base_channels: int = 32, depth: int = 4):
         super().__init__()
         if in_channels <= 0 or out_channels <= 0 or base_channels <= 0:
             raise ValueError("Channel counts must be positive.")
         if depth <= 0:
             raise ValueError("depth must be positive.")
 
+        # number of channels output from each level
         encoder_channels = [base_channels * (2**level) for level in range(depth)]
         self.depth = depth
         self.down_blocks = nn.ModuleList()
@@ -96,6 +95,7 @@ class UNet(nn.Module):
             )
             current_channels = skip_channels
 
+        # the last 1x1 conv
         self.output = nn.Conv2d(current_channels, out_channels, kernel_size=1)
 
     def forward(self, x: Tensor) -> Tensor:
@@ -112,23 +112,17 @@ class UNet(nn.Module):
             skips.append(skip)
 
         x = self.bottleneck(x)
+
         for up_block, skip in zip(self.up_blocks, reversed(skips)):
             x = up_block(x, skip)
 
         return self.output(x)
 
 
-CLASS_NAMES = ("No Tumor", "Glioma", "Meningioma", "Pituitary")
-NUM_CLASSES = len(CLASS_NAMES)
-DATASET_FOLDER = "Brain Tumor Segmentation Dataset"
-
-
 class BrainTumorSegmentationDataset(Dataset):
-    """Load paired MRI images and class-index masks from the Kaggle layout."""
+    """Load paired MRI images and class-index masks"""
 
-    def __init__(
-        self, image_dir: Path, mask_dir: Path, image_size: int = 256
-    ) -> None:
+    def __init__(self, image_dir: Path, mask_dir: Path, image_size: int = 256):
         self.image_dir = image_dir
         self.image_size = image_size
         image_paths = sorted(
@@ -137,7 +131,8 @@ class BrainTumorSegmentationDataset(Dataset):
             if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
         )
         masks_by_name = {
-            path.relative_to(mask_dir).with_suffix("").as_posix(): path
+            path.relative_to(mask_dir).with_suffix("").as_posix(): 
+            path
             for path in mask_dir.rglob("*")
             if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
         }
@@ -196,22 +191,16 @@ class BrainTumorSegmentationDataset(Dataset):
         return image_tensor, mask_tensor
 
 
-def display_random_samples(
-    dataset: BrainTumorSegmentationDataset, num_samples: int = 4
-) -> None:
-    """Plot randomly selected MRI images beside their segmentation masks."""
-    if num_samples <= 0:
-        raise ValueError("num_samples must be positive.")
-
-    sample_indices = random.sample(
-        range(len(dataset)), k=min(num_samples, len(dataset))
-    )
+def display_random_samples(dataset: BrainTumorSegmentationDataset):
+    """Display MRI images beside their segmentation masks"""
+    num_samples = 2
+    sample_indices = random.sample(range(len(dataset)), k=min(num_samples, len(dataset)))
     figure, axes = plt.subplots(
-        len(sample_indices),
-        2,
+        nrows=len(sample_indices),
+        ncols=2,
         figsize=(8, 4 * len(sample_indices)),
         squeeze=False,
-        constrained_layout=True,
+        constrained_layout=True
     )
     mask_plot = None
 
@@ -289,7 +278,7 @@ def train_model(
         mask_dir=dataset_dir / "mask",
         image_size=image_size,
     )
-    display_random_samples(dataset, num_samples=4)
+
     if len(dataset) < 2:
         raise ValueError("At least two image-mask pairs are required for training.")
 
@@ -352,7 +341,6 @@ def main() -> None:
         image_size=256,
         learning_rate=1e-3,
     )
-
 
 if __name__ == "__main__":
     main()
