@@ -4,6 +4,7 @@ import random
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import BoundaryNorm, ListedColormap
 import numpy as np
 from PIL import Image
 import torch
@@ -12,9 +13,17 @@ import torch.nn.functional as F
 from torch import Tensor, cat
 from torch.utils.data import DataLoader, Dataset, random_split
 
-CLASS_NAMES = ("No Tumor", "Glioma", "Meningioma", "Pituitary")
+CLASS_NAMES = ("Background", "Glioma", "Meningioma", "Pituitary")
 NUM_CLASSES = len(CLASS_NAMES)
 MASK_FOREGROUND_THRESHOLD = 128
+MODEL_IN_CHANNELS = 1
+MODEL_BASE_CHANNELS = 32
+MODEL_DEPTH = 4
+TUMOR_COLORS = ("tab:blue", "tab:orange", "tab:green")
+MASK_CMAP = ListedColormap(("black", *TUMOR_COLORS))
+MASK_NORM = BoundaryNorm(np.arange(-0.5, NUM_CLASSES + 0.5), MASK_CMAP.N)
+TUMOR_CMAP = ListedColormap(TUMOR_COLORS)
+TUMOR_NORM = BoundaryNorm(np.arange(0.5, NUM_CLASSES + 0.5), TUMOR_CMAP.N)
 
 class DoubleConv(nn.Module):
     """Apply two 3x3 convolutions, each followed by ReLU."""
@@ -195,6 +204,7 @@ class BrainTumorSegmentationDataset(Dataset):
                 )
             mask_array = mask_array[..., 0]
 
+        # turn mask to 0 or class_id according to threshold
         mask_array = np.where(mask_array >= MASK_FOREGROUND_THRESHOLD, class_id, 0)
 
         if mask_array.min() < 0 or mask_array.max() >= NUM_CLASSES:
@@ -210,17 +220,16 @@ class BrainTumorSegmentationDataset(Dataset):
 
 
 def display_random_samples(dataset: BrainTumorSegmentationDataset):
-    """Display MRI images beside their segmentation masks"""
+    """Display MRI images with black backgrounds and three tumor colors."""
     num_samples = 2
     sample_indices = random.sample(range(len(dataset)), k=min(num_samples, len(dataset)))
     figure, axes = plt.subplots(
         nrows=len(sample_indices),
         ncols=2,
-        figsize=(8, 4 * len(sample_indices)),
+        figsize=(6, 2 * len(sample_indices)),
         squeeze=False,
         constrained_layout=True
     )
-    mask_plot = None
 
     for row, index in enumerate(sample_indices):
         image, mask = dataset[index]
@@ -228,31 +237,76 @@ def display_random_samples(dataset: BrainTumorSegmentationDataset):
         axes[row, 0].set_title(f"Image {index}")
         axes[row, 0].axis("off")
 
-        mask_plot = axes[row, 1].imshow(
+        axes[row, 1].imshow(
             mask.numpy(),
-            cmap="tab10",
-            vmin=-0.5,
-            vmax=NUM_CLASSES - 0.5,
+            cmap=MASK_CMAP,
+            norm=MASK_NORM,
             interpolation="nearest",
         )
         axes[row, 1].set_title(f"Mask {index}")
         axes[row, 1].axis("off")
 
-    colorbar = figure.colorbar(
-        mask_plot, ax=axes[:, 1].tolist(), ticks=range(NUM_CLASSES)
-    )
-    colorbar.ax.set_yticklabels(CLASS_NAMES)
+    _add_tumor_colorbar(figure, axes[:, 1].tolist())
     plt.show()
     plt.close(figure)
 
 
-def run_epoch(
+def _add_tumor_colorbar(figure, mask_axes) -> None:
+    mappable = plt.cm.ScalarMappable(norm=TUMOR_NORM, cmap=TUMOR_CMAP)
+    mappable.set_array([])
+    colorbar = figure.colorbar(
+        mappable, ax=mask_axes, ticks=range(1, NUM_CLASSES)
+    )
+    colorbar.ax.set_yticklabels(CLASS_NAMES[1:])
+
+
+def predict_mask(model: UNet, image: Tensor) -> Tensor:
+    """Predict per-pixel class IDs for a preprocessed single-channel image."""
+    if image.ndim != 3 or image.shape[0] != MODEL_IN_CHANNELS:
+        raise ValueError(
+            f"Expected an image shaped (1, height, width); got {tuple(image.shape)}."
+        )
+
+    device = next(model.parameters()).device
+    model.eval()
+    with torch.inference_mode():
+        logits = model(image.unsqueeze(0).to(device))
+    return logits.argmax(dim=1)[0].cpu()
+
+
+def display_random_prediction(
+    dataset: BrainTumorSegmentationDataset,
     model: UNet,
-    data_loader: DataLoader,
-    criterion: nn.Module,
-    device: torch.device,
-    optimizer: torch.optim.Optimizer | None = None,
-) -> float:
+) -> None:
+    """Compare one random image's ground-truth and predicted segmentation."""
+    index = random.randrange(len(dataset))
+    image, target = dataset[index]
+    prediction = predict_mask(model, image)
+
+    figure, axes = plt.subplots(
+        nrows=1,
+        ncols=3,
+        figsize=(9, 3),
+        squeeze=False,
+        constrained_layout=True,
+    )
+    axes[0, 0].imshow(image.squeeze(0).numpy(), cmap="gray")
+    axes[0, 0].set_title(f"Image {index}")
+    axes[0, 1].imshow(target.numpy(), cmap=MASK_CMAP, norm=MASK_NORM, interpolation="nearest")
+    axes[0, 1].set_title("Ground truth")
+    axes[0, 2].imshow(
+        prediction.numpy(), cmap=MASK_CMAP, norm=MASK_NORM, interpolation="nearest"
+    )
+    axes[0, 2].set_title("Prediction")
+    for axis in axes[0]:
+        axis.axis("off")
+
+    _add_tumor_colorbar(figure, axes[0, 1:].tolist())
+    plt.show()
+    plt.close(figure)
+
+
+def run_epoch(model: UNet, data_loader: DataLoader, criterion: nn.Module, device: torch.device, optimizer: torch.optim.Optimizer | None = None):
     is_training = optimizer is not None
     model.train(is_training)
     total_loss = 0.0
@@ -278,44 +332,40 @@ def run_epoch(
 
 
 def train_model(
-    dataset_root: Path,
+    dataset: BrainTumorSegmentationDataset,
     epochs: int = 20,
     batch_size: int = 8,
-    image_size: int = 256,
     learning_rate: float = 1e-3,
+    checkpoint_path: Path = Path("./checkpoints/brain_tumor_unet.pth"),
 ) -> UNet:
     if epochs <= 0 or batch_size <= 0 or learning_rate <= 0:
         raise ValueError("epochs, batch_size, and learning_rate must be positive.")
-    if image_size < 2**4:
-        raise ValueError("image_size must be at least 16 for the default U-Net depth.")
-
-    dataset = BrainTumorSegmentationDataset(
-        image_dir=dataset_root / "image",
-        mask_dir=dataset_root / "mask",
-        image_size=image_size,
-    )
-
+    if dataset.image_size < 2**MODEL_DEPTH:
+        raise ValueError(
+            f"image_size must be at least {2**MODEL_DEPTH} for depth={MODEL_DEPTH}."
+        )
     if len(dataset) < 2:
         raise ValueError("At least two image-mask pairs are required for training.")
 
+    # split dataset for training and validation
     validation_size = max(1, int(len(dataset) * 0.2))
     training_size = len(dataset) - validation_size
-    training_data, validation_data = random_split(
-        dataset,
-        (training_size, validation_size),
-        generator=torch.Generator().manual_seed(42),
-    )
+    training_data, validation_data = random_split(dataset,
+                                                  (training_size, validation_size),
+                                                  generator=torch.Generator().manual_seed(42)
+                                                  )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    pin_memory = device.type == "cuda"
-    training_loader = DataLoader(
-        training_data, batch_size=batch_size, shuffle=True, pin_memory=pin_memory
-    )
-    validation_loader = DataLoader(
-        validation_data, batch_size=batch_size, pin_memory=pin_memory
-    )
 
-    model = UNet(in_channels=1, out_channels=NUM_CLASSES).to(device)
+    training_loader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
+    validation_loader = DataLoader(validation_data, batch_size=batch_size)
+
+    model = UNet(
+        in_channels=MODEL_IN_CHANNELS,
+        out_channels=NUM_CLASSES,
+        base_channels=MODEL_BASE_CHANNELS,
+        depth=MODEL_DEPTH,
+    ).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -330,19 +380,63 @@ def train_model(
             f"validation loss: {validation_loss:.4f}"
         )
 
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(
+        {
+            "model_state_dict": model.state_dict(),
+            "model_config": {
+                "in_channels": MODEL_IN_CHANNELS,
+                "out_channels": NUM_CLASSES,
+                "base_channels": MODEL_BASE_CHANNELS,
+                "depth": MODEL_DEPTH,
+            },
+            "class_names": list(CLASS_NAMES),
+            "image_size": dataset.image_size,
+        },
+        checkpoint_path,
+    )
+    print(f"Model parameters saved to {checkpoint_path}")
     return model
 
 
-def main(
-    dataset_root: Path = Path("./dataset/Brain Tumor Segmentation Dataset"),
-) -> None:
-    train_model(
-        dataset_root=dataset_root,
-        epochs=20,
-        batch_size=8,
-        image_size=256,
-        learning_rate=1e-3,
+def load_model(
+    checkpoint_path: Path,
+    device: torch.device | None = None,
+) -> tuple[UNet, int]:
+    """Load a trained U-Net and its expected input size."""
+    if device is None:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    checkpoint = torch.load(
+        checkpoint_path, map_location=device, weights_only=True
     )
+    if checkpoint["class_names"] != list(CLASS_NAMES):
+        raise ValueError(
+            f"Checkpoint classes {checkpoint['class_names']} do not match "
+            f"current classes {list(CLASS_NAMES)}."
+        )
+
+    model = UNet(**checkpoint["model_config"]).to(device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval()
+    return model, int(checkpoint["image_size"])
+
 
 if __name__ == "__main__":
-    main()
+
+    root_dir = Path(r"E:\PDF\deep learning\brain_tumor_seg")
+    dataset = BrainTumorSegmentationDataset(
+        image_dir=root_dir / "image",
+        mask_dir=root_dir / "mask",
+        image_size=256
+    )
+
+    # trained_model = train_model(
+    #     dataset,
+    #     epochs=10,
+    #     batch_size=8,
+    #     learning_rate=1e-3,
+    # )
+
+    trained_model, _  = load_model(Path("./checkpoints/brain_tumor_unet.pth"))
+    display_random_prediction(dataset, trained_model)

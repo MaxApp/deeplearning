@@ -168,7 +168,7 @@ dataset/
         └── 3/
 ```
 
-From the repository root, run `python VisionLab\u_net.py` to train four-class segmentation with `CrossEntropyLoss`. The loader pairs files by relative path and resizes images and masks to 256×256 (nearest-neighbor for masks). Training reports loss each epoch and does not save a checkpoint; `train_model` returns the trained model in memory. To use a different dataset directory, call `main(dataset_root=Path(r"..."))` or pass that directory to `train_model`; the directory should directly contain the `image` and `mask` folders. To change training settings, edit the values in `main()` in `u_net.py`.
+From the repository root, run `python VisionLab\u_net.py` to train four-class segmentation with `CrossEntropyLoss`. The loader pairs files by relative path and resizes images and masks to 256×256 (nearest-neighbor for masks). After training, the script displays one random image beside its ground-truth and predicted masks, then saves the model and inference metadata to `./checkpoints/brain_tumor_unet.pth`. `load_model(checkpoint_path)` reloads the model and returns its expected image size; `predict_mask(model, image_tensor)` produces a per-pixel class-ID mask. To use a different dataset directory, update `root_dir` in the script; it should directly contain the `image` and `mask` folders.
 
 ### Siamese network
 
