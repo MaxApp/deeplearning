@@ -14,7 +14,7 @@ from torch.utils.data import DataLoader, Dataset, random_split
 
 CLASS_NAMES = ("No Tumor", "Glioma", "Meningioma", "Pituitary")
 NUM_CLASSES = len(CLASS_NAMES)
-DATASET_FOLDER = "Brain Tumor Segmentation Dataset"
+MASK_FOREGROUND_THRESHOLD = 128
 
 class DoubleConv(nn.Module):
     """Apply two 3x3 convolutions, each followed by ReLU."""
@@ -120,7 +120,7 @@ class UNet(nn.Module):
 
 
 class BrainTumorSegmentationDataset(Dataset):
-    """Load paired MRI images and class-index masks"""
+    """Load MRI images and convert grayscale masks to class-index masks."""
 
     def __init__(self, image_dir: Path, mask_dir: Path, image_size: int = 256):
         self.image_dir = image_dir
@@ -128,26 +128,42 @@ class BrainTumorSegmentationDataset(Dataset):
         image_paths = sorted(
             path
             for path in image_dir.rglob("*")
-            if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+            if path.suffix.lower() == ".jpg"
         )
         masks_by_name = {
-            path.relative_to(mask_dir).with_suffix("").as_posix(): 
+            path.relative_to(mask_dir).with_suffix("").as_posix():
             path
             for path in mask_dir.rglob("*")
-            if path.suffix.lower() in {".jpg", ".jpeg", ".png"}
+            if path.suffix.lower() == ".jpg"
         }
-
-        self.samples = []
+        self.samples: list[tuple[Path, Path, int]] = []
         unmatched = []
         for image_path in image_paths:
-            relative_name = (
-                image_path.relative_to(image_dir).with_suffix("").as_posix()
-            )
+            relative_image_path = image_path.relative_to(image_dir)
+            relative_name = relative_image_path.with_suffix("").as_posix() + "_m"
             mask_path = masks_by_name.get(relative_name)
             if mask_path is None:
                 unmatched.append(relative_name)
             else:
-                self.samples.append((image_path, mask_path))
+                if len(relative_image_path.parts) < 2:
+                    raise ValueError(
+                        f"Expected image files under class folders 0-{NUM_CLASSES - 1}; "
+                        f"got {image_path}."
+                    )
+                try:
+                    class_id = int(relative_image_path.parts[0])
+                except ValueError as exc:
+                    raise ValueError(
+                        f"Expected a numeric class folder 0-{NUM_CLASSES - 1}; "
+                        f"got {relative_image_path.parts[0]!r} for {image_path}."
+                    ) from exc
+                
+                if not 0 <= class_id < NUM_CLASSES:
+                    raise ValueError(
+                        f"Class folder must be an ID from 0 to {NUM_CLASSES - 1}; "
+                        f"got {class_id} for {image_path}."
+                    )
+                self.samples.append((image_path, mask_path, class_id))
 
         if not self.samples:
             raise ValueError(f"No paired images and masks found under {image_dir}.")
@@ -161,7 +177,7 @@ class BrainTumorSegmentationDataset(Dataset):
         return len(self.samples)
 
     def __getitem__(self, index: int) -> tuple[Tensor, Tensor]:
-        image_path, mask_path = self.samples[index]
+        image_path, mask_path, class_id = self.samples[index]
         size = (self.image_size, self.image_size)
 
         with Image.open(image_path) as image:
@@ -178,6 +194,8 @@ class BrainTumorSegmentationDataset(Dataset):
                     f"Expected a single-channel class-index mask, got {mask_path}."
                 )
             mask_array = mask_array[..., 0]
+
+        mask_array = np.where(mask_array >= MASK_FOREGROUND_THRESHOLD, class_id, 0)
 
         if mask_array.min() < 0 or mask_array.max() >= NUM_CLASSES:
             raise ValueError(
@@ -261,21 +279,19 @@ def run_epoch(
 
 def train_model(
     dataset_root: Path,
-    output_path: Path,
     epochs: int = 20,
     batch_size: int = 8,
     image_size: int = 256,
     learning_rate: float = 1e-3,
-) -> None:
+) -> UNet:
     if epochs <= 0 or batch_size <= 0 or learning_rate <= 0:
         raise ValueError("epochs, batch_size, and learning_rate must be positive.")
     if image_size < 2**4:
         raise ValueError("image_size must be at least 16 for the default U-Net depth.")
 
-    dataset_dir = dataset_root / DATASET_FOLDER
     dataset = BrainTumorSegmentationDataset(
-        image_dir=dataset_dir / "image",
-        mask_dir=dataset_dir / "mask",
+        image_dir=dataset_root / "image",
+        mask_dir=dataset_root / "mask",
         image_size=image_size,
     )
 
@@ -302,7 +318,6 @@ def train_model(
     model = UNet(in_channels=1, out_channels=NUM_CLASSES).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    best_validation_loss = float("inf")
 
     for epoch in range(1, epochs + 1):
         training_loss = run_epoch(
@@ -315,27 +330,14 @@ def train_model(
             f"validation loss: {validation_loss:.4f}"
         )
 
-        if validation_loss < best_validation_loss:
-            best_validation_loss = validation_loss
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            torch.save(
-                {
-                    "model_state_dict": model.state_dict(),
-                    "class_names": CLASS_NAMES,
-                    "image_size": image_size,
-                    "epoch": epoch,
-                    "validation_loss": validation_loss,
-                },
-                output_path,
-            )
-
-    print(f"Best model saved to {output_path}")
+    return model
 
 
-def main() -> None:
+def main(
+    dataset_root: Path = Path("./dataset/Brain Tumor Segmentation Dataset"),
+) -> None:
     train_model(
-        dataset_root=Path("./dataset"),
-        output_path=Path("./checkpoints/brain_tumor_unet.pth"),
+        dataset_root=dataset_root,
         epochs=20,
         batch_size=8,
         image_size=256,

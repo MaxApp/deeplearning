@@ -149,7 +149,9 @@ U-Net is a convolutional neural network designed for image segmentation, especia
 
 ![U-Net architecture](imgs/u-net.png)
 
-The PyTorch implementation and training entry point are in [`u_net.py`](u_net.py). The Kaggle dataset uses class IDs `0` (no tumor), `1` (glioma), `2` (meningioma), and `3` (pituitary). Place the extracted files under `./dataset` with paired image and mask subfolders:
+The PyTorch implementation and training entry point are in [`u_net.py`](u_net.py). The dataset's masks are grayscale images (stored as three identical RGB channels), not class-index maps: black is background and bright pixels mark the tumor. Since the JPEG masks contain compression noise, pixels at intensity 128 or above are treated as foreground. The image's numeric class folder supplies the tumor class: `0` (no tumor), `1` (glioma), `2` (meningioma), and `3` (pituitary). The loader converts each mask to class IDs where `0` is background and foreground pixels receive the folder's class ID.
+
+Place the extracted files under `./dataset/Brain Tumor Segmentation Dataset` with paired image and mask subfolders:
 
 ```text
 dataset/
@@ -166,7 +168,7 @@ dataset/
         └── 3/
 ```
 
-From the repository root, run `python VisionLab\u_net.py`. It first displays four random image-mask pairs; close the plot window to continue. The loader pairs files by relative path, resizes images and masks to 256×256 (nearest-neighbor for masks), and trains four-class segmentation with `CrossEntropyLoss`. The best validation-loss checkpoint is saved to `./checkpoints/brain_tumor_unet.pth`. To change training settings, edit the hard-coded values in `main()` in `u_net.py`.
+From the repository root, run `python VisionLab\u_net.py` to train four-class segmentation with `CrossEntropyLoss`. The loader pairs files by relative path and resizes images and masks to 256×256 (nearest-neighbor for masks). Training reports loss each epoch and does not save a checkpoint; `train_model` returns the trained model in memory. To use a different dataset directory, call `main(dataset_root=Path(r"..."))` or pass that directory to `train_model`; the directory should directly contain the `image` and `mask` folders. To change training settings, edit the values in `main()` in `u_net.py`.
 
 ### Siamese network
 
