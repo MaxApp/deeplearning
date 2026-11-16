@@ -19,6 +19,13 @@ MASK_FOREGROUND_THRESHOLD = 128
 MODEL_IN_CHANNELS = 1
 MODEL_BASE_CHANNELS = 32
 MODEL_DEPTH = 4
+MODEL_CONFIG = {
+    "in_channels": MODEL_IN_CHANNELS,
+    "out_channels": NUM_CLASSES,
+    "base_channels": MODEL_BASE_CHANNELS,
+    "depth": MODEL_DEPTH,
+}
+DEFAULT_CHECKPOINT_PATH = Path("./checkpoints/brain_tumor_unet.pth")
 TUMOR_COLORS = ("tab:blue", "tab:orange", "tab:green")
 MASK_CMAP = ListedColormap(("black", *TUMOR_COLORS))
 MASK_NORM = BoundaryNorm(np.arange(-0.5, NUM_CLASSES + 0.5), MASK_CMAP.N)
@@ -335,17 +342,23 @@ def train_model(
     dataset: BrainTumorSegmentationDataset,
     epochs: int = 20,
     batch_size: int = 8,
-    learning_rate: float = 1e-3,
-    checkpoint_path: Path = Path("./checkpoints/brain_tumor_unet.pth"),
+    learning_rate: float | None = None,
+    checkpoint_path: Path | None = None,
+    resume_from: Path | None = None,
 ) -> UNet:
-    if epochs <= 0 or batch_size <= 0 or learning_rate <= 0:
-        raise ValueError("epochs, batch_size, and learning_rate must be positive.")
+    """Train for additional epochs, restoring optimizer state when resuming."""
+    if epochs <= 0 or batch_size <= 0:
+        raise ValueError("epochs and batch_size must be positive.")
+    if learning_rate is not None and learning_rate <= 0:
+        raise ValueError("learning_rate must be positive when provided.")
     if dataset.image_size < 2**MODEL_DEPTH:
         raise ValueError(
             f"image_size must be at least {2**MODEL_DEPTH} for depth={MODEL_DEPTH}."
         )
     if len(dataset) < 2:
         raise ValueError("At least two image-mask pairs are required for training.")
+    if checkpoint_path is None:
+        checkpoint_path = resume_from or DEFAULT_CHECKPOINT_PATH
 
     # split dataset for training and validation
     validation_size = max(1, int(len(dataset) * 0.2))
@@ -360,22 +373,45 @@ def train_model(
     training_loader = DataLoader(training_data, batch_size=batch_size, shuffle=True)
     validation_loader = DataLoader(validation_data, batch_size=batch_size)
 
-    model = UNet(
-        in_channels=MODEL_IN_CHANNELS,
-        out_channels=NUM_CLASSES,
-        base_channels=MODEL_BASE_CHANNELS,
-        depth=MODEL_DEPTH,
-    ).to(device)
+    model = UNet(**MODEL_CONFIG).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=learning_rate if learning_rate is not None else 1e-3
+    )
+    completed_epochs = 0
 
-    for epoch in range(1, epochs + 1):
+    if resume_from is not None:
+        checkpoint = _read_checkpoint(resume_from, device)
+        if "optimizer_state_dict" not in checkpoint:
+            raise ValueError(
+                f"Checkpoint {resume_from} has no optimizer state and cannot resume "
+                "training. Use it for inference or start a new training run."
+            )
+        if checkpoint["model_config"] != MODEL_CONFIG:
+            raise ValueError("Checkpoint model configuration does not match this U-Net.")
+        if checkpoint["image_size"] != dataset.image_size:
+            raise ValueError(
+                f"Checkpoint expects image_size={checkpoint['image_size']}, "
+                f"but dataset uses image_size={dataset.image_size}."
+            )
+        if not isinstance(checkpoint.get("epoch"), int) or checkpoint["epoch"] < 0:
+            raise ValueError("Checkpoint has an invalid completed epoch.")
+
+        model.load_state_dict(checkpoint["model_state_dict"])
+        optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+        if learning_rate is not None:
+            for parameter_group in optimizer.param_groups:
+                parameter_group["lr"] = learning_rate
+        completed_epochs = checkpoint["epoch"]
+
+    final_epoch = completed_epochs + epochs
+    for epoch in range(completed_epochs + 1, final_epoch + 1):
         training_loss = run_epoch(
             model, training_loader, criterion, device, optimizer
         )
         validation_loss = run_epoch(model, validation_loader, criterion, device)
         print(
-            f"Epoch {epoch:02d}/{epochs} | "
+            f"Epoch {epoch:02d}/{final_epoch} | "
             f"train loss: {training_loss:.4f} | "
             f"validation loss: {validation_loss:.4f}"
         )
@@ -384,14 +420,11 @@ def train_model(
     torch.save(
         {
             "model_state_dict": model.state_dict(),
-            "model_config": {
-                "in_channels": MODEL_IN_CHANNELS,
-                "out_channels": NUM_CLASSES,
-                "base_channels": MODEL_BASE_CHANNELS,
-                "depth": MODEL_DEPTH,
-            },
+            "optimizer_state_dict": optimizer.state_dict(),
+            "model_config": MODEL_CONFIG,
             "class_names": list(CLASS_NAMES),
             "image_size": dataset.image_size,
+            "epoch": final_epoch,
         },
         checkpoint_path,
     )
@@ -403,10 +436,19 @@ def load_model(
     checkpoint_path: Path,
     device: torch.device | None = None,
 ) -> tuple[UNet, int]:
-    """Load a trained U-Net and its expected input size."""
+    """Load a trained U-Net for inference; use train_model to resume training."""
     if device is None:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    checkpoint = _read_checkpoint(checkpoint_path, device)
+
+    model = UNet(**checkpoint["model_config"]).to(device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model.eval()
+    return model, int(checkpoint["image_size"])
+
+
+def _read_checkpoint(checkpoint_path: Path, device: torch.device) -> dict:
     checkpoint = torch.load(
         checkpoint_path, map_location=device, weights_only=True
     )
@@ -415,11 +457,7 @@ def load_model(
             f"Checkpoint classes {checkpoint['class_names']} do not match "
             f"current classes {list(CLASS_NAMES)}."
         )
-
-    model = UNet(**checkpoint["model_config"]).to(device)
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.eval()
-    return model, int(checkpoint["image_size"])
+    return checkpoint
 
 
 if __name__ == "__main__":
@@ -431,11 +469,11 @@ if __name__ == "__main__":
         image_size=256
     )
 
+    # To continue training, resume from a checkpoint containing optimizer state:
     # trained_model = train_model(
     #     dataset,
-    #     epochs=10,
-    #     batch_size=8,
-    #     learning_rate=1e-3,
+    #     epochs=5,
+    #     resume_from=Path("./checkpoints/brain_tumor_unet.pth"),
     # )
 
     trained_model, _  = load_model(Path("./checkpoints/brain_tumor_unet.pth"))
