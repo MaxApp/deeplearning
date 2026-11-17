@@ -168,7 +168,7 @@ dataset/
         └── 3/
 ```
 
-From the repository root, run `python VisionLab\u_net.py` to train four-class segmentation with `CrossEntropyLoss`. The loader pairs files by relative path and resizes images and masks to 256×256 (nearest-neighbor for masks). After training, the script displays one random image beside its ground-truth and predicted masks, then saves the model and inference metadata to `./checkpoints/brain_tumor_unet.pth`. `load_model(checkpoint_path)` reloads the model and returns its expected image size; `predict_mask(model, image_tensor)` produces a per-pixel class-ID mask. To use a different dataset directory, update `root_dir` in the script; it should directly contain the `image` and `mask` folders.
+From the repository root, run `python VisionLab\u_net.py` to train four-class segmentation with `CrossEntropyLoss`. The loader pairs files by relative path and resizes images and masks to 256×256 (nearest-neighbor for masks). After training, the script displays one random image beside its ground-truth and predicted masks, then saves the model, optimizer state, completed epoch, and inference metadata to `./checkpoints/brain_tumor_unet.pth`. `load_model(checkpoint_path)` reloads the model for inference and returns its expected image size; `predict_mask(model, image_tensor)` produces a per-pixel class-ID mask. To continue training, call `train_model(dataset, epochs=10, resume_from=checkpoint_path)`; `epochs` is the number of additional epochs. The checkpoint must include optimizer state, so older inference-only checkpoints cannot resume. To use a different dataset directory, update `root_dir` in the script; it should directly contain the `image` and `mask` folders.
 
 ### Siamese network
 
