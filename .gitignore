@@ -9,3 +9,6 @@ __pycache__/
 # 忽略所有 test.py 本地测试文件
 test*.py
 
+# 忽略所有 .pth 模型 checkpoints 文件
+*.pth
+

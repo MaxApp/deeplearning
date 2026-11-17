@@ -149,9 +149,9 @@ U-Net is a convolutional neural network designed for image segmentation, especia
 
 ![U-Net architecture](imgs/u-net.png)
 
-The PyTorch implementation and training entry point are in [`u_net.py`](u_net.py). The dataset's masks are grayscale images (stored as three identical RGB channels), not class-index maps: black is background and bright pixels mark the tumor. Since the JPEG masks contain compression noise, pixels at intensity 128 or above are treated as foreground. The image's numeric class folder supplies the tumor class: `0` (no tumor), `1` (glioma), `2` (meningioma), and `3` (pituitary). The loader converts each mask to class IDs where `0` is background and foreground pixels receive the folder's class ID.
+The PyTorch implementation and training entry point are in [u_net.py](./u_net.py). The dataset is [Brain Tumor Segmentation](https://www.kaggle.com/datasets/atikaakter11/brain-tumor-segmentation-dataset) from Kaggle. The masks are grayscale images stored as three identical RGB channels, not class-index maps: black is background and bright pixels mark the tumor. Since the JPEG masks contain compression noise, pixels with intensity 128 or above are treated as foreground. The image's numeric class folder supplies the tumor class: `0: (no tumor)`, `1: (glioma)`, `2: (meningioma)`, `3: (pituitary)`. The loader converts each mask to class IDs: `0` for background and the folder's class ID for foreground pixels.
 
-Place the extracted files under `./dataset/Brain Tumor Segmentation Dataset` with paired image and mask subfolders:
+The dataset is organized into paired image and mask subfolders:
 
 ```text
 dataset/
@@ -168,7 +168,13 @@ dataset/
         └── 3/
 ```
 
-From the repository root, run `python VisionLab\u_net.py` to train four-class segmentation with `CrossEntropyLoss`. The loader pairs files by relative path and resizes images and masks to 256×256 (nearest-neighbor for masks). After training, the script displays one random image beside its ground-truth and predicted masks, then saves the model, optimizer state, completed epoch, and inference metadata to `./checkpoints/brain_tumor_unet.pth`. `load_model(checkpoint_path)` reloads the model for inference and returns its expected image size; `predict_mask(model, image_tensor)` produces a per-pixel class-ID mask. To continue training, call `train_model(dataset, epochs=10, resume_from=checkpoint_path)`; `epochs` is the number of additional epochs. The checkpoint must include optimizer state, so older inference-only checkpoints cannot resume. To use a different dataset directory, update `root_dir` in the script; it should directly contain the `image` and `mask` folders.
+The script includes a function for displaying processed image-mask pairs:
+
+![Tumor Data Sample](./imgs/tumor_seg.png)
+
+After training for 30 epochs on a subset of 1,000 samples, the model produced meaningful, though imperfect, predictions. Training on a larger dataset for more epochs may improve the results.
+
+![Training result](./imgs/u-net-pred.png)
 
 ### Siamese network
 

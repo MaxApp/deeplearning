@@ -462,7 +462,7 @@ def _read_checkpoint(checkpoint_path: Path, device: torch.device) -> dict:
 
 if __name__ == "__main__":
 
-    root_dir = Path(r"E:\PDF\deep learning\brain_tumor_seg")
+    root_dir = Path("./brain_tumor_seg") #
     dataset = BrainTumorSegmentationDataset(
         image_dir=root_dir / "image",
         mask_dir=root_dir / "mask",
@@ -470,11 +470,11 @@ if __name__ == "__main__":
     )
 
     # To continue training, resume from a checkpoint containing optimizer state:
-    # trained_model = train_model(
-    #     dataset,
-    #     epochs=5,
-    #     resume_from=Path("./checkpoints/brain_tumor_unet.pth"),
-    # )
+    trained_model = train_model(
+        dataset,
+        epochs=5,
+        # resume_from=Path("./checkpoints/brain_tumor_unet.pth"),
+    )
 
-    trained_model, _  = load_model(Path("./checkpoints/brain_tumor_unet.pth"))
-    display_random_prediction(dataset, trained_model)
+    # trained_model, _  = load_model(Path("./checkpoints/brain_tumor_unet.pth"))
+    # display_random_prediction(dataset, trained_model)
