@@ -136,16 +136,16 @@ I use this repository to organize concepts, make connections between methods and
 
 ## Machine Learning Workflow
 
-From the idea to a production-ready system, a machine learning project typically follows a clear workflow. It usually includes:
+From the idea to a production-ready system, a machine learning project typically follows a clear workflow. It usually follows:
 
 * Data Collection
 * Data Cleaning and Preparation
 * Model Architecture
 * Model Training
-* Evaluation
+* Evaluation and Refine
 * Compression and Deployment
 
-Different types of data may require different preprocessing, training, and evaluation techniques, but the overall workflow remains broadly consistent.
+Different types of data may require different preprocessing, training and evaluation techniques but the overall workflow remains broadly consistent.
 
 ## Knowledge Maps
 
@@ -170,7 +170,9 @@ There're some key topics and common concepts frequently used in ML:
 
 ### Programming Environment
 
-***Python*** is the primary language used throughout this learning journey. It offers a rich ecosystem of tools and libraries that make experimentation, model training, and data analysis efficient and accessible. In addition to Python, I have also worked with ***Java*, *C*, *Ruby*, *PHP*, *JavaScript*** and other languages, but Python remains the most practical choice for machine learning work.
+***Python*** is the primary language used throughout this learning journey. It offers a rich ecosystem of tools and libraries that make experimentation, model training and data analysis efficient and accessible. In addition to Python, I have also worked with ***Java*, *C*, *Ruby*, *PHP*, *JavaScript*** and other languages, but Python remains the most practical choice for machine learning work.
+
+I also use ***vibe coding*** in my programming workflow to turn ideas into working solutions more efficiently. By collaborating with AI coding assistants through natural-language instructions, I can quickly explore solutions, build prototypes, understand unfamiliar code and debug implementation issues.
 
 ### Frameworks and Tools
 
