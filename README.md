@@ -152,20 +152,19 @@ Different types of data may require different preprocessing, training and evalua
 
 A solid foundation in *linear algebra*, *calculus*, *probability* and *statistics* is essential for understanding how models learn and why they behave the way they do. These concepts support a deeper understanding of training progress, optimization, inference and model behavior in real applications.
 
-There're some key topics and common concepts frequently used in ML:
-* Linear algebra: vectors, matrices, tensor operations, matrix factorization
-* Calculus: derivatives, gradients, chain rule
-* Probability and statistics: conditional probability, Bayes' theorem, expectation, variance, distributions and maximum likelihood
-* Information theory: entropy, cross-entropy, KL divergence and information gain
-* Exponential Weighted Average‌
-* Naive Bayes
-* Laplace Smoothing
-* Log Likelihood
-* Euclidean Distance
-* Cosine Similarity
-* Markov Chain
-* Transition Probability
-* ...
+These mathematical foundations support many machine-learning methods. The topics I’m exploring include:
+
+**Mathematical foundations**
+* **Linear algebra:** vectors, matrices, tensor operations and matrix factorization
+* **Calculus:** derivatives, gradients and the chain rule
+* **Probability and statistics:** conditional probability, Bayes' theorem, expectation, variance, distributions and maximum likelihood
+* **Information theory:** entropy, cross-entropy, KL divergence and information gain
+
+**Related machine-learning concepts**
+* **Probabilistic models:** Naive Bayes, Laplace smoothing and log-likelihood
+* **Distance and similarity:** Euclidean distance and cosine similarity
+* **Sequential models:** Markov chains and transition probabilities
+* **Smoothing:** exponential moving averages (EMAs)
 
 ### Programming Environment
 
