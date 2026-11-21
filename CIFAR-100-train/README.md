@@ -1,12 +1,13 @@
-# Description
+# Project Description
+
 Train a CNN model based on **CIFAR-100** low resolution(32x32) datasets that can 
 classify limited subclasses instead of 100 categories.
 
-We build a intuitive working model that can be trained to do classification first, but with some training issues.
-Then we do some improvements and enhancements to tackle the overfitting issues and make structure more graceful.
+This project starts with a simple, working CNN classifier and then gradually improves it through successive iterations. Each stage refines the model to address issues such as overfitting, improve the network structure and enhance classification performance.
 
 ### scripts descriptions
-* **dataset_visualise.py**
+
+* [dataset_visualise.py](./dataset_visualise.py)
 
     Given the pre-downloaded datasets, load and parse the files to read images and labels.
 
@@ -14,7 +15,7 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
 
     ![random_images](imgs/dataset_visualise_01.png)
 
-* **nature_classifier.py**
+* [nature_classifier.py](./nature_classifier.py)
 
     Build a working model that can classify flowers, insects and small animals within small curated classes.
 
@@ -30,9 +31,9 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
     * mini-batch gradient descent
     * evaluate model performence
 
-    **Cautions:**
+    **Remarks:**
     
-    * Be careful with accumulating the loss in batch and calculate the average loss for total. The loss value returned by loss function is the mean value per batch by default, in order to calculate the total loss based on every sample, you should calculate every batch total loss and accumulate them to get the final one. Otherwise you could calculate average loss based on batch, see `additional` notes below.
+    * Pay attention to accumulating the loss in batch and calculate the average loss for total. The loss value returned by loss function is the mean value per batch by default, in order to calculate the total loss based on every sample, we should calculate every batch total loss and accumulate them to get the final one. Otherwise you could calculate average loss based on batch, see `additional` notes below.
     * It's not promised the last batch is a full size, so you should count step by step to get the right size of the sample in a batch.
     * Don't use softmax as the last layer, use Linear layer directly instead. 
     
@@ -83,7 +84,7 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
 
     **Note:** The gap between **training_loss** and **validation_loss** shows a clear signs of overfitting. That's what we'll resolve in  `nature_classifier_enhanced.py` next.
 
-* **nature_classifier_enhanced.py**
+* [nature_classifier_enhanced.py](nature_classifier_enhanced.py)
   
   The performence ploted shows an evident signal to overfitting problems. To tackle this issue, we would do some refactors.
 
@@ -147,6 +148,7 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
           x = self.classifier(x)
           return x
   ```
+
   **Model performence:** 
 
   Now we can see **training loss** and **validation loss** are more stable and reasonable. But, there's still a plateau to accuracy, we'll do more to improve it later.
@@ -154,7 +156,7 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
   ![training_enhanced_result](imgs/nature_classifier_02.png)
 
 
-* **nature_classifier_optimized.py**
+* [nature_classifier_optimized.py](nature_classifier_optimized.py)
 
     Base on `nature_classifier_enhanced.py` we add more optimized methods to tuning the model in order to improve accuracy and other performance metrics.
     We monitor not just on `accuracy` but also more useful `precision`, `recall`, `f1 score` metrics to evaluating the predictions. 
@@ -206,7 +208,7 @@ Then we do some improvements and enhancements to tackle the overfitting issues a
 
     ![training_optimized_result](imgs/nature_classifier_optim.png)
 
-* **utils.py**
+* [utils.py](utils.py)
 
     helper functions assist with main code.
 
