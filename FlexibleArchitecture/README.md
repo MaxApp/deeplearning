@@ -25,7 +25,7 @@ Linear Output Layer
 * Flatten
 * Classify Block
 
-### Cautions
+### Notes
 1. Do not use python `list` for dynamically reserve modules, use `nn.ModuleList` instead, or parameters won't be registered and updated during training.
 2. It's better to calculate the flatten size according to input layer features in `__init__` method. Using an internel method for conv calculation.
 3. Print out the models to confirm the structure is what you expect.
