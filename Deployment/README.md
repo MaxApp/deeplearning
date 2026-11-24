@@ -100,5 +100,29 @@ While precision of paramters is important during training because of gradient ca
 
 The main difference between PTQ and QAT is whether influence backward calculation. In PTQ quantized modules mainly observe and make statistic for later optimization, but in QAT the modules influence the inputs and outputs, also backward calculation, that makes model more robust to lower precision mode.
 
+## Deployment with Inference Engine
+
+**What is inference engine?**
+
+An inference engine is optimized software that runs a trained model to make predictions on new data. It loads the model, preprocesses inputs, performs forward computation and returns outputs efficiently.
+
+Use an inference engine to reduce latency and memory use, scale requests reliably, and deploy models across different hardware and platforms. It also provides useful production features such as batching, quantization, acceleration, monitoring, and version management.
+
+**Typical inference engines**
+
+* **vLLM**: An open-source engine for high-throughput LLM serving, with continuous batching, PagedAttention, and prefix caching.
+* **TensorRT-LLM**: NVIDIA runtimes for optimizing and accelerating models, including large language models, on NVIDIA GPUs.
+* **ONNX Runtime**: A cross-platform runtime for running ONNX models efficiently across CPUs, GPUs, and specialized accelerators.
+
+**Fast and efficient LLM inference**
+
+vLLM is a popular open-source LLM inference engine designed for high-throughput serving and efficient GPU memory use. It is especially useful when an application needs to handle many concurrent requests while keeping latency and infrastructure costs under control.
+
+* **Continuous batching**: vLLM dynamically adds and removes requests during generation, keeping the GPU busy instead of waiting for fixed batches to finish.
+* **PagedAttention**: It manages the KV cache in paged memory blocks, reducing fragmentation and wasted GPU memory as request lengths vary.
+* **Prefix caching**: Shared prompt prefixes are reused instead of recomputed, improving performance for prompts or system instructions that are repeated across requests.
+* **Quantization support**: vLLM can run compressed model weights in formats such as FP8 or GPTQ, reducing memory use and potentially improving throughput while trading off some accuracy.
+* **OpenAI-compatible API**: It provides familiar chat-completion and text-generation interfaces, making it easier to integrate and switch from hosted services.
+* **Production observability**: vLLM exposes metrics for latency, throughput, memory use, cache utilization, and request activity, helping operators tune and monitor deployments.
 
 
