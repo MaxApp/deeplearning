@@ -125,4 +125,15 @@ vLLM is a popular open-source LLM inference engine designed for high-throughput 
 * **OpenAI-compatible API**: It provides familiar chat-completion and text-generation interfaces, making it easier to integrate and switch from hosted services.
 * **Production observability**: vLLM exposes metrics for latency, throughput, memory use, cache utilization and request activity, helping operators tune and monitor deployments.
 
+## Optimize a Model with LLM Compressor
+
+`llm_compressor_vllm.py` demonstrates an end-to-end workflow: it applies GPTQ W4A16 quantization to the small `Qwen/Qwen2.5-0.5B-Instruct` model using a few UltraChat examples, saves the compressed model, then loads it with vLLM and generates a response.
+
+Run it from the repository root:
+
+```shell
+python Deployment/llm_compressor_vllm.py
+```
+
+The script downloads the model and calibration data on the first run and saves the compressed model to `compressed_model` in the current working directory. Use `--output-dir` to choose another location. W4A16 inference requires a compatible NVIDIA GPU (compute capability greater than 8.0); the short calibration set keeps this example small, not production quality.
 
